@@ -4,8 +4,8 @@
 
 - [x] Create FastAPI project.
 - [x] Add configuration module.
-- [ ] Add Supabase JWT verification.
-- [ ] Add current employee resolution.
+- [x] Add Supabase JWT verification.
+- [x] Add current employee resolution.
 - [ ] Add centralized RBAC service.
 - [ ] Add centralized ABAC service.
 - [ ] Add Super User override handler.
@@ -27,9 +27,9 @@
 ## Auth
 
 - [ ] Configure Google sign-in.
-- [ ] Restrict access to approved IEMS accounts.
-- [ ] Test unapproved account rejection.
-- [ ] Test disabled employee rejection.
+- [x] Restrict access to approved IEMS accounts.
+- [x] Test unapproved account rejection.
+- [x] Test disabled employee rejection.
 - [ ] Test Director role assignment.
 - [ ] Test Super User status.
 
@@ -54,7 +54,7 @@
 ### Codex
 
 - [x] Scaffold FastAPI only.
-- [ ] Implement auth verification and backend authorization only.
+- [x] Implement auth verification and backend authorization only.
 - [x] Update API contract where required.
 
 ### Claude
