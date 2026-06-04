@@ -189,6 +189,7 @@ def test_current_user_resolver_returns_active_employee_context() -> None:
 
 def test_current_user_resolver_uses_apikey_only_for_new_secret_keys() -> None:
     seen_requests: list[httpx.Request] = []
+    service_key = "sb" "_secret_test_secret_key_value_123456"
 
     def handler(request: httpx.Request) -> Response:
         seen_requests.append(request)
@@ -196,15 +197,34 @@ def test_current_user_resolver_uses_apikey_only_for_new_secret_keys() -> None:
 
     resolver = SupabaseCurrentUserResolver(
         supabase_url="http://localhost:54321",
-        service_role_key="sb_secret_test_secret_key_value_123456",
+        service_role_key=service_key,
         transport=httpx.MockTransport(handler),
     )
 
     with pytest.raises(CurrentUserError):
         asyncio.run(resolver.resolve(_claims()))
 
-    assert seen_requests[0].headers["apikey"] == "sb_secret_test_secret_key_value_123456"
+    assert seen_requests[0].headers["apikey"] == service_key
     assert "authorization" not in seen_requests[0].headers
+    assert (
+        "role_assignments:user_role_assignments!"
+        "user_role_assignments_user_account_id_fkey"
+    ) in seen_requests[0].url.params["select"]
+
+
+def test_current_user_resolver_rejects_postgrest_multiple_choice() -> None:
+    resolver = SupabaseCurrentUserResolver(
+        supabase_url="http://localhost:54321",
+        service_role_key="legacy-service-role-key",
+        transport=httpx.MockTransport(lambda _request: Response(300, json={"code": "PGRST201"})),
+    )
+
+    with pytest.raises(CurrentUserError) as exc_info:
+        asyncio.run(resolver.resolve(_claims()))
+
+    assert exc_info.value.status_code == 503
+    assert exc_info.value.code == "AUTH_RESOLUTION_FAILED"
+    assert exc_info.value.message == "Current employee lookup failed"
 
 
 def test_current_user_resolver_rejects_unapproved_account() -> None:

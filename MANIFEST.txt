@@ -18,9 +18,11 @@ apps/api/app/core/request_id.py
 apps/api/app/main.py
 apps/api/app/schemas/__init__.py
 apps/api/app/schemas/current_user.py
+apps/api/scripts/local_access_token.py
 apps/api/tests/test_authorization.py
 apps/api/tests/test_auth_current_user.py
 apps/api/tests/test_api_shell.py
+apps/api/tests/test_local_access_token_script.py
 docs/abac-policy-matrix.md
 docs/api-contract.md
 docs/architecture.md

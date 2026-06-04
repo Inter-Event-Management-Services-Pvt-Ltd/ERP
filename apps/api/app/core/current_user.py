@@ -104,7 +104,7 @@ class SupabaseCurrentUserResolver:
                 "employee:employees("
                 "id,employee_code,full_name,official_email,designation,employment_status"
                 "),"
-                "role_assignments:user_role_assignments("
+                "role_assignments:user_role_assignments!user_role_assignments_user_account_id_fkey("
                 "expires_at,"
                 "role:roles(code,role_permissions(permission:permissions(code)))"
                 ")"
@@ -122,7 +122,7 @@ class SupabaseCurrentUserResolver:
                 params=params,
             )
 
-        if response.status_code >= 400:
+        if response.status_code >= 300:
             raise CurrentUserError(
                 503,
                 "AUTH_RESOLUTION_FAILED",
