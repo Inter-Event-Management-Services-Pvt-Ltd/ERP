@@ -10,6 +10,8 @@ docs/normalized-schema-design.md
 docs/storage-conventions.md
 docs/testing-checklist.md
 docs/ui-map.md
+docs/superpowers/plans/2026-06-04-iems-erp-frontend.md
+docs/superpowers/specs/2026-06-04-iems-erp-frontend-design.md
 supabase/config.toml
 supabase/migrations/202606040001_extensions.sql
 supabase/migrations/202606040002_reference_tables.sql

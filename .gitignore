@@ -1,17 +1,40 @@
-# dependencies
+# JavaScript dependencies
 node_modules/
 
 # Next.js
 .next/
 out/
 
+# Python / uv
+.venv/
+venv/
+__pycache__/
+*.py[cod]
+*$py.class
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+.coverage
+coverage.xml
+htmlcov/
+.uv-cache/
+
 # build output
 dist/
+build/
+*.egg-info/
 
 # env files
 .env
 .env.local
 .env.*.local
+
+# logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
 
 # superpowers brainstorm sessions
 .superpowers/
