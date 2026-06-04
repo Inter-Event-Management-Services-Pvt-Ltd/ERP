@@ -1,0 +1,30 @@
+name: Handoff Guardrails
+
+on:
+  pull_request:
+  push:
+    branches: [main, staging]
+
+jobs:
+  validate-handoff:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Validate required project files
+        run: bash scripts/validate-handoff.sh
+      - name: Check for committed environment files
+        run: |
+          if git ls-files | grep -E '(^|/)\.env($|\.)' | grep -v '\.env\.example$'; then
+            echo "Committed environment file detected"
+            exit 1
+          fi
+
+
+      - name: Confirm agent ownership documentation exists
+        run: |
+          test -f docs/13_AGENT_OWNERSHIP_MATRIX.md
+          test -f docs/checklists/FRONTEND_CLAUDE.md
+          test -f docs/checklists/BACKEND_CODEX.md
+
+      - name: Validate agent skills and MCP templates
+        run: bash scripts/validate-agent-skills.sh

@@ -1,0 +1,15 @@
+# Codex project-scoped MCP configuration
+#
+# Local Supabase MCP is the default for development.
+# Do not connect Codex MCP to production ERP data.
+
+[mcp_servers.supabase_local]
+url = "http://localhost:54321/mcp"
+enabled = true
+
+# Optional staging MCP.
+# Keep it read-only by default and replace the placeholder project ref locally.
+#
+# [mcp_servers.supabase_staging]
+# url = "https://mcp.supabase.com/mcp?project_ref=REPLACE_WITH_STAGING_PROJECT_REF&read_only=true&features=database,docs,debugging"
+# enabled = true

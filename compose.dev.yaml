@@ -1,0 +1,99 @@
+name: iems-erp-dev
+
+services:
+  web:
+    build:
+      context: ./apps/web
+      dockerfile: Dockerfile
+      target: development
+    command: ["npm", "run", "dev", "--", "-H", "0.0.0.0"]
+    volumes:
+      - ./apps/web:/app
+      - web-node-modules:/app/node_modules
+    env_file:
+      - .env.development
+    ports:
+      - "3000:3000"
+    depends_on:
+      api:
+        condition: service_healthy
+    networks:
+      - devnet
+
+  api:
+    build:
+      context: ./apps/api
+      dockerfile: Dockerfile
+      target: development
+    command: ["uv", "run", "uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000", "--reload"]
+    volumes:
+      - ./apps/api:/app
+    env_file:
+      - .env.development
+    ports:
+      - "8000:8000"
+    depends_on:
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/health').read()"]
+      interval: 15s
+      timeout: 5s
+      retries: 10
+      start_period: 10s
+    networks:
+      - devnet
+
+  worker:
+    build:
+      context: ./apps/api
+      dockerfile: Dockerfile
+      target: development
+    command: ["uv", "run", "celery", "-A", "app.workers.celery_app", "worker", "--loglevel=INFO"]
+    volumes:
+      - ./apps/api:/app
+    env_file:
+      - .env.development
+    depends_on:
+      redis:
+        condition: service_healthy
+    networks:
+      - devnet
+
+  scheduler:
+    build:
+      context: ./apps/api
+      dockerfile: Dockerfile
+      target: development
+    command: ["uv", "run", "celery", "-A", "app.workers.celery_app", "beat", "--loglevel=INFO"]
+    volumes:
+      - ./apps/api:/app
+    env_file:
+      - .env.development
+    depends_on:
+      redis:
+        condition: service_healthy
+    networks:
+      - devnet
+
+  redis:
+    image: redis:7-alpine
+    command: ["redis-server", "--appendonly", "yes"]
+    volumes:
+      - redis-dev-data:/data
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+    networks:
+      - devnet
+
+volumes:
+  web-node-modules:
+  redis-dev-data:
+
+networks:
+  devnet:

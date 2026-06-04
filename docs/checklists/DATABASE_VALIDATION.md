@@ -1,0 +1,21 @@
+# Database Validation Checklist
+
+- [x] Clean `supabase db reset` succeeds.
+- [x] Extensions created.
+- [x] Reference tables seeded.
+- [x] Employee/Auth separation works.
+- [x] Director bootstrap works after sign-in.
+- [x] Foreign keys validated.
+- [x] Check constraints validated.
+- [x] Partial unique indexes validated.
+- [x] Views compile.
+- [x] RLS policies compile.
+- [x] RLS enabled on every exposed `public` table.
+- [x] Storage buckets created.
+- [x] Storage policies compile.
+- [x] Audit table cannot be updated.
+- [x] Audit table cannot be deleted from.
+- [x] One root folder per project enforced.
+- [x] One open attendance session enforced.
+- [x] One open checkout enforced.
+- [x] Approval target count enforced.
