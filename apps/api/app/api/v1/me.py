@@ -1,27 +1,14 @@
 from typing import Annotated
 
-from fastapi import APIRouter, Header, HTTPException, status
+from fastapi import APIRouter, Depends
+
+from app.api.dependencies import get_current_user
+from app.schemas.current_user import CurrentUser
 
 router = APIRouter(prefix="/v1", tags=["current user"])
 
-
-@router.get("/me")
+@router.get("/me", response_model=CurrentUser)
 async def read_current_user(
-    authorization: Annotated[str | None, Header(alias="Authorization")] = None,
-) -> dict[str, str]:
-    if not authorization:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail={
-                "code": "AUTH_REQUIRED",
-                "message": "Authentication required",
-            },
-        )
-
-    raise HTTPException(
-        status_code=status.HTTP_501_NOT_IMPLEMENTED,
-        detail={
-            "code": "AUTH_NOT_CONFIGURED",
-            "message": "Supabase JWT verification is not configured yet",
-        },
-    )
+    current_user: Annotated[CurrentUser, Depends(get_current_user)],
+) -> CurrentUser:
+    return current_user

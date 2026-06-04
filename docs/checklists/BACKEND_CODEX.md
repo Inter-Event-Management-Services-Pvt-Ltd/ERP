@@ -17,8 +17,8 @@
 
 ## Authorization
 
-- [ ] JWT verified.
-- [ ] Employee account resolved.
+- [x] JWT verified.
+- [x] Employee account resolved.
 - [ ] RBAC checked.
 - [ ] ABAC checked.
 - [x] Default deny preserved at the database layer for exposed tables without explicit RLS policies.

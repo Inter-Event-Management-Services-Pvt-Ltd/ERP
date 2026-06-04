@@ -46,14 +46,20 @@ API errors use a stable envelope:
 
 The API returns `X-Request-ID` on responses. If the client sends `X-Request-ID`, the same value is echoed.
 
-Initial stable shell errors:
+Stable platform/auth errors:
 
 | HTTP status | Code | Meaning |
 |---|---|---|
 | 401 | `AUTH_REQUIRED` | Protected route called without an `Authorization` header |
+| 401 | `INVALID_TOKEN` | JWT is missing required claims, expired, malformed, or has an invalid signature |
+| 403 | `EMAIL_DOMAIN_NOT_ALLOWED` | Supabase user email is outside the approved IEMS domain |
+| 403 | `ACCOUNT_NOT_APPROVED` | Supabase user is valid but not linked to an approved employee account |
+| 403 | `ACCOUNT_DISABLED` | Linked user account or employee record is disabled |
+| 403 | `ACCOUNT_EMAIL_MISMATCH` | JWT email does not match the linked employee official email |
 | 404 | `NOT_FOUND` | Route not found |
 | 422 | `VALIDATION_ERROR` | Request validation failed |
-| 501 | `AUTH_NOT_CONFIGURED` | Temporary Phase 1 shell response until Supabase JWT verification is implemented |
+| 503 | `AUTH_NOT_CONFIGURED` | Required Supabase auth or employee-resolution settings are missing |
+| 503 | `AUTH_RESOLUTION_FAILED` | Backend could not resolve the current employee context |
 
 ## Auth and Current User
 
@@ -63,6 +69,32 @@ GET    /v1/me/permissions
 GET    /v1/me/notifications
 PATCH  /v1/me/notifications/{notification_id}/read
 ```
+
+`GET /v1/me` requires `Authorization: Bearer <Supabase access token>`.
+
+Successful response:
+
+```json
+{
+  "auth_user_id": "11111111-1111-4111-8111-111111111111",
+  "account": {
+    "is_active": true,
+    "is_super_user": false
+  },
+  "employee": {
+    "id": "22222222-2222-4222-8222-222222222222",
+    "employee_code": "IEMS-001",
+    "full_name": "Example Employee",
+    "official_email": "employee@iemsnewdelhi.com",
+    "designation": "Coordinator",
+    "employment_status": "ACTIVE"
+  },
+  "roles": ["EMPLOYEE"]
+}
+```
+
+The backend resolves `roles` from database role assignments. The frontend must
+not trust editable Supabase user metadata for authorization.
 
 ## Employees and Departments
 
