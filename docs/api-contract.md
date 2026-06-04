@@ -56,6 +56,8 @@ Stable platform/auth errors:
 | 403 | `ACCOUNT_NOT_APPROVED` | Supabase user is valid but not linked to an approved employee account |
 | 403 | `ACCOUNT_DISABLED` | Linked user account or employee record is disabled |
 | 403 | `ACCOUNT_EMAIL_MISMATCH` | JWT email does not match the linked employee official email |
+| 403 | `PERMISSION_DENIED` | Authenticated user does not have the required RBAC permission |
+| 403 | `ABAC_DENIED` | Authenticated user failed contextual ABAC authorization |
 | 404 | `NOT_FOUND` | Route not found |
 | 422 | `VALIDATION_ERROR` | Request validation failed |
 | 503 | `AUTH_NOT_CONFIGURED` | Required Supabase auth or employee-resolution settings are missing |
@@ -89,12 +91,31 @@ Successful response:
     "designation": "Coordinator",
     "employment_status": "ACTIVE"
   },
-  "roles": ["EMPLOYEE"]
+  "roles": ["EMPLOYEE"],
+  "permissions": ["document.download", "document.view", "project.view"]
 }
 ```
 
-The backend resolves `roles` from database role assignments. The frontend must
-not trust editable Supabase user metadata for authorization.
+The backend resolves `roles` and `permissions` from database role assignments.
+The frontend must not trust editable Supabase user metadata for authorization.
+
+`GET /v1/me/permissions` requires `Authorization: Bearer <Supabase access token>`.
+
+Successful response:
+
+```json
+{
+  "roles": ["EMPLOYEE"],
+  "permissions": ["document.download", "document.view", "project.view"],
+  "is_super_user": false,
+  "super_user_requires_reason": true
+}
+```
+
+`is_super_user` means the backend may allow privileged operations only through
+server-side checks. Sensitive override operations still require
+`X-IEMS-Override-Reason`; frontend permission data is for navigation and UI
+state only.
 
 ## Employees and Departments
 

@@ -33,6 +33,19 @@ uv run --group dev ruff check .
 uv run --group dev mypy app
 ```
 
+## Local API Access Token
+
+After local Supabase is running and `apps/api/.env` contains local Supabase
+values:
+
+```bash
+cd apps/api
+uv run python scripts/local_access_token.py
+```
+
+The helper is local-only and prints a temporary bearer token plus `curl.exe`
+commands for `/v1/me` and `/v1/me/permissions`.
+
 ## Future Frontend
 
 ```bash

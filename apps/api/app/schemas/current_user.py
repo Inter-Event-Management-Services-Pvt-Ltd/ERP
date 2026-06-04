@@ -22,3 +22,11 @@ class CurrentUser(BaseModel):
     account: UserAccount
     employee: EmployeeProfile
     roles: list[str] = Field(default_factory=list)
+    permissions: list[str] = Field(default_factory=list)
+
+
+class CurrentUserPermissions(BaseModel):
+    roles: list[str] = Field(default_factory=list)
+    permissions: list[str] = Field(default_factory=list)
+    is_super_user: bool
+    super_user_requires_reason: bool = True

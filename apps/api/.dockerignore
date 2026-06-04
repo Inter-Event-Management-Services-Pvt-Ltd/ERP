@@ -6,6 +6,7 @@ __pycache__
 .git
 .env
 .env.*
+scripts
 tests
 dist
 build

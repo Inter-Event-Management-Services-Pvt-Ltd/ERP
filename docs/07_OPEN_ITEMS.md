@@ -89,11 +89,10 @@ Date: 2026-06-04
 Category: API Contract
 Severity: Medium
 Question or issue: Claude's tracked frontend plan identifies API fields that still need exact response-shape confirmation before frontend business workflows start.
-Why it matters: The frontend shell is paused. `GET /v1/me` is now documented, but later screens still need stable shapes for `/v1/me/permissions`, notification unread counts, project archive readiness, export ZIP status, and Director overview metrics.
+Why it matters: The frontend shell is paused. `GET /v1/me` and `GET /v1/me/permissions` are now documented, but later screens still need stable shapes for notification unread counts, project archive readiness, export ZIP status, and Director overview metrics.
 Options:
-- Confirm and document `/v1/me/permissions` during CODEX-PHASE1-003.
 - Defer detailed business response shapes until Phase 2/4 endpoint implementation.
-Recommended next action: During RBAC/ABAC setup, finalize `/v1/me/permissions`; during Phase 2/4, update `docs/api-contract.md` before Claude wires business views.
+Recommended next action: During Phase 2/4, update `docs/api-contract.md` before Claude wires business views.
 Owner: Codex
 Status: Open
 ```
