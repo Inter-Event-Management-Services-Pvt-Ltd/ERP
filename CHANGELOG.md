@@ -9,6 +9,8 @@
 - Converted public dashboard views to `security_invoker` views and scoped Storage object reads to authenticated users.
 - Added Phase 0 SQL validation probes for schema, constraints, RLS, Storage buckets, audit immutability, and Director bootstrap logic.
 - Initialized the repository as a Git repo on `main` with the provided GitHub SSH remote.
+- Tracked Claude frontend planning docs under `docs/superpowers/`.
+- Added the initial FastAPI shell with health/readiness routes, configuration loading, request IDs, stable error envelopes, and `uv` test/lint/type-check tooling.
 
 - Assigned Claude as frontend-only owner using either Claude Design or Google Stitch for reviewed UI ideation.
 - Assigned Codex as backend-only owner.

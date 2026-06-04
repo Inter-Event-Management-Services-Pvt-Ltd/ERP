@@ -2,6 +2,59 @@
 
 All writes go through FastAPI. Each protected route performs JWT validation, RBAC/ABAC evaluation, transaction handling and audit logging.
 
+## Platform
+
+```text
+GET    /health
+GET    /ready
+```
+
+`GET /health` returns service liveness:
+
+```json
+{
+  "status": "ok",
+  "service": "iems-erp-api",
+  "version": "0.1.0"
+}
+```
+
+`GET /ready` returns API readiness checks:
+
+```json
+{
+  "status": "ready",
+  "checks": {
+    "api": "ok"
+  }
+}
+```
+
+## Error Envelope
+
+API errors use a stable envelope:
+
+```json
+{
+  "error": {
+    "code": "AUTH_REQUIRED",
+    "message": "Authentication required",
+    "request_id": "request-id"
+  }
+}
+```
+
+The API returns `X-Request-ID` on responses. If the client sends `X-Request-ID`, the same value is echoed.
+
+Initial stable shell errors:
+
+| HTTP status | Code | Meaning |
+|---|---|---|
+| 401 | `AUTH_REQUIRED` | Protected route called without an `Authorization` header |
+| 404 | `NOT_FOUND` | Route not found |
+| 422 | `VALIDATION_ERROR` | Request validation failed |
+| 501 | `AUTH_NOT_CONFIGURED` | Temporary Phase 1 shell response until Supabase JWT verification is implemented |
+
 ## Auth and Current User
 
 ```text

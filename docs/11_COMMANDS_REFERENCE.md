@@ -28,9 +28,9 @@ docker exec supabase_db_iems-erp psql -U postgres -d postgres -v ON_ERROR_STOP=1
 ```bash
 cd apps/api
 uv sync
-uv run pytest
-uv run ruff check .
-uv run mypy app
+uv run --group dev pytest
+uv run --group dev ruff check .
+uv run --group dev mypy app
 ```
 
 ## Future Frontend

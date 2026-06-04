@@ -2,9 +2,9 @@
 
 ## Ownership
 
-- [x] Only backend-owned files were modified for Phase 0 validation; `apps/web/**` was not modified.
+- [x] Only backend-owned files were modified for Phase 0/Phase 1 backend work; `apps/web/**` was not modified.
 - [x] Any frontend requirement was recorded for Claude. No frontend requirement was identified.
-- [x] API contract updated where required. No API contract change was required.
+- [x] API contract updated where required.
 
 ## Database
 
@@ -39,13 +39,13 @@
 - [ ] Transaction boundaries reviewed.
 - [ ] Race conditions reviewed.
 - [x] Invalid-state tests added.
-- [ ] Unauthorized tests added.
-- [ ] Success tests added.
+- [x] Unauthorized tests added.
+- [x] Success tests added.
 
 ## Validation
 
-- [ ] Ruff passes.
-- [ ] MyPy passes.
-- [ ] Pytest passes.
+- [x] Ruff passes.
+- [x] MyPy passes.
+- [x] Pytest passes.
 - [x] Migration reset passes.
 - [x] Backend security implications documented.

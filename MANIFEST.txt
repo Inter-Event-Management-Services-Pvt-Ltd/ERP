@@ -1,5 +1,17 @@
 .env.example
 README.md
+apps/api/pyproject.toml
+apps/api/uv.lock
+apps/api/app/__init__.py
+apps/api/app/api/__init__.py
+apps/api/app/api/v1/__init__.py
+apps/api/app/api/v1/me.py
+apps/api/app/core/__init__.py
+apps/api/app/core/config.py
+apps/api/app/core/errors.py
+apps/api/app/core/request_id.py
+apps/api/app/main.py
+apps/api/tests/test_api_shell.py
 docs/abac-policy-matrix.md
 docs/api-contract.md
 docs/architecture.md

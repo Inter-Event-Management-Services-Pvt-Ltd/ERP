@@ -2,15 +2,15 @@
 
 ## Backend
 
-- [ ] Create FastAPI project.
-- [ ] Add configuration module.
+- [x] Create FastAPI project.
+- [x] Add configuration module.
 - [ ] Add Supabase JWT verification.
 - [ ] Add current employee resolution.
 - [ ] Add centralized RBAC service.
 - [ ] Add centralized ABAC service.
 - [ ] Add Super User override handler.
 - [ ] Add audit-event writer.
-- [ ] Add health endpoint.
+- [x] Add health endpoint.
 - [ ] Add structured logging.
 
 ## Frontend
@@ -35,10 +35,10 @@
 
 ## Security Gate
 
-- [ ] Confirm service-role key is never exposed to Next.js client bundle.
+- [x] Confirm service-role key is never exposed to Next.js client bundle.
 - [ ] Confirm frontend does not make authorization decisions.
 - [ ] Confirm sensitive writes go through FastAPI.
-- [ ] Confirm unauthorized API tests exist.
+- [x] Confirm unauthorized API tests exist.
 - [ ] Confirm audit record exists for override use.
 
 ## Exit Criteria
@@ -53,9 +53,9 @@
 
 ### Codex
 
-- [ ] Scaffold FastAPI only.
+- [x] Scaffold FastAPI only.
 - [ ] Implement auth verification and backend authorization only.
-- [ ] Update API contract where required.
+- [x] Update API contract where required.
 
 ### Claude
 
