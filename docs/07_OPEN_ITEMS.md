@@ -56,8 +56,8 @@ Status: Open
 Date: 2026-06-04
 Category: Local Development
 Severity: Low
-Question or issue: `supabase_vector_iems-erp` restarts because it cannot connect to the Docker daemon at its expected TCP endpoint.
-Why it matters: Core local database, Auth, REST, Storage, and Studio validation pass, but local log collection is incomplete on this Windows Docker Desktop setup.
+Question or issue: `supabase_vector_iems-erp` restarts and `npx supabase db reset` exits nonzero after migrations/seeds apply because the local Vector route `POST:/vector/ListVectorBuckets` returns 404.
+Why it matters: Core local database, Auth, REST, Storage, and Studio validation pass, but local log/vector bucket setup is incomplete on this Windows Docker Desktop setup.
 Options:
 - Enable Docker Desktop TCP daemon exposure for local Supabase analytics/log routing.
 - Leave disabled for now and use direct container logs during Phase 0/1 development.
@@ -79,6 +79,22 @@ Options:
 - Prefer `docker exec ... psql` for deterministic local SQL validation.
 Recommended next action: Use the documented `docker exec` Phase 0 validation command until the local Supabase CLI telemetry file permissions are fixed.
 Owner: Codex
+Status: Open
+```
+
+### OPEN-007 — GitHub `main` branch protection unavailable on current plan
+
+```text
+Date: 2026-06-04
+Category: Operations
+Severity: Medium
+Question or issue: GitHub rejected branch protection and repository rulesets for the private ERP repository with "Upgrade to GitHub Pro or make this repository public to enable this feature."
+Why it matters: PR review discipline is documented, but GitHub cannot currently enforce protected-branch rules on `main`.
+Options:
+- Upgrade the GitHub plan and enable branch protection/rulesets for `main`.
+- Keep the repository private and rely on manual PR-only discipline until the plan is upgraded.
+Recommended next action: Upgrade the GitHub plan before staging or production development depends on protected-branch enforcement.
+Owner: Human
 Status: Open
 ```
 

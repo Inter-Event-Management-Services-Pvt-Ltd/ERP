@@ -8,10 +8,10 @@
 - [x] Add current employee resolution.
 - [x] Add centralized RBAC service.
 - [x] Add centralized ABAC service.
-- [ ] Add Super User override handler.
-- [ ] Add audit-event writer.
+- [x] Add Super User override handler.
+- [x] Add audit-event writer.
 - [x] Add health endpoint.
-- [ ] Add structured logging.
+- [x] Add structured logging.
 
 ## Frontend
 
@@ -30,23 +30,23 @@
 - [x] Restrict access to approved IEMS accounts.
 - [x] Test unapproved account rejection.
 - [x] Test disabled employee rejection.
-- [ ] Test Director role assignment.
+- [x] Test Director role assignment.
 - [x] Test Super User status.
 
 ## Security Gate
 
 - [x] Confirm service-role key is never exposed to Next.js client bundle.
 - [x] Confirm frontend does not make authorization decisions.
-- [ ] Confirm sensitive writes go through FastAPI.
+- [x] Confirm sensitive writes go through FastAPI.
 - [x] Confirm unauthorized API tests exist.
-- [ ] Confirm audit record exists for override use.
+- [x] Confirm audit record exists for override use.
 
 ## Exit Criteria
 
 - [ ] Employee can sign in.
 - [ ] Unauthorized user cannot sign in.
 - [ ] Director receives the Director Dashboard route.
-- [ ] CI runs lint and basic tests.
+- [x] CI runs lint and basic tests.
 
 
 ## Agent Ownership
@@ -67,7 +67,7 @@
 ## Dockerization
 
 - [ ] Development Compose stack runs.
-- [ ] API Dockerfile builds.
+- [x] API Dockerfile builds.
 - [ ] Web Dockerfile builds.
 - [ ] Redis container passes health check.
 - [ ] Caddy routing is documented.

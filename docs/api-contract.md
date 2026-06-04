@@ -58,8 +58,12 @@ Stable platform/auth errors:
 | 403 | `ACCOUNT_EMAIL_MISMATCH` | JWT email does not match the linked employee official email |
 | 403 | `PERMISSION_DENIED` | Authenticated user does not have the required RBAC permission |
 | 403 | `ABAC_DENIED` | Authenticated user failed contextual ABAC authorization |
+| 403 | `SUPER_USER_REQUIRED` | Sensitive override operation requires a Super User account |
+| 403 | `SUPER_USER_OVERRIDE_REASON_REQUIRED` | Sensitive override operation is missing a meaningful override reason |
 | 404 | `NOT_FOUND` | Route not found |
 | 422 | `VALIDATION_ERROR` | Request validation failed |
+| 503 | `AUDIT_NOT_CONFIGURED` | Required audit writer settings are missing |
+| 503 | `AUDIT_WRITE_FAILED` | Backend failed to write the required audit event |
 | 503 | `AUTH_NOT_CONFIGURED` | Required Supabase auth or employee-resolution settings are missing |
 | 503 | `AUTH_RESOLUTION_FAILED` | Backend could not resolve the current employee context |
 

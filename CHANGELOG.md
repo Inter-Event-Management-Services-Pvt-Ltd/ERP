@@ -15,6 +15,9 @@
 - Added centralized RBAC/ABAC services and `GET /v1/me/permissions`.
 - Fixed current-user role-assignment resolution by disambiguating the Supabase PostgREST relationship.
 - Added a local-only API access-token helper for exercising protected FastAPI routes against local Supabase.
+- Added Super User override recording with atomic Supabase audit-event insertion.
+- Added structured JSON API access logging and a minimal Celery worker scaffold.
+- Added backend CI for Ruff, MyPy and Pytest.
 
 - Assigned Claude as frontend-only owner using either Claude Design or Google Stitch for reviewed UI ideation.
 - Assigned Codex as backend-only owner.

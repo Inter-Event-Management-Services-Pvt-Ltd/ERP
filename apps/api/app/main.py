@@ -5,9 +5,11 @@ from starlette.exceptions import HTTPException as StarletteHTTPException
 from app.api.v1.me import router as me_router
 from app.core.config import get_settings
 from app.core.errors import http_exception_handler, validation_exception_handler
+from app.core.logging import configure_logging, structured_access_log_middleware
 from app.core.request_id import request_id_middleware
 
 settings = get_settings()
+configure_logging(settings.log_level)
 
 app = FastAPI(
     title=settings.app_name,
@@ -15,6 +17,7 @@ app = FastAPI(
 )
 
 app.middleware("http")(request_id_middleware)
+app.middleware("http")(structured_access_log_middleware)
 app.add_exception_handler(StarletteHTTPException, http_exception_handler)
 app.add_exception_handler(RequestValidationError, validation_exception_handler)
 app.include_router(me_router)

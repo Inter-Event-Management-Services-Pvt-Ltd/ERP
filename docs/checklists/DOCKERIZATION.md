@@ -2,25 +2,25 @@
 
 ## Repository
 
-- [ ] `compose.yaml` exists.
-- [ ] `compose.dev.yaml` exists.
-- [ ] API Dockerfile exists.
-- [ ] Web Dockerfile exists.
-- [ ] `.dockerignore` files exist.
-- [ ] Caddy configuration exists.
-- [ ] `.env.example` documents required variables.
+- [x] `compose.yaml` exists.
+- [x] `compose.dev.yaml` exists.
+- [x] API Dockerfile exists.
+- [x] Web Dockerfile exists.
+- [x] `.dockerignore` files exist.
+- [x] Caddy configuration exists.
+- [x] `.env.example` documents required variables.
 
 ## Backend — Codex
 
-- [ ] FastAPI image builds.
-- [ ] API health endpoint exists.
-- [ ] API container runs as non-root.
+- [x] FastAPI image builds.
+- [x] API health endpoint exists.
+- [x] API container runs as non-root.
 - [ ] Celery worker starts.
 - [ ] Celery scheduler starts.
 - [ ] Redis health check passes.
-- [ ] Redis is private in production.
-- [ ] API does not expose secrets in logs.
-- [ ] Container logs are useful and structured.
+- [x] Redis is private in production.
+- [x] API does not expose secrets in logs.
+- [x] Container logs are useful and structured.
 
 ## Frontend — Claude
 
@@ -42,16 +42,16 @@
 
 ## Security Gate
 
-- [ ] No privileged containers.
-- [ ] No Docker socket mounts.
-- [ ] No host networking.
-- [ ] No committed `.env`.
-- [ ] Secrets not baked into images.
+- [x] No privileged containers.
+- [x] No Docker socket mounts.
+- [x] No host networking.
+- [x] No committed `.env`.
+- [x] Secrets not baked into images.
 - [ ] Images run as non-root.
 - [ ] Images scanned.
 - [ ] Base-image versions reviewed.
-- [ ] Backend network is internal.
-- [ ] Redis not exposed publicly.
+- [x] Backend network is internal.
+- [x] Redis not exposed publicly.
 - [ ] Production Compose file reviewed by human.
 
 ## Validation

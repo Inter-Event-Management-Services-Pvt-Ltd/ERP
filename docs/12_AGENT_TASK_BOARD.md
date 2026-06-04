@@ -53,9 +53,10 @@ Output:
 
 ```text
 CODEX-PHASE0-002 Validate constraints and RLS
-CODEX-PHASE1-001 Scaffold FastAPI — REVIEW
-CODEX-PHASE1-002 Configure auth verification — REVIEW
-CODEX-PHASE1-003 Add RBAC/ABAC middleware — REVIEW
+CODEX-PHASE1-001 Scaffold FastAPI — DONE
+CODEX-PHASE1-002 Configure auth verification — DONE
+CODEX-PHASE1-003 Add RBAC/ABAC middleware — DONE
+CODEX-PHASE1-004 Complete backend Phase 1 audit, logging and CI — REVIEW
 CODEX-PHASE2-001 Build clients and projects API
 CODEX-PHASE2-002 Build folders and documents API
 CODEX-PHASE2-003 Build archive ZIP worker
