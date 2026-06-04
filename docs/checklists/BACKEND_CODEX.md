@@ -19,8 +19,8 @@
 
 - [x] JWT verified.
 - [x] Employee account resolved.
-- [ ] RBAC checked.
-- [ ] ABAC checked.
+- [x] RBAC checked.
+- [x] ABAC checked.
 - [x] Default deny preserved at the database layer for exposed tables without explicit RLS policies.
 - [ ] Super User override reason handled where relevant.
 - [ ] Audit event written.

@@ -17,6 +17,7 @@ uv run --group dev mypy app
 GET /health
 GET /ready
 GET /v1/me
+GET /v1/me/permissions
 ```
 
 `GET /v1/me` requires:

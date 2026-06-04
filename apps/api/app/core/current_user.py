@@ -87,6 +87,7 @@ class SupabaseCurrentUserResolver:
                     employment_status=employment_status,
                 ),
                 roles=_active_role_codes(account_row.get("role_assignments")),
+                permissions=_active_permission_codes(account_row.get("role_assignments")),
             )
         except (ValidationError, ValueError) as exc:
             raise CurrentUserError(
@@ -103,7 +104,10 @@ class SupabaseCurrentUserResolver:
                 "employee:employees("
                 "id,employee_code,full_name,official_email,designation,employment_status"
                 "),"
-                "role_assignments:user_role_assignments(expires_at,role:roles(code))"
+                "role_assignments:user_role_assignments("
+                "expires_at,"
+                "role:roles(code,role_permissions(permission:permissions(code)))"
+                ")"
             ),
             "id": f"eq.{auth_user_id}",
             "limit": "1",
@@ -209,6 +213,35 @@ def _active_role_codes(value: object) -> list[str]:
         if isinstance(code, str) and code and code not in role_codes:
             role_codes.append(code)
     return role_codes
+
+
+def _active_permission_codes(value: object) -> list[str]:
+    if not isinstance(value, list):
+        return []
+
+    permission_codes: set[str] = set()
+    for item in value:
+        if not isinstance(item, dict):
+            continue
+        expires_at = item.get("expires_at")
+        if _role_assignment_expired(expires_at):
+            continue
+        role = item.get("role")
+        if not isinstance(role, dict):
+            continue
+        role_permissions = role.get("role_permissions")
+        if not isinstance(role_permissions, list):
+            continue
+        for role_permission in role_permissions:
+            if not isinstance(role_permission, dict):
+                continue
+            permission = role_permission.get("permission")
+            if not isinstance(permission, dict):
+                continue
+            code = permission.get("code")
+            if isinstance(code, str) and code:
+                permission_codes.add(code)
+    return sorted(permission_codes)
 
 
 def _role_assignment_expired(raw_expires_at: object) -> bool:

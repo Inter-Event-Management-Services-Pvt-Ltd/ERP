@@ -12,6 +12,7 @@
 - Tracked Claude frontend planning docs under `docs/superpowers/`.
 - Added the initial FastAPI shell with health/readiness routes, configuration loading, request IDs, stable error envelopes, and `uv` test/lint/type-check tooling.
 - Added Supabase JWT verification and current employee resolution for `GET /v1/me`.
+- Added centralized RBAC/ABAC services and `GET /v1/me/permissions`.
 
 - Assigned Claude as frontend-only owner using either Claude Design or Google Stitch for reviewed UI ideation.
 - Assigned Codex as backend-only owner.

@@ -8,14 +8,17 @@ apps/api/app/api/__init__.py
 apps/api/app/api/v1/__init__.py
 apps/api/app/api/v1/me.py
 apps/api/app/core/__init__.py
+apps/api/app/core/abac.py
 apps/api/app/core/auth.py
 apps/api/app/core/config.py
 apps/api/app/core/current_user.py
 apps/api/app/core/errors.py
+apps/api/app/core/rbac.py
 apps/api/app/core/request_id.py
 apps/api/app/main.py
 apps/api/app/schemas/__init__.py
 apps/api/app/schemas/current_user.py
+apps/api/tests/test_authorization.py
 apps/api/tests/test_auth_current_user.py
 apps/api/tests/test_api_shell.py
 docs/abac-policy-matrix.md

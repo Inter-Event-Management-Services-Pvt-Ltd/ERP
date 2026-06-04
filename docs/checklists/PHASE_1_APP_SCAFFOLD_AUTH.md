@@ -6,8 +6,8 @@
 - [x] Add configuration module.
 - [x] Add Supabase JWT verification.
 - [x] Add current employee resolution.
-- [ ] Add centralized RBAC service.
-- [ ] Add centralized ABAC service.
+- [x] Add centralized RBAC service.
+- [x] Add centralized ABAC service.
 - [ ] Add Super User override handler.
 - [ ] Add audit-event writer.
 - [x] Add health endpoint.
@@ -31,12 +31,12 @@
 - [x] Test unapproved account rejection.
 - [x] Test disabled employee rejection.
 - [ ] Test Director role assignment.
-- [ ] Test Super User status.
+- [x] Test Super User status.
 
 ## Security Gate
 
 - [x] Confirm service-role key is never exposed to Next.js client bundle.
-- [ ] Confirm frontend does not make authorization decisions.
+- [x] Confirm frontend does not make authorization decisions.
 - [ ] Confirm sensitive writes go through FastAPI.
 - [x] Confirm unauthorized API tests exist.
 - [ ] Confirm audit record exists for override use.

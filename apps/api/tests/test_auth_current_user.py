@@ -92,6 +92,7 @@ def test_me_endpoint_returns_authenticated_employee_context() -> None:
             "employment_status": "ACTIVE",
         },
         "roles": ["EMPLOYEE"],
+        "permissions": [],
     }
 
 
