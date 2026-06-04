@@ -8,7 +8,7 @@ Codex scaffolds this application.
 uv sync
 uv run --group dev pytest
 uv run --group dev ruff check .
-uv run --group dev mypy app
+uv run --group dev mypy app scripts
 ```
 
 ## Shell Endpoints
@@ -30,6 +30,17 @@ SUPABASE_SERVICE_ROLE_KEY
 
 The service-role key is server-only. Do not expose it through any frontend
 environment variable.
+
+## Workers
+
+Celery uses the app namespace `iems_erp`:
+
+```powershell
+uv run celery -A app.workers.celery_app worker --loglevel=INFO
+uv run celery -A app.workers.celery_app beat --loglevel=INFO
+```
+
+Runtime logs are structured JSON. Configure verbosity with `LOG_LEVEL`.
 
 ## Local Access Token
 

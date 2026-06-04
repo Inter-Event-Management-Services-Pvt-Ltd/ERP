@@ -241,6 +241,8 @@ declare
   archive_location_id uuid;
   physical_file_id uuid;
   leave_request_id uuid;
+  override_id uuid;
+  override_resource_id uuid;
   blocked boolean;
 begin
   select id
@@ -321,6 +323,48 @@ begin
       blocked := true;
   end;
   perform pg_temp.phase0_assert(blocked, 'Super User override reason minimum length is enforced');
+
+  override_resource_id := gen_random_uuid();
+  select public.record_super_user_override(
+    director_auth_id,
+    director_employee_id,
+    'phase1.override',
+    'project',
+    override_resource_id,
+    'Phase 1 validation reason',
+    gen_random_uuid(),
+    '{"phase":"1"}'::jsonb,
+    '127.0.0.1'::inet,
+    'phase-validation'
+  )
+  into override_id;
+
+  perform pg_temp.phase0_assert(
+    exists (
+      select 1
+      from public.super_user_overrides suo
+      where suo.id = override_id
+        and suo.user_account_id = director_auth_id
+        and suo.action_code = 'phase1.override'
+        and suo.resource_type = 'project'
+        and suo.resource_id = override_resource_id
+    ),
+    'Super User override RPC writes override record'
+  );
+
+  perform pg_temp.phase0_assert(
+    exists (
+      select 1
+      from public.audit_events ae
+      where ae.actor_user_account_id = director_auth_id
+        and ae.actor_employee_id = director_employee_id
+        and ae.action_code = 'super_user.override_used'
+        and ae.resource_type = 'project'
+        and ae.resource_id = override_resource_id
+        and ae.new_values->>'override_id' = override_id::text
+    ),
+    'Super User override RPC writes audit event'
+  );
 
   insert into public.clients(client_code, legal_name, display_name)
   values ('PHASE0-CLIENT', 'Phase 0 Client Pvt Ltd', 'Phase 0 Client')

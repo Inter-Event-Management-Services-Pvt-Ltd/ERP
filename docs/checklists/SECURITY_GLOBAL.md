@@ -21,12 +21,12 @@
 
 ## Authorization
 
-- [ ] Default-deny ABAC.
+- [x] Default-deny ABAC.
 - [ ] Server-side checks for writes.
 - [x] RLS enabled on exposed tables.
 - [x] Super User override requires reason.
-- [ ] Override logged.
-- [ ] Unauthorized tests exist.
+- [x] Override logged.
+- [x] Unauthorized tests exist.
 
 ## Storage
 

@@ -32,6 +32,16 @@ class Settings(BaseSettings):
         default=5.0,
         validation_alias="SUPABASE_REQUEST_TIMEOUT_SECONDS",
     )
+    redis_url: str = Field(default="redis://localhost:6379/0", validation_alias="REDIS_URL")
+    celery_broker_url: str = Field(
+        default="redis://localhost:6379/0",
+        validation_alias="CELERY_BROKER_URL",
+    )
+    celery_result_backend: str = Field(
+        default="redis://localhost:6379/1",
+        validation_alias="CELERY_RESULT_BACKEND",
+    )
+    log_level: str = Field(default="INFO", validation_alias="LOG_LEVEL")
 
     @property
     def supabase_auth_issuer(self) -> str | None:

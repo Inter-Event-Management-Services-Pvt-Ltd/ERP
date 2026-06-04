@@ -1,11 +1,14 @@
 from typing import Annotated
+from uuid import UUID
 
-from fastapi import Depends, Header, HTTPException
+from fastapi import Depends, Header, HTTPException, Request
 
+from app.core.audit import AuditWriteError, SupabaseAuditWriter, audit_context_from_request
 from app.core.auth import AuthError, SupabaseJwtVerifier, parse_bearer_token
 from app.core.config import get_settings
 from app.core.current_user import CurrentUserError, SupabaseCurrentUserResolver
 from app.core.rbac import AuthorizationError, RBACService
+from app.core.super_user import SuperUserOverrideService
 from app.schemas.current_user import CurrentUser
 
 
@@ -44,3 +47,87 @@ def require_permission(permission_code: str) -> object:
             ) from exc
 
     return dependency
+
+
+def get_audit_writer() -> SupabaseAuditWriter:
+    settings = get_settings()
+    if settings.supabase_url is None or settings.supabase_service_role_key is None:
+        raise HTTPException(
+            status_code=503,
+            detail={
+                "code": "AUDIT_NOT_CONFIGURED",
+                "message": "Supabase audit writer is not configured",
+            },
+        )
+    return SupabaseAuditWriter(
+        supabase_url=settings.supabase_url,
+        service_role_key=settings.supabase_service_role_key,
+        timeout_seconds=settings.supabase_request_timeout_seconds,
+    )
+
+
+def require_super_user_override(
+    action_code: str,
+    resource_type: str,
+    resource_id_path_param: str,
+) -> object:
+    async def dependency(
+        request: Request,
+        current_user: Annotated[CurrentUser, Depends(get_current_user)],
+        writer: Annotated[SupabaseAuditWriter, Depends(get_audit_writer)],
+        override_reason: Annotated[
+            str | None,
+            Header(alias="X-IEMS-Override-Reason"),
+        ] = None,
+    ) -> UUID:
+        resource_id = _resource_uuid_from_path(request, resource_id_path_param)
+        try:
+            return await SuperUserOverrideService().record_override(
+                current_user=current_user,
+                action_code=action_code,
+                resource_type=resource_type,
+                resource_id=resource_id,
+                reason=override_reason,
+                context=audit_context_from_request(request),
+                writer=writer,
+            )
+        except AuthorizationError as exc:
+            raise HTTPException(
+                status_code=exc.status_code,
+                detail={
+                    "code": exc.code,
+                    "message": exc.message,
+                },
+            ) from exc
+        except AuditWriteError as exc:
+            raise HTTPException(
+                status_code=503,
+                detail={
+                    "code": "AUDIT_WRITE_FAILED",
+                    "message": exc.message,
+                },
+            ) from exc
+
+    return dependency
+
+
+def _resource_uuid_from_path(request: Request, path_param: str) -> UUID:
+    raw_value = request.path_params.get(path_param)
+    if raw_value is None:
+        raise HTTPException(
+            status_code=500,
+            detail={
+                "code": "ROUTE_CONFIGURATION_ERROR",
+                "message": "Override resource path parameter is not configured",
+            },
+        )
+    try:
+        return UUID(str(raw_value))
+    except ValueError as exc:
+        raise HTTPException(
+            status_code=422,
+            detail={
+                "code": "VALIDATION_ERROR",
+                "message": "Override resource id must be a UUID",
+            },
+        ) from exc

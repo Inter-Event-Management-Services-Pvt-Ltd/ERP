@@ -22,8 +22,8 @@
 - [x] RBAC checked.
 - [x] ABAC checked.
 - [x] Default deny preserved at the database layer for exposed tables without explicit RLS policies.
-- [ ] Super User override reason handled where relevant.
-- [ ] Audit event written.
+- [x] Super User override reason handled where relevant.
+- [x] Audit event written.
 
 ## Storage
 
