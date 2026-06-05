@@ -28,7 +28,7 @@ build/
 .env
 .env.local
 .env.*.local
-
+supabase/.env
 # logs
 *.log
 npm-debug.log*
