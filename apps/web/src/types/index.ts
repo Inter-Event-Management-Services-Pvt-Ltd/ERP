@@ -151,21 +151,21 @@ export interface UpdateProjectPayload {
   priority_level_id?: string
 }
 
-export type ProjectMemberRole = 'VIEW' | 'MANAGE'
+export type ProjectMemberRole = 'VIEW' | 'CONTRIBUTE' | 'MANAGE'
 
 export interface ProjectMember {
   employee_id: string
   full_name: string
   employee_code: string
   designation: string
-  role: ProjectMemberRole
+  access_level: ProjectMemberRole
   joined_at: string
   removed_at: string | null
 }
 
 export interface AddProjectMemberPayload {
   employee_id: string
-  role: ProjectMemberRole
+  access_level: ProjectMemberRole
 }
 
 // ─── Folders ──────────────────────────────────────────────────────────────────

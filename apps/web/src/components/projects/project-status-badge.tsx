@@ -14,7 +14,7 @@ const PRIORITY_VARIANT: Record<string, BadgeVariant> = {
   LOW: 'info',
   NORMAL: 'info',
   HIGH: 'warning',
-  CRITICAL: 'critical',
+  URGENT: 'critical',
 }
 
 interface ProjectStatusBadgeProps {

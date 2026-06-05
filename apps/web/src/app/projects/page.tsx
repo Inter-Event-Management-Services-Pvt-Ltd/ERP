@@ -17,14 +17,20 @@ import { useProjects } from '@/hooks/use-projects'
 import { useMe } from '@/hooks/use-me'
 import { format } from 'date-fns'
 
-// Static seed values — replace with GET /v1/project-types etc. once available (OPEN-016)
+// Static lookup names match 001_reference_seed.sql codes.
+// IDs are resolved at runtime once GET /v1/project-types etc. exist (OPEN-016).
+// Until then these placeholder IDs will be rejected by the API — the form
+// should be disabled or gated behind the lookup endpoints.
 const STATIC_LOOKUPS = {
   projectTypes: [
     { id: 'type-conference', name: 'Conference' },
     { id: 'type-exhibition', name: 'Exhibition' },
     { id: 'type-corporate', name: 'Corporate Event' },
-    { id: 'type-wedding', name: 'Wedding' },
-    { id: 'type-other', name: 'Other' },
+    { id: 'type-government', name: 'Government Event' },
+    { id: 'type-product-launch', name: 'Product Launch' },
+    { id: 'type-vendor-file', name: 'Vendor File' },
+    { id: 'type-hr-file', name: 'HR File' },
+    { id: 'type-legal-file', name: 'Legal File' },
   ],
   projectStatuses: [
     { id: 'status-planning', name: 'Planning' },
@@ -37,7 +43,7 @@ const STATIC_LOOKUPS = {
     { id: 'priority-low', name: 'Low' },
     { id: 'priority-normal', name: 'Normal' },
     { id: 'priority-high', name: 'High' },
-    { id: 'priority-critical', name: 'Critical' },
+    { id: 'priority-urgent', name: 'Urgent' },
   ],
 }
 

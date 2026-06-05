@@ -14,14 +14,14 @@ interface AddMemberFormProps {
 
 function AddMemberForm({ projectId, onDone }: AddMemberFormProps) {
   const [employeeId, setEmployeeId] = useState('')
-  const [role, setRole] = useState<'VIEW' | 'MANAGE'>('VIEW')
+  const [accessLevel, setAccessLevel] = useState<'VIEW' | 'CONTRIBUTE' | 'MANAGE'>('VIEW')
   const { mutate, isPending, error } = useAddProjectMember(projectId)
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     if (!employeeId.trim()) return
     mutate(
-      { employee_id: employeeId.trim(), role },
+      { employee_id: employeeId.trim(), access_level: accessLevel },
       { onSuccess: onDone }
     )
   }
@@ -42,11 +42,12 @@ function AddMemberForm({ projectId, onDone }: AddMemberFormProps) {
         <FormField label="Access" htmlFor="member-role">
           <select
             id="member-role"
-            value={role}
-            onChange={(e) => setRole(e.target.value as 'VIEW' | 'MANAGE')}
+            value={accessLevel}
+            onChange={(e) => setAccessLevel(e.target.value as 'VIEW' | 'CONTRIBUTE' | 'MANAGE')}
             className={inputCls}
           >
             <option value="VIEW">View</option>
+            <option value="CONTRIBUTE">Contribute</option>
             <option value="MANAGE">Manage</option>
           </select>
         </FormField>
@@ -123,19 +124,21 @@ export function ProjectMembersPanel({
                 <span
                   className={cn(
                     'text-xs font-mono px-1.5 py-0.5 rounded',
-                    m.role === 'MANAGE'
+                    m.access_level === 'MANAGE'
                       ? 'bg-accent-madder/20 text-accent-warning'
+                      : m.access_level === 'CONTRIBUTE'
+                      ? 'bg-accent-saffron/10 text-accent-saffron'
                       : 'bg-surface-border text-text-primary/50'
                   )}
                 >
-                  {m.role}
+                  {m.access_level}
                 </span>
                 {canManage && (
                   <button
                     type="button"
                     onClick={() => remove(m.employee_id)}
                     disabled={removing}
-                    aria-label={`Remove ${m.full_name} from project`}
+                    aria-label={`Remove ${m.full_name}`}
                     className="text-text-primary/30 hover:text-accent-critical transition-colors disabled:opacity-50"
                   >
                     <Trash2 size={13} aria-hidden="true" />
