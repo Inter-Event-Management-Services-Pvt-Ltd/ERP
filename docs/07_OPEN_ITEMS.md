@@ -66,6 +66,96 @@ Owner: Codex
 Status: Open
 ```
 
+### OPEN-016 — Project type / status / priority lookup endpoints missing
+
+```text
+Date: 2026-06-05
+Category: API Contract
+Severity: Medium
+Affected module: apps/web/src/app/projects/page.tsx — CreateProjectDialog
+Question or issue: POST /v1/projects requires project_type_id, project_status_id, and priority_level_id
+  (database UUIDs), but no lookup endpoints exist to retrieve available options.
+Why it matters: The Create Project form currently uses static placeholder IDs that will not match
+  real database records. Project creation will fail until real IDs are supplied.
+Options:
+- Add GET /v1/project-types, GET /v1/project-statuses, GET /v1/priority-levels endpoints.
+- Embed lookup arrays in GET /v1/projects response or a metadata endpoint.
+Recommended next action: Codex adds lookup endpoints; Claude wires them into the Create Project form.
+Owner: Codex
+Status: Open
+```
+
+### OPEN-017 — GET /v1/projects/{id}/members endpoint missing
+
+```text
+Date: 2026-06-05
+Category: API Contract
+Severity: Medium
+Affected module: apps/web/src/app/projects/[id]/page.tsx — ProjectMembersPanel
+Question or issue: POST and DELETE /v1/projects/{project_id}/members/{employee_id} exist, but there
+  is no GET endpoint to list current project members.
+Why it matters: The members panel on the project detail page shows an empty list until this endpoint
+  is available.
+Options:
+- Add GET /v1/projects/{project_id}/members returning ProjectMember[].
+- Embed members array in GET /v1/projects/{project_id} response.
+Recommended next action: Codex adds the GET endpoint; Claude wires it into useProject or a new hook.
+Owner: Codex
+Status: Open
+```
+
+### OPEN-018 — Document/file endpoints deferred to Phase 3
+
+```text
+Date: 2026-06-05
+Category: Scope
+Severity: Low
+Affected module: apps/web/src/app/projects/[id]/documents/page.tsx
+Question or issue: POST /v1/folders/{folder_id}/documents, GET /v1/documents/{document_id},
+  and related file-upload endpoints are not in Phase 2 scope.
+Why it matters: The folder explorer shows folder tree but cannot list or upload documents yet.
+Recommended next action: Wire document list and upload in Phase 3 when those endpoints ship.
+Owner: Codex / Claude
+Status: Open
+```
+
+### OPEN-014 - Client visibility scope for Phase 2 API
+
+```text
+Date: 2026-06-05
+Category: Security / API Contract
+Severity: Medium
+Affected module: apps/api/app/services/clients_projects.py
+Question or issue: `GET /v1/clients` currently returns active clients to any user with `project.view` or `project.manage`; unlike projects, clients do not yet have a membership table for row-level scoping.
+Why it matters: This is acceptable for an internal ERP if client names are company-wide, but it may be too broad if client visibility should follow project membership.
+Reproduction: Authenticate as an approved employee with `project.view` and call `GET /v1/clients`.
+Options:
+- Keep client directory visible to all approved project users.
+- Add a client visibility policy based on active project membership.
+- Add explicit client membership/ownership if needed later.
+Recommended next action: Human/Codex confirm the desired client visibility rule before production.
+Owner: Human / Codex
+Status: Open
+```
+
+### OPEN-015 - Folder hierarchy import preservation
+
+```text
+Date: 2026-06-05
+Category: Phase 2 Documents
+Severity: Low
+Affected module: Phase 2 folder/document import workflow
+Question or issue: The Phase 2 checklist item "Preserve existing folder hierarchy during import" is not implemented in CODEX-PHASE2-001.
+Why it matters: The clients/projects API creates the default folder tree, but import-specific hierarchy preservation belongs with CODEX-PHASE2-002 folders/documents.
+Reproduction: No import endpoint exists yet.
+Options:
+- Implement hierarchy-preserving import as part of CODEX-PHASE2-002.
+- Defer import workflow if MVP only needs manual folder/document creation first.
+Recommended next action: Include this explicitly in CODEX-PHASE2-002 planning.
+Owner: Codex
+Status: Open
+```
+
 ### OPEN-008 — Frontend local env uses a secret Supabase key
 
 ```text

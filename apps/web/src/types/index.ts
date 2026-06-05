@@ -72,3 +72,119 @@ export interface ApiError {
     request_id?: string
   }
 }
+
+// ─── Clients ──────────────────────────────────────────────────────────────────
+
+export interface Client {
+  id: string
+  client_code: string
+  legal_name: string
+  display_name: string
+  is_active: boolean
+  notes: string | null
+  created_at: string
+  updated_at: string
+}
+
+export interface CreateClientPayload {
+  client_code: string
+  legal_name: string
+  display_name: string
+  notes?: string
+}
+
+// ─── Projects ─────────────────────────────────────────────────────────────────
+
+export interface ProjectClient {
+  id: string
+  client_code: string
+  display_name: string
+}
+
+export interface ProjectLookup {
+  id: string
+  code: string
+  name: string
+}
+
+export interface Project {
+  id: string
+  project_code: string
+  client_id: string
+  client: ProjectClient
+  project_type_id: string
+  project_type: ProjectLookup
+  project_status_id: string
+  project_status: ProjectLookup
+  priority_level_id: string
+  priority_level: ProjectLookup
+  name: string
+  event_date: string
+  venue: string
+  description: string | null
+  project_manager_id: string
+  created_by: string
+  created_at: string
+  updated_at: string
+  archived_at: string | null
+  deleted_at: string | null
+  root_folder_id: string
+}
+
+export interface CreateProjectPayload {
+  name: string
+  client_id: string
+  project_type_id: string
+  project_status_id: string
+  priority_level_id: string
+  event_date: string
+  venue: string
+  description?: string
+}
+
+export interface UpdateProjectPayload {
+  name?: string
+  event_date?: string
+  venue?: string
+  description?: string
+  project_status_id?: string
+  priority_level_id?: string
+}
+
+export type ProjectMemberRole = 'VIEW' | 'MANAGE'
+
+export interface ProjectMember {
+  employee_id: string
+  full_name: string
+  employee_code: string
+  designation: string
+  role: ProjectMemberRole
+  joined_at: string
+  removed_at: string | null
+}
+
+export interface AddProjectMemberPayload {
+  employee_id: string
+  role: ProjectMemberRole
+}
+
+// ─── Folders ──────────────────────────────────────────────────────────────────
+
+export interface FolderNode {
+  id: string
+  project_id: string
+  parent_folder_id: string | null
+  name: string
+  sort_order: number
+  children: FolderNode[]
+}
+
+// ─── Employees (used in member picker) ────────────────────────────────────────
+
+export interface EmployeeSummary {
+  id: string
+  employee_code: string
+  full_name: string
+  designation: string
+  employment_status: string
+}
