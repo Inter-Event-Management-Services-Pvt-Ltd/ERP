@@ -87,11 +87,10 @@ Category: Security
 Severity: Critical
 Question or issue: `supabase/config.toml` previously contained a Google OAuth client secret under `[auth.external.google]`.
 Current state: config.toml now uses `env(SUPABASE_AUTH_EXTERNAL_GOOGLE_CLIENT_ID)` and `env(SUPABASE_AUTH_EXTERNAL_GOOGLE_CLIENT_SECRET)`. The hardcoded secret is gone from tracked config.
-Remaining action (human): Rotate the previously exposed Google OAuth secret in Google Cloud Console.
-  Set SUPABASE_AUTH_EXTERNAL_GOOGLE_CLIENT_ID and SUPABASE_AUTH_EXTERNAL_GOOGLE_CLIENT_SECRET as shell
-  environment variables before running `npx supabase start` (or add them to a local .env that is gitignored).
+Resolution: Google OAuth secret rotated in Google Cloud Console. New credentials stored in
+  gitignored `supabase/.env` as SUPABASE_AUTH_EXTERNAL_GOOGLE_CLIENT_ID / SECRET.
 Owner: Human
-Status: Partially resolved — env var wiring done; secret rotation required
+Status: Closed (2026-06-05)
 ```
 
 ### OPEN-010 — Frontend type-check fails on Vitest globals
