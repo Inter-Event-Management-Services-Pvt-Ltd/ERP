@@ -136,9 +136,9 @@ export function Sidebar() {
         })}
       </div>
 
-      {/* Footer */}
-      {user && (
-        <div className="flex-none border-t border-surface-border p-2 space-y-1">
+      {/* Footer — always rendered so sign-out is reachable even if GET /v1/me fails */}
+      <div className="flex-none border-t border-surface-border p-2 space-y-1">
+        {user && (
           <div className="flex items-center gap-3 px-2 py-1.5 overflow-hidden">
             <div className="w-7 h-7 rounded-full bg-accent-madder flex-none flex items-center justify-center text-xs font-mono text-text-primary uppercase">
               {user.fullName.charAt(0)}
@@ -148,18 +148,18 @@ export function Sidebar() {
               <p className="text-[10px] text-text-primary/40 font-mono truncate">{user.employeeCode}</p>
             </div>
           </div>
-          <button
-            onClick={handleSignOut}
-            aria-label="Sign out"
-            className="flex items-center gap-3 w-full px-2 py-2 rounded-md text-text-primary/40 hover:text-text-primary/70 hover:bg-surface-raised transition-colors"
-          >
-            <LogOut size={16} aria-hidden="true" className="flex-none" />
-            <span className="text-xs font-sans opacity-0 group-hover/sidebar:opacity-100 transition-opacity duration-180">
-              Sign out
-            </span>
-          </button>
-        </div>
-      )}
+        )}
+        <button
+          onClick={handleSignOut}
+          aria-label="Sign out"
+          className="flex items-center gap-3 w-full px-2 py-2 rounded-md text-text-primary/40 hover:text-text-primary/70 hover:bg-surface-raised transition-colors"
+        >
+          <LogOut size={16} aria-hidden="true" className="flex-none" />
+          <span className="text-xs font-sans opacity-0 group-hover/sidebar:opacity-100 transition-opacity duration-180">
+            Sign out
+          </span>
+        </button>
+      </div>
     </nav>
   )
 }
