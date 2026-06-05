@@ -5,7 +5,7 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint",
+    "lint": "eslint src/ --ext .ts,.tsx,.js,.jsx",
     "type-check": "tsc --noEmit",
     "test": "vitest",
     "test:run": "vitest run"
@@ -40,6 +40,8 @@
     "@testing-library/react": "^16.0.0",
     "@testing-library/user-event": "^14.5.0",
     "@testing-library/jest-dom": "^6.5.0",
-    "jsdom": "^25.0.0"
+    "jsdom": "^25.0.0",
+    "eslint": "^8.57.0",
+    "eslint-config-next": "^15.3.3"
   }
 }

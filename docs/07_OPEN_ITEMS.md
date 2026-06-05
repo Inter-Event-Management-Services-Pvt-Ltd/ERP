@@ -66,6 +66,87 @@ Owner: Codex
 Status: Open
 ```
 
+### OPEN-008 — Frontend local env uses a secret Supabase key
+
+```text
+Date: 2026-06-05
+Category: Security
+Severity: Critical
+Question or issue: `apps/web/.env.local` set `NEXT_PUBLIC_SUPABASE_ANON_KEY` to the service-role key (sb_secret_...) instead of the publishable key.
+Resolution: `apps/web/.env.local` updated to use the Supabase publishable key (sb_publishable_...).
+  The service-role key remains only in `apps/api/.env`.
+Owner: Claude
+Status: Closed (2026-06-05)
+```
+
+### OPEN-009 — Google OAuth client secret is present in tracked Supabase config
+
+```text
+Date: 2026-06-05
+Category: Security
+Severity: Critical
+Question or issue: `supabase/config.toml` previously contained a Google OAuth client secret under `[auth.external.google]`.
+Current state: config.toml now uses `env(SUPABASE_AUTH_EXTERNAL_GOOGLE_CLIENT_ID)` and `env(SUPABASE_AUTH_EXTERNAL_GOOGLE_CLIENT_SECRET)`. The hardcoded secret is gone from tracked config.
+Remaining action (human): Rotate the previously exposed Google OAuth secret in Google Cloud Console.
+  Set SUPABASE_AUTH_EXTERNAL_GOOGLE_CLIENT_ID and SUPABASE_AUTH_EXTERNAL_GOOGLE_CLIENT_SECRET as shell
+  environment variables before running `npx supabase start` (or add them to a local .env that is gitignored).
+Owner: Human
+Status: Partially resolved — env var wiring done; secret rotation required
+```
+
+### OPEN-010 — Frontend type-check fails on Vitest globals
+
+```text
+Date: 2026-06-05
+Category: Frontend Tooling
+Severity: Medium
+Question or issue: `npm run type-check` failed because Vitest globals (test, expect, describe, vi) were unknown to TypeScript.
+Resolution: Added `apps/web/src/vitest.d.ts` with `/// <reference types="vitest/globals" />`.
+  `npm run type-check` now passes clean.
+Owner: Claude
+Status: Closed (2026-06-05)
+```
+
+### OPEN-011 — Frontend lint script is interactive/deprecated
+
+```text
+Date: 2026-06-05
+Category: Frontend Tooling
+Severity: Medium
+Question or issue: `npm run lint` ran `next lint` which is deprecated in Next.js 15 and prompted interactively without an ESLint config.
+Resolution: Added `apps/web/.eslintrc.json` (extends next/core-web-vitals), added `eslint` and
+  `eslint-config-next` to devDependencies. Updated lint script to `eslint src/ --ext .ts,.tsx,.js,.jsx`.
+  `npm run lint` now runs non-interactively.
+Owner: Claude
+Status: Closed (2026-06-05)
+```
+
+### OPEN-012 — Frontend build warns about Supabase client in Edge runtime
+
+```text
+Date: 2026-06-05
+Category: Frontend Auth
+Severity: Medium
+Question or issue: Build warned that @supabase/supabase-js uses Node.js APIs (process.version) unsupported in Edge runtime, because middleware ran in Edge by default.
+Resolution: Added `export const runtime = 'nodejs'` to `apps/web/src/middleware.ts` to opt middleware
+  into Node.js runtime. Build now completes with no Edge runtime warnings.
+Owner: Claude
+Status: Closed (2026-06-05)
+```
+
+### OPEN-013 — Frontend shell includes Phase 2+ route placeholders
+
+```text
+Date: 2026-06-05
+Category: Scope
+Severity: Low
+Question or issue: The frontend shell contains routes for projects, documents, archive, attendance, approvals, Director subpages, and admin screens before Phase 2+ backend APIs exist.
+Resolution: Verified all Phase 2+ routes are pure placeholder pages (SkeletonScreen only, no API calls,
+  no invented backend contracts). Acceptable as navigation stubs until Phase 2 begins.
+Owner: Claude
+Status: Closed (2026-06-05)
+```
+
 ### OPEN-005 — Supabase CLI telemetry rename warning on Windows
 
 ```text
