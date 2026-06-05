@@ -14,7 +14,7 @@ jobs:
         run: bash scripts/validate-handoff.sh
       - name: Check for committed environment files
         run: |
-          if git ls-files | grep -E '(^|/)\.env($|\.)' | grep -v '\.env\.example$'; then
+          if git ls-files | grep -E '(^|/)\.env($|\.)' | grep -v '\.example$'; then
             echo "Committed environment file detected"
             exit 1
           fi

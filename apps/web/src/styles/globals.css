@@ -1,0 +1,78 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    color-scheme: dark;
+  }
+
+  *,
+  *::before,
+  *::after {
+    box-sizing: border-box;
+  }
+
+  html,
+  body {
+    height: 100%;
+  }
+
+  body {
+    @apply bg-surface-base text-text-primary font-sans antialiased;
+  }
+
+  /* Focus ring — saffron on ink background */
+  :focus-visible {
+    @apply outline-none ring-2 ring-accent-saffron ring-offset-2 ring-offset-surface-base;
+  }
+
+  /* Scrollbar */
+  ::-webkit-scrollbar {
+    width: 5px;
+    height: 5px;
+  }
+  ::-webkit-scrollbar-track {
+    background: #1c1611;
+  }
+  ::-webkit-scrollbar-thumb {
+    background: #352616;
+    border-radius: 3px;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    background: #d4924a;
+  }
+}
+
+@layer utilities {
+  /* Gradient strip — 2px, used ONCE per shell below the top bar */
+  .gradient-strip {
+    height: 2px;
+    flex-shrink: 0;
+    background: linear-gradient(90deg, #8b3a1f 0%, #d4924a 55%, #f3e9cf 100%);
+  }
+
+  /* Skeleton shimmer — pulse disabled under prefers-reduced-motion */
+  .shimmer {
+    background: linear-gradient(90deg, #261d15 25%, #352616 50%, #261d15 75%);
+    background-size: 200% 100%;
+    animation: shimmer 2s linear infinite;
+  }
+}
+
+/* Honour prefers-reduced-motion — collapse all transitions and shimmer */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+
+  .shimmer {
+    animation: none;
+    background: #261d15;
+  }
+}
