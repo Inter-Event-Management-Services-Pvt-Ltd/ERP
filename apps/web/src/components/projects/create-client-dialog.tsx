@@ -1,13 +1,31 @@
 'use client'
 
-import { useEffect, useRef } from 'react'
-import { useForm } from 'react-hook-form'
+import { useEffect, useRef, useState } from 'react'
+import { useForm, useWatch } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import { X } from 'lucide-react'
 import { FormField, inputCls } from '@/components/ui/form-field'
 import { useCreateClient } from '@/hooks/use-clients'
 import { cn } from '@/lib/utils'
+
+const STOP_WORDS = new Set([
+  'private', 'limited', 'pvt', 'ltd', 'llp', 'inc', 'corp',
+  'corporation', 'company', 'co', 'and', 'the', 'of', 'for',
+])
+
+function deriveClientCode(legalName: string): string {
+  const words = legalName
+    .trim()
+    .toUpperCase()
+    .replace(/[^A-Z0-9\s]/g, '')
+    .split(/\s+/)
+    .filter((w) => w.length > 0 && !STOP_WORDS.has(w.toLowerCase()))
+
+  if (words.length === 0) return ''
+  if (words.length === 1) return words[0].slice(0, 12)
+  return words.map((w) => w[0]).join('').slice(0, 12)
+}
 
 const schema = z.object({
   client_code: z
@@ -35,17 +53,29 @@ export function CreateClientDialog({
 }: CreateClientDialogProps) {
   const { mutate, isPending, error } = useCreateClient()
   const firstRef = useRef<HTMLInputElement>(null)
+  const [codeTouched, setCodeTouched] = useState(false)
 
   const {
     register,
     handleSubmit,
     reset,
+    setValue,
+    control,
     formState: { errors },
   } = useForm<FormValues>({ resolver: zodResolver(schema) })
+
+  const legalName = useWatch({ control, name: 'legal_name', defaultValue: '' })
+
+  useEffect(() => {
+    if (!codeTouched) {
+      setValue('client_code', deriveClientCode(legalName), { shouldValidate: false })
+    }
+  }, [legalName, codeTouched, setValue])
 
   useEffect(() => {
     if (open) {
       reset()
+      setCodeTouched(false)
       setTimeout(() => firstRef.current?.focus(), 50)
     }
   }, [open, reset])
@@ -96,26 +126,42 @@ export function CreateClientDialog({
           </div>
 
           <form onSubmit={handleSubmit(onSubmit)} noValidate className="space-y-4">
-            <FormField label="Client Code" htmlFor="client_code" required error={errors.client_code?.message}>
-              <input
-                {...register('client_code')}
-                id="client_code"
-                ref={(el) => {
-                  register('client_code').ref(el)
-                  if (el) (firstRef as React.MutableRefObject<HTMLInputElement>).current = el
-                }}
-                placeholder="ACME"
-                className={cn(inputCls, errors.client_code && 'border-accent-critical')}
-              />
-            </FormField>
-
             <FormField label="Legal Name" htmlFor="legal_name" required error={errors.legal_name?.message}>
               <input
                 {...register('legal_name')}
                 id="legal_name"
+                ref={(el) => {
+                  register('legal_name').ref(el)
+                  if (el) (firstRef as React.MutableRefObject<HTMLInputElement>).current = el
+                }}
                 placeholder="Acme Events Private Limited"
                 className={cn(inputCls, errors.legal_name && 'border-accent-critical')}
               />
+            </FormField>
+
+            <FormField
+              label="Client Code"
+              htmlFor="client_code"
+              required
+              error={errors.client_code?.message}
+            >
+              <div className="relative">
+                <input
+                  {...register('client_code')}
+                  id="client_code"
+                  placeholder="Auto-generated"
+                  onChange={(e) => {
+                    register('client_code').onChange(e)
+                    setCodeTouched(true)
+                  }}
+                  className={cn(inputCls, errors.client_code && 'border-accent-critical', !codeTouched && 'text-text-primary/60')}
+                />
+                {!codeTouched && (
+                  <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[10px] font-mono text-text-primary/30 pointer-events-none select-none">
+                    auto
+                  </span>
+                )}
+              </div>
             </FormField>
 
             <FormField label="Display Name" htmlFor="display_name" required error={errors.display_name?.message}>
