@@ -124,6 +124,19 @@ insert into public.employees(employee_code, full_name, official_email, designati
 values ('IEMS-DIRECTOR', 'IEMS Director', 'director@iemsnewdelhi.com', 'Director', 'ACTIVE')
 on conflict (official_email) do nothing;
 
+-- Local/demo employees for API and frontend development. Auth accounts are not
+-- seeded; use apps/api/scripts/local_access_token.py to create local Auth users.
+insert into public.employees(id, employee_code, full_name, official_email, designation, employment_status)
+values
+('10000000-0000-4000-8000-000000000001','IEMS-DEV-001','IEMS Dev User','dev.user@iemsnewdelhi.com','Local Dev','ACTIVE'),
+('10000000-0000-4000-8000-000000000002','IEMS-MGR-001','Aarav Mehta','project.manager@iemsnewdelhi.com','Project Manager','ACTIVE'),
+('10000000-0000-4000-8000-000000000003','IEMS-OPS-001','Nisha Rao','ops.coordinator@iemsnewdelhi.com','Operations Coordinator','ACTIVE')
+on conflict (official_email) do update
+  set employee_code = excluded.employee_code,
+      full_name = excluded.full_name,
+      designation = excluded.designation,
+      employment_status = excluded.employment_status;
+
 -- Standard event project folder template
 insert into public.folder_templates(name, project_type_id, created_by)
 select 'Standard Event Project', null, null
@@ -149,4 +162,176 @@ cross join (values
 where not exists (
   select 1 from public.folder_template_items existing
   where existing.template_id = template.id and existing.name = item.name
+);
+
+-- Local/demo clients, projects, memberships and folder trees for Phase 2 testing.
+-- These records are deterministic and idempotent so repeated local resets keep
+-- stable URLs and predictable frontend fixtures.
+insert into public.clients(id, client_code, legal_name, display_name, is_active, notes)
+values
+('20000000-0000-4000-8000-000000000001','ACME-DEMO','Acme Events Private Limited','Acme Events',true,'Demo client for local project workflow testing.'),
+('20000000-0000-4000-8000-000000000002','GOV-DELHI','Delhi Cultural Affairs Department','Delhi Cultural Affairs',true,'Demo government client for local archive workflow testing.')
+on conflict (client_code) do update
+  set legal_name = excluded.legal_name,
+      display_name = excluded.display_name,
+      is_active = excluded.is_active,
+      notes = excluded.notes;
+
+insert into public.client_contacts(
+  id,
+  client_id,
+  full_name,
+  email,
+  phone,
+  designation,
+  is_primary
+)
+values
+('21000000-0000-4000-8000-000000000001','20000000-0000-4000-8000-000000000001','Priya Sharma','priya.sharma@example.com','+91-98765-01001','Events Lead',true),
+('21000000-0000-4000-8000-000000000002','20000000-0000-4000-8000-000000000002','Rohan Kapoor','rohan.kapoor@example.com','+91-98765-01002','Programme Officer',true)
+on conflict (id) do update
+  set full_name = excluded.full_name,
+      email = excluded.email,
+      phone = excluded.phone,
+      designation = excluded.designation,
+      is_primary = excluded.is_primary;
+
+with refs as (
+  select
+    (select id from public.project_types where code = 'CONFERENCE') as conference_type_id,
+    (select id from public.project_types where code = 'GOVERNMENT_EVENT') as government_type_id,
+    (select id from public.project_statuses where code = 'ACTIVE') as active_status_id,
+    (select id from public.project_statuses where code = 'PLANNING') as planning_status_id,
+    (select id from public.priority_levels where code = 'HIGH') as high_priority_id,
+    (select id from public.priority_levels where code = 'NORMAL') as normal_priority_id
+)
+insert into public.projects(
+  id,
+  project_code,
+  client_id,
+  project_type_id,
+  project_status_id,
+  priority_level_id,
+  name,
+  event_date,
+  venue,
+  description,
+  project_manager_id,
+  created_by
+)
+select demo_project.*
+from refs
+cross join lateral (values
+  (
+    '30000000-0000-4000-8000-000000000001'::uuid,
+    'IEMS-2026-DEMO-001',
+    '20000000-0000-4000-8000-000000000001'::uuid,
+    refs.conference_type_id,
+    refs.active_status_id,
+    refs.high_priority_id,
+    'Acme Annual Leadership Conference',
+    '2026-08-12'::date,
+    'India Habitat Centre, New Delhi',
+    'Local demo project with an active document workflow.',
+    '10000000-0000-4000-8000-000000000002'::uuid,
+    '10000000-0000-4000-8000-000000000001'::uuid
+  ),
+  (
+    '30000000-0000-4000-8000-000000000002'::uuid,
+    'IEMS-2026-DEMO-002',
+    '20000000-0000-4000-8000-000000000002'::uuid,
+    refs.government_type_id,
+    refs.planning_status_id,
+    refs.normal_priority_id,
+    'Delhi Heritage Week Opening Ceremony',
+    '2026-10-05'::date,
+    'Vigyan Bhawan, New Delhi',
+    'Local demo project for archive and approval screen testing.',
+    '10000000-0000-4000-8000-000000000002'::uuid,
+    '10000000-0000-4000-8000-000000000001'::uuid
+  )
+) as demo_project(
+  id,
+  project_code,
+  client_id,
+  project_type_id,
+  project_status_id,
+  priority_level_id,
+  name,
+  event_date,
+  venue,
+  description,
+  project_manager_id,
+  created_by
+)
+on conflict (project_code) do update
+  set client_id = excluded.client_id,
+      project_type_id = excluded.project_type_id,
+      project_status_id = excluded.project_status_id,
+      priority_level_id = excluded.priority_level_id,
+      name = excluded.name,
+      event_date = excluded.event_date,
+      venue = excluded.venue,
+      description = excluded.description,
+      project_manager_id = excluded.project_manager_id;
+
+insert into public.project_members(project_id, employee_id, access_level, assigned_by)
+values
+('30000000-0000-4000-8000-000000000001','10000000-0000-4000-8000-000000000001','MANAGE','10000000-0000-4000-8000-000000000001'),
+('30000000-0000-4000-8000-000000000001','10000000-0000-4000-8000-000000000002','MANAGE','10000000-0000-4000-8000-000000000001'),
+('30000000-0000-4000-8000-000000000001','10000000-0000-4000-8000-000000000003','CONTRIBUTE','10000000-0000-4000-8000-000000000001'),
+('30000000-0000-4000-8000-000000000002','10000000-0000-4000-8000-000000000001','VIEW','10000000-0000-4000-8000-000000000001'),
+('30000000-0000-4000-8000-000000000002','10000000-0000-4000-8000-000000000002','MANAGE','10000000-0000-4000-8000-000000000001'),
+('30000000-0000-4000-8000-000000000002','10000000-0000-4000-8000-000000000003','CONTRIBUTE','10000000-0000-4000-8000-000000000001')
+on conflict (project_id, employee_id) do update
+  set access_level = excluded.access_level,
+      assigned_by = excluded.assigned_by,
+      removed_at = null;
+
+insert into public.folders(id, project_id, parent_folder_id, name, sort_order, created_by)
+select root_folder.id, root_folder.project_id, null, root_folder.name, 0, root_folder.created_by
+from (values
+  ('31000000-0000-4000-8000-000000000001'::uuid,'30000000-0000-4000-8000-000000000001'::uuid,'IEMS-2026-DEMO-001','10000000-0000-4000-8000-000000000001'::uuid),
+  ('31000000-0000-4000-8000-000000000002'::uuid,'30000000-0000-4000-8000-000000000002'::uuid,'IEMS-2026-DEMO-002','10000000-0000-4000-8000-000000000001'::uuid)
+) as root_folder(id, project_id, name, created_by)
+where not exists (
+  select 1
+  from public.folders existing
+  where existing.project_id = root_folder.project_id
+    and existing.parent_folder_id is null
+    and existing.deleted_at is null
+);
+
+with template_items as (
+  select name, sort_order
+  from public.folder_template_items
+  where template_id = (select id from public.folder_templates where name = 'Standard Event Project')
+    and parent_item_id is null
+),
+project_roots as (
+  select id as root_folder_id, project_id, created_by
+  from public.folders
+  where project_id in (
+    '30000000-0000-4000-8000-000000000001',
+    '30000000-0000-4000-8000-000000000002'
+  )
+    and parent_folder_id is null
+    and deleted_at is null
+)
+insert into public.folders(project_id, parent_folder_id, name, sort_order, created_by)
+select
+  project_roots.project_id,
+  project_roots.root_folder_id,
+  template_items.name,
+  template_items.sort_order,
+  project_roots.created_by
+from project_roots
+cross join template_items
+where not exists (
+  select 1
+  from public.folders existing
+  where existing.project_id = project_roots.project_id
+    and existing.parent_folder_id = project_roots.root_folder_id
+    and lower(existing.name) = lower(template_items.name)
+    and existing.deleted_at is null
 );
