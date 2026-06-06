@@ -1,79 +1,9 @@
 'use client'
 
-import { useState } from 'react'
 import { UserPlus, Trash2 } from 'lucide-react'
-import { useAddProjectMember, useRemoveProjectMember } from '@/hooks/use-projects'
-import { FormField, inputCls } from '@/components/ui/form-field'
+import { useRemoveProjectMember } from '@/hooks/use-projects'
 import { cn } from '@/lib/utils'
 import type { ProjectMember } from '@/types'
-
-interface AddMemberFormProps {
-  projectId: string
-  onDone: () => void
-}
-
-function AddMemberForm({ projectId, onDone }: AddMemberFormProps) {
-  const [employeeId, setEmployeeId] = useState('')
-  const [accessLevel, setAccessLevel] = useState<'VIEW' | 'CONTRIBUTE' | 'MANAGE'>('VIEW')
-  const { mutate, isPending, error } = useAddProjectMember(projectId)
-
-  function handleSubmit(e: React.FormEvent) {
-    e.preventDefault()
-    if (!employeeId.trim()) return
-    mutate(
-      { employee_id: employeeId.trim(), access_level: accessLevel },
-      { onSuccess: onDone }
-    )
-  }
-
-  return (
-    <form onSubmit={handleSubmit} noValidate className="space-y-3 border-t border-surface-border pt-3 mt-3">
-      <p className="text-xs text-text-primary/50 font-sans">Add a team member</p>
-      <div className="grid grid-cols-2 gap-3">
-        <FormField label="Employee ID" htmlFor="emp-id">
-          <input
-            id="emp-id"
-            value={employeeId}
-            onChange={(e) => setEmployeeId(e.target.value)}
-            placeholder="22222222-…"
-            className={inputCls}
-          />
-        </FormField>
-        <FormField label="Access" htmlFor="member-role">
-          <select
-            id="member-role"
-            value={accessLevel}
-            onChange={(e) => setAccessLevel(e.target.value as 'VIEW' | 'CONTRIBUTE' | 'MANAGE')}
-            className={inputCls}
-          >
-            <option value="VIEW">View</option>
-            <option value="CONTRIBUTE">Contribute</option>
-            <option value="MANAGE">Manage</option>
-          </select>
-        </FormField>
-      </div>
-      {error instanceof Error && (
-        <p role="alert" className="text-xs text-accent-critical">{error.message}</p>
-      )}
-      <div className="flex gap-2">
-        <button
-          type="submit"
-          disabled={isPending || !employeeId.trim()}
-          className="px-3 py-1.5 text-xs font-sans font-medium bg-accent-saffron text-surface-deep rounded hover:bg-accent-warning transition-colors disabled:opacity-50"
-        >
-          {isPending ? 'Adding…' : 'Add'}
-        </button>
-        <button
-          type="button"
-          onClick={onDone}
-          className="px-3 py-1.5 text-xs font-sans text-text-primary/50 hover:text-text-primary transition-colors"
-        >
-          Cancel
-        </button>
-      </div>
-    </form>
-  )
-}
 
 interface ProjectMembersPanelProps {
   projectId: string
@@ -86,7 +16,6 @@ export function ProjectMembersPanel({
   members,
   canManage,
 }: ProjectMembersPanelProps) {
-  const [adding, setAdding] = useState(false)
   const { mutate: remove, isPending: removing } = useRemoveProjectMember(projectId)
 
   return (
@@ -95,15 +24,15 @@ export function ProjectMembersPanel({
         <h3 className="text-xs font-sans font-semibold text-text-primary/50 uppercase tracking-wider">
           Team ({members.length})
         </h3>
-        {canManage && !adding && (
-          <button
-            type="button"
-            onClick={() => setAdding(true)}
-            className="flex items-center gap-1.5 text-xs font-sans text-accent-saffron hover:text-accent-warning transition-colors focus-visible:ring-2 focus-visible:ring-accent-saffron rounded"
+        {canManage && (
+          <span
+            title="Employee search is not yet available (OPEN-021)"
+            className="flex items-center gap-1.5 text-xs font-sans text-text-primary/25 cursor-not-allowed select-none"
+            aria-disabled="true"
           >
             <UserPlus size={12} aria-hidden="true" />
             Add member
-          </button>
+          </span>
         )}
       </div>
 
@@ -148,10 +77,6 @@ export function ProjectMembersPanel({
             </li>
           ))}
         </ul>
-      )}
-
-      {adding && (
-        <AddMemberForm projectId={projectId} onDone={() => setAdding(false)} />
       )}
     </section>
   )

@@ -66,6 +66,105 @@ Owner: Codex
 Status: Open
 ```
 
+### OPEN-020 — API has no CORS headers; browser cannot reach it from the frontend
+
+```text
+Date: 2026-06-05
+Category: API / Local Development
+Severity: Critical
+Affected module: apps/api/app/main.py
+Question or issue:
+  The FastAPI application has no CORSMiddleware. Browser preflight (OPTIONS) requests from
+  http://localhost:3000 to http://localhost:8000 receive a 405 with zero Access-Control-Allow-*
+  headers. The browser blocks all cross-origin requests, so every apiFetch() call in the
+  frontend fails with "Failed to fetch" before a token is even evaluated.
+  Verified: OPTIONS /v1/projects → HTTP 405, no CORS headers.
+Why it matters:
+  The frontend is completely unusable in the browser. All project, client, me, and folder
+  endpoints fail silently as a CORS network error.
+Fix required (backend):
+  Add FastAPI CORSMiddleware to apps/api/app/main.py:
+    from fastapi.middleware.cors import CORSMiddleware
+    app.add_middleware(
+        CORSMiddleware,
+        allow_origins=["http://localhost:3000"],   # extend for staging/prod origins
+        allow_credentials=True,
+        allow_methods=["*"],
+        allow_headers=["*"],
+    )
+  For production, replace the wildcard with explicit allowed origins.
+Owner: Codex
+Resolution:
+  Implemented FastAPI CORSMiddleware with explicit configured origins. Local default is
+  http://localhost:3000 through CORS_ALLOWED_ORIGINS.
+Verification:
+  uv run --group dev pytest tests/test_api_shell.py -q
+Status: Resolved in CODEX-PHASE2-001 integration fixes
+```
+
+### OPEN-019 — Local dev sign-in blocked by email domain restriction
+
+```text
+Date: 2026-06-05
+Category: Local Development / API Contract
+Severity: High
+Affected modules:
+  apps/api/app/core/auth.py:150  (_validate_email_domain)
+  apps/api/app/core/config.py:13 (allowed_email_domain = "iemsnewdelhi.com")
+Question or issue:
+  The API rejects any JWT whose email is not @iemsnewdelhi.com (403 EMAIL_DOMAIN_NOT_ALLOWED).
+  The frontend has only Google OAuth sign-in. There is no email/password form in the current build.
+  Combined effect: a developer signing in with a personal Gmail account (e.g. @gmail.com) cannot
+  reach any authenticated page or see seed data.
+Why it matters:
+  Makes local development and frontend QA impossible without an @iemsnewdelhi.com Google Workspace
+  account. Seed data (demo employees, projects, clients) is unreachable from the browser.
+Options:
+  1. Add a dev-only email/password login form to the frontend (gated on NODE_ENV=development or an
+     env flag). Developer then runs apps/api/scripts/local_access_token.py to create a Supabase
+     Auth user for dev.user@iemsnewdelhi.com. This is the safest option; the form never ships.
+  2. Allow Codex to relax ALLOWED_EMAIL_DOMAIN to also accept a configurable local dev domain
+     (e.g. set ALLOWED_EMAIL_DOMAIN=gmail.com in apps/api/.env for local testing only, with a
+     clear warning in .env.example).
+  3. Provision a real @iemsnewdelhi.com Google Workspace account for local dev use.
+Recommended next action:
+  Codex confirms which option is acceptable and either (a) exposes an ALLOWED_EMAIL_DOMAIN_LOCAL
+  override or (b) confirms option 2 is safe for local .env only.
+  Claude will add the dev-only login form once there is a path to sign in.
+Owner: Codex
+Resolution:
+  Added ALLOWED_EMAIL_DOMAINS as an explicit comma-separated server-side allowlist. This does
+  not bypass employee-account approval: a token email must still match an active employee account.
+Verification:
+  uv run --group dev pytest tests/test_auth_current_user.py -q
+Status: Resolved in CODEX-PHASE2-001 integration fixes
+```
+
+### OPEN-021 — Employee search endpoint missing; Add Member UI deferred
+
+```text
+Date: 2026-06-06
+Category: API Contract
+Severity: Medium
+Affected module: apps/web/src/components/projects/project-members-panel.tsx
+Question or issue:
+  POST /v1/projects/{project_id}/members accepts an employee_id UUID, but there is no
+  endpoint to search or list employees so the user can pick one.
+  The "Add member" button is currently rendered as a disabled non-interactive label.
+  Showing a raw UUID text input would be unusable and error-prone in production.
+Why it matters:
+  Project managers cannot assign new team members from the UI until employee search exists.
+  Remove (DELETE) still works because employee_id is already known from the members list.
+Endpoint needed from Codex:
+  GET /v1/employees?status=ACTIVE&search=<term>
+  Response per item: { id, employee_code, full_name, official_email, designation }
+Recommended next action:
+  Codex adds the search endpoint. Claude wires a typeahead/combobox into the Add Member
+  form using that endpoint, replacing the current disabled state.
+Owner: Codex
+Status: Open
+```
+
 ### OPEN-016 — Project type / status / priority lookup endpoints missing
 
 ```text
@@ -82,7 +181,12 @@ Options:
 - Embed lookup arrays in GET /v1/projects response or a metadata endpoint.
 Recommended next action: Codex adds lookup endpoints; Claude wires them into the Create Project form.
 Owner: Codex
-Status: Open
+Resolution:
+  Added authenticated GET /v1/project-types, GET /v1/project-statuses, and
+  GET /v1/priority-levels endpoints returning ReferenceSummary arrays.
+Verification:
+  uv run --group dev pytest tests/test_clients_projects_api.py tests/test_clients_projects_service.py -q
+Status: Resolved in CODEX-PHASE2-001 integration fixes
 ```
 
 ### OPEN-017 — GET /v1/projects/{id}/members endpoint missing
@@ -101,7 +205,13 @@ Options:
 - Embed members array in GET /v1/projects/{project_id} response.
 Recommended next action: Codex adds the GET endpoint; Claude wires it into useProject or a new hook.
 Owner: Codex
-Status: Open
+Resolution:
+  Added authenticated GET /v1/projects/{project_id}/members returning active members with
+  embedded employee summaries. Project-view users still require active membership; project-manage
+  users can list members across projects.
+Verification:
+  uv run --group dev pytest tests/test_clients_projects_api.py tests/test_clients_projects_service.py -q
+Status: Resolved in CODEX-PHASE2-001 integration fixes
 ```
 
 ### OPEN-018 — Document/file endpoints deferred to Phase 3
