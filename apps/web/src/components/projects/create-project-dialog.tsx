@@ -1,7 +1,7 @@
 'use client'
 
-import { useEffect } from 'react'
-import { useForm } from 'react-hook-form'
+import { useEffect, useState } from 'react'
+import { useForm, useWatch } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import { X } from 'lucide-react'
@@ -10,7 +10,35 @@ import { useCreateProject } from '@/hooks/use-projects'
 import { useClients } from '@/hooks/use-clients'
 import { cn } from '@/lib/utils'
 
+const STOP_WORDS = new Set([
+  'a', 'an', 'the', 'and', 'or', 'of', 'for', 'in', 'on', 'at', 'to',
+  'with', 'by', 'from', 'annual', 'quarterly', 'monthly',
+])
+
+function deriveProjectCode(name: string, eventDate: string): string {
+  const words = name
+    .trim()
+    .toUpperCase()
+    .replace(/[^A-Z0-9\s]/g, '')
+    .split(/\s+/)
+    .filter((w) => w.length > 0 && !STOP_WORDS.has(w.toLowerCase()))
+
+  const acronym = words.length === 0
+    ? ''
+    : words.length === 1
+    ? words[0].slice(0, 8)
+    : words.map((w) => w[0]).join('').slice(0, 8)
+
+  const year = eventDate ? new Date(eventDate).getFullYear() : new Date().getFullYear()
+  return acronym ? `${acronym}-${year}` : ''
+}
+
 const schema = z.object({
+  project_code: z
+    .string()
+    .min(1, 'Project code is required')
+    .max(40, 'Max 40 characters')
+    .regex(/^[A-Z0-9_-]+$/, 'Uppercase letters, numbers, - and _ only'),
   name: z.string().min(1, 'Project name is required').max(200),
   client_id: z.string().min(1, 'Client is required'),
   event_date: z.string().min(1, 'Event date is required'),
@@ -44,21 +72,37 @@ export function CreateProjectDialog({
 }: CreateProjectDialogProps) {
   const { mutate, isPending, error } = useCreateProject()
   const { data: clients = [] } = useClients()
+  const [codeTouched, setCodeTouched] = useState(false)
 
   const {
     register,
     handleSubmit,
     reset,
+    setValue,
+    control,
     formState: { errors },
   } = useForm<FormValues>({ resolver: zodResolver(schema) })
 
+  const projectName = useWatch({ control, name: 'name', defaultValue: '' })
+  const eventDate = useWatch({ control, name: 'event_date', defaultValue: '' })
+
   useEffect(() => {
-    if (open) reset()
+    if (!codeTouched) {
+      setValue('project_code', deriveProjectCode(projectName, eventDate), { shouldValidate: false })
+    }
+  }, [projectName, eventDate, codeTouched, setValue])
+
+  useEffect(() => {
+    if (open) {
+      reset()
+      setCodeTouched(false)
+    }
   }, [open, reset])
 
   function onSubmit(values: FormValues) {
     mutate(
       {
+        project_code: values.project_code,
         name: values.name,
         client_id: values.client_id,
         event_date: values.event_date,
@@ -119,15 +163,37 @@ export function CreateProjectDialog({
           noValidate
           className="overflow-y-auto flex-1 px-6 pb-6 space-y-4"
         >
-          <FormField label="Project Name" htmlFor="name" required error={errors.name?.message}>
-            <input
-              {...register('name')}
-              id="name"
-              placeholder="Annual Leadership Conference"
-              autoFocus
-              className={cn(inputCls, errors.name && 'border-accent-critical')}
-            />
-          </FormField>
+          <div className="grid grid-cols-2 gap-4">
+            <FormField label="Project Name" htmlFor="name" required error={errors.name?.message}>
+              <input
+                {...register('name')}
+                id="name"
+                placeholder="Annual Leadership Conference"
+                autoFocus
+                className={cn(inputCls, errors.name && 'border-accent-critical')}
+              />
+            </FormField>
+
+            <FormField label="Project Code" htmlFor="project_code" required error={errors.project_code?.message}>
+              <div className="relative">
+                <input
+                  {...register('project_code')}
+                  id="project_code"
+                  placeholder="Auto-generated"
+                  onChange={(e) => {
+                    register('project_code').onChange(e)
+                    setCodeTouched(true)
+                  }}
+                  className={cn(inputCls, errors.project_code && 'border-accent-critical', !codeTouched && 'text-text-primary/60')}
+                />
+                {!codeTouched && (
+                  <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[10px] font-mono text-text-primary/30 pointer-events-none select-none">
+                    auto
+                  </span>
+                )}
+              </div>
+            </FormField>
+          </div>
 
           <FormField label="Client" htmlFor="client_id" required error={errors.client_id?.message}>
             <select

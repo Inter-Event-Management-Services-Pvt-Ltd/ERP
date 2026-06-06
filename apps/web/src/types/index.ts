@@ -132,6 +132,7 @@ export interface Project {
 }
 
 export interface CreateProjectPayload {
+  project_code: string
   name: string
   client_id: string
   project_type_id: string
