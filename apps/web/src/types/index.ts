@@ -195,6 +195,7 @@ export interface EmployeeSummary {
   id: string
   employee_code: string
   full_name: string
+  official_email: string
   designation: string
   employment_status: string
 }
