@@ -7,16 +7,24 @@ from starlette import status
 from starlette.exceptions import HTTPException as StarletteHTTPException
 
 
-def error_response(status_code: int, code: str, message: str, request_id: str) -> JSONResponse:
+def error_response(
+    status_code: int,
+    code: str,
+    message: str,
+    request_id: str,
+    fields: list[dict[str, str]] | None = None,
+) -> JSONResponse:
+    error: dict[str, object] = {
+        "code": code,
+        "message": message,
+        "request_id": request_id,
+    }
+    if fields:
+        error["fields"] = fields
+
     return JSONResponse(
         status_code=status_code,
-        content={
-            "error": {
-                "code": code,
-                "message": message,
-                "request_id": request_id,
-            }
-        },
+        content={"error": error},
         headers={"X-Request-ID": request_id},
     )
 
@@ -65,8 +73,30 @@ async def validation_exception_handler(
         raise exc
 
     return error_response(
-        status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+        status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
         code="VALIDATION_ERROR",
         message="Request validation failed",
         request_id=_request_id(request),
+        fields=_validation_fields(exc),
     )
+
+
+def _validation_fields(exc: RequestValidationError) -> list[dict[str, str]]:
+    fields: list[dict[str, str]] = []
+    for error in exc.errors():
+        loc = error.get("loc")
+        message = error.get("msg")
+        error_type = error.get("type")
+        if not isinstance(loc, tuple) or not isinstance(message, str) or not isinstance(
+            error_type,
+            str,
+        ):
+            continue
+        fields.append(
+            {
+                "field": ".".join(str(part) for part in loc),
+                "message": message,
+                "type": error_type,
+            }
+        )
+    return fields

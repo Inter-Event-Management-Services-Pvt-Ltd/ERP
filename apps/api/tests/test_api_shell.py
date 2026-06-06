@@ -11,8 +11,18 @@ async def _get(path: str, headers: dict[str, str] | None = None) -> Response:
         return await client.get(path, headers=headers)
 
 
+async def _options(path: str, headers: dict[str, str] | None = None) -> Response:
+    transport = ASGITransport(app=app)
+    async with AsyncClient(transport=transport, base_url="http://testserver") as client:
+        return await client.options(path, headers=headers)
+
+
 def get(path: str, headers: dict[str, str] | None = None) -> Response:
     return asyncio.run(_get(path, headers=headers))
+
+
+def options(path: str, headers: dict[str, str] | None = None) -> Response:
+    return asyncio.run(_options(path, headers=headers))
 
 
 def test_health_endpoint_returns_service_status() -> None:
@@ -64,3 +74,18 @@ def test_unknown_route_uses_stable_error_envelope() -> None:
             "request_id": "phase1-missing-route",
         }
     }
+
+
+def test_cors_preflight_allows_local_frontend_origin() -> None:
+    response = options(
+        "/v1/projects",
+        headers={
+            "Origin": "http://localhost:3000",
+            "Access-Control-Request-Method": "GET",
+            "Access-Control-Request-Headers": "authorization,x-request-id",
+        },
+    )
+
+    assert response.status_code == 200
+    assert response.headers["access-control-allow-origin"] == "http://localhost:3000"
+    assert response.headers["access-control-allow-credentials"] == "true"

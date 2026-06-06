@@ -16,6 +16,7 @@ celery_app.conf.update(
     accept_content=["json"],
     timezone="Asia/Kolkata",
     enable_utc=True,
+    imports=("app.workers.archive_exports",),
 )
 
 
