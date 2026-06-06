@@ -12,6 +12,23 @@ import type {
   UpdateProjectMemberPayload,
   ReferenceLookup,
   FolderNode,
+  CreateFolderPayload,
+  UpdateFolderPayload,
+  Document,
+  DownloadUrlResponse,
+  ArchiveExport,
+  PhysicalRoom,
+  CreatePhysicalRoomPayload,
+  PhysicalLocation,
+  CreatePhysicalLocationPayload,
+  PhysicalLocationContents,
+  PhysicalFile,
+  CreatePhysicalFilePayload,
+  PhysicalFileCheckoutPayload,
+  PhysicalFileReturnPayload,
+  PhysicalFileMovePayload,
+  PhysicalFileVerifyPayload,
+  PhysicalFileLabel,
   EmployeeSummary,
 } from '@/types'
 
@@ -43,6 +60,23 @@ async function apiFetch<T>(path: string, init?: RequestInit): Promise<T> {
     throw Object.assign(new Error(message), { code, status: res.status })
   }
 
+  return res.json() as Promise<T>
+}
+
+/** Multipart upload — browser sets Content-Type with boundary automatically. */
+async function apiUpload<T>(path: string, formData: FormData): Promise<T> {
+  const token = await getAccessToken()
+  const res = await fetch(`${API_URL}${path}`, {
+    method: 'POST',
+    headers: { Authorization: `Bearer ${token}` },
+    body: formData,
+  })
+  if (!res.ok) {
+    const body = await res.json().catch(() => ({}))
+    const code = body?.error?.code ?? `HTTP_${res.status}`
+    const message = body?.error?.message ?? res.statusText
+    throw Object.assign(new Error(message), { code, status: res.status })
+  }
   return res.json() as Promise<T>
 }
 
@@ -164,6 +198,185 @@ export async function fetchPriorityLevels(): Promise<ReferenceLookup[]> {
 
 export async function fetchFolderTree(projectId: string): Promise<FolderNode> {
   return apiFetch<FolderNode>(`/v1/projects/${projectId}/folders/tree`)
+}
+
+export async function createFolder(
+  projectId: string,
+  payload: CreateFolderPayload
+): Promise<FolderNode> {
+  return apiFetch<FolderNode>(`/v1/projects/${projectId}/folders`, {
+    method: 'POST',
+    body: JSON.stringify(payload),
+  })
+}
+
+export async function renameFolder(
+  folderId: string,
+  payload: UpdateFolderPayload
+): Promise<FolderNode> {
+  return apiFetch<FolderNode>(`/v1/folders/${folderId}`, {
+    method: 'PATCH',
+    body: JSON.stringify(payload),
+  })
+}
+
+export async function deleteFolder(folderId: string): Promise<void> {
+  await apiFetch<unknown>(`/v1/folders/${folderId}`, { method: 'DELETE' })
+}
+
+// ─── Documents ────────────────────────────────────────────────────────────────
+
+export async function uploadDocument(
+  folderId: string,
+  formData: FormData
+): Promise<Document> {
+  return apiUpload<Document>(`/v1/folders/${folderId}/documents`, formData)
+}
+
+export async function searchDocuments(params: {
+  folder_id?: string
+  project_id?: string
+  q?: string
+}): Promise<Document[]> {
+  const qs = new URLSearchParams()
+  if (params.folder_id) qs.set('folder_id', params.folder_id)
+  if (params.project_id) qs.set('project_id', params.project_id)
+  if (params.q) qs.set('q', params.q)
+  return apiFetch<Document[]>(`/v1/documents/search?${qs.toString()}`)
+}
+
+export async function getDocument(documentId: string): Promise<Document> {
+  return apiFetch<Document>(`/v1/documents/${documentId}`)
+}
+
+export async function uploadDocumentVersion(
+  documentId: string,
+  formData: FormData
+): Promise<Document> {
+  return apiUpload<Document>(`/v1/documents/${documentId}/versions`, formData)
+}
+
+export async function getDocumentVersionDownloadUrl(
+  versionId: string
+): Promise<DownloadUrlResponse> {
+  return apiFetch<DownloadUrlResponse>(
+    `/v1/document-versions/${versionId}/download-url`
+  )
+}
+
+// ─── Archive exports ──────────────────────────────────────────────────────────
+
+export async function createExport(projectId: string): Promise<ArchiveExport> {
+  return apiFetch<ArchiveExport>(`/v1/projects/${projectId}/exports`, {
+    method: 'POST',
+    body: JSON.stringify({}),
+  })
+}
+
+export async function listExports(projectId: string): Promise<ArchiveExport[]> {
+  return apiFetch<ArchiveExport[]>(`/v1/projects/${projectId}/exports`)
+}
+
+export async function getExport(exportId: string): Promise<ArchiveExport> {
+  return apiFetch<ArchiveExport>(`/v1/exports/${exportId}`)
+}
+
+export async function getExportDownloadUrl(
+  exportId: string
+): Promise<DownloadUrlResponse> {
+  return apiFetch<DownloadUrlResponse>(`/v1/exports/${exportId}/download-url`)
+}
+
+// ─── Physical archive ─────────────────────────────────────────────────────────
+
+export async function listRooms(): Promise<PhysicalRoom[]> {
+  return apiFetch<PhysicalRoom[]>('/v1/archive/rooms')
+}
+
+export async function createRoom(
+  payload: CreatePhysicalRoomPayload
+): Promise<PhysicalRoom> {
+  return apiFetch<PhysicalRoom>('/v1/archive/rooms', {
+    method: 'POST',
+    body: JSON.stringify(payload),
+  })
+}
+
+export async function createLocation(
+  payload: CreatePhysicalLocationPayload
+): Promise<PhysicalLocation> {
+  return apiFetch<PhysicalLocation>('/v1/archive/locations', {
+    method: 'POST',
+    body: JSON.stringify(payload),
+  })
+}
+
+export async function getLocationContents(
+  locationId: string
+): Promise<PhysicalLocationContents> {
+  return apiFetch<PhysicalLocationContents>(
+    `/v1/archive/locations/${locationId}/contents`
+  )
+}
+
+export async function createPhysicalFile(
+  projectId: string,
+  payload: CreatePhysicalFilePayload
+): Promise<PhysicalFile> {
+  return apiFetch<PhysicalFile>(`/v1/projects/${projectId}/physical-files`, {
+    method: 'POST',
+    body: JSON.stringify(payload),
+  })
+}
+
+export async function getPhysicalFile(fileId: string): Promise<PhysicalFile> {
+  return apiFetch<PhysicalFile>(`/v1/physical-files/${fileId}`)
+}
+
+export async function checkoutPhysicalFile(
+  fileId: string,
+  payload: PhysicalFileCheckoutPayload
+): Promise<PhysicalFile> {
+  return apiFetch<PhysicalFile>(`/v1/physical-files/${fileId}/checkout`, {
+    method: 'POST',
+    body: JSON.stringify(payload),
+  })
+}
+
+export async function returnPhysicalFile(
+  fileId: string,
+  payload: PhysicalFileReturnPayload
+): Promise<PhysicalFile> {
+  return apiFetch<PhysicalFile>(`/v1/physical-files/${fileId}/return`, {
+    method: 'POST',
+    body: JSON.stringify(payload),
+  })
+}
+
+export async function movePhysicalFile(
+  fileId: string,
+  payload: PhysicalFileMovePayload
+): Promise<PhysicalFile> {
+  return apiFetch<PhysicalFile>(`/v1/physical-files/${fileId}/move`, {
+    method: 'POST',
+    body: JSON.stringify(payload),
+  })
+}
+
+export async function verifyPhysicalFile(
+  fileId: string,
+  payload: PhysicalFileVerifyPayload
+): Promise<PhysicalFile> {
+  return apiFetch<PhysicalFile>(`/v1/physical-files/${fileId}/verify`, {
+    method: 'POST',
+    body: JSON.stringify(payload),
+  })
+}
+
+export async function getPhysicalFileLabel(
+  fileId: string
+): Promise<PhysicalFileLabel> {
+  return apiFetch<PhysicalFileLabel>(`/v1/physical-files/${fileId}/label`)
 }
 
 // ─── Employees ────────────────────────────────────────────────────────────────

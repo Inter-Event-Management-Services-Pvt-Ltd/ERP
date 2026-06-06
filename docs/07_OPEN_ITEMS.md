@@ -29,7 +29,13 @@ Options:
 - ClamAV worker
 - external scanning service
 - controlled rollout with file-type restrictions before scanner integration
-Status: Open
+Decision:
+  Phase 2 enforces server-side file-name, MIME-type and size restrictions. Full malware
+  scanning is deferred to Phase 5 hardening before production release.
+Recommended next action:
+  Evaluate ClamAV worker versus an external scanning service during Phase 5. Do not allow
+  production uploads without either a scanner or a documented risk acceptance.
+Status: Decision recorded; implementation remains open before production
 ```
 
 ### OPEN-002 — Supabase production plan
@@ -268,7 +274,16 @@ Question or issue: POST /v1/folders/{folder_id}/documents, GET /v1/documents/{do
 Why it matters: The folder explorer shows folder tree but cannot list or upload documents yet.
 Recommended next action: Wire document list and upload in Phase 3 when those endpoints ship.
 Owner: Codex / Claude
-Status: Open
+Resolution:
+  Codex added Phase 2 backend document endpoints:
+  - POST /v1/folders/{folder_id}/documents
+  - GET /v1/documents/{document_id}
+  - POST /v1/documents/{document_id}/versions
+  - GET /v1/document-versions/{version_id}/download-url
+  - GET /v1/documents/search
+  Endpoints enforce server-side upload validation, immutable private Storage keys,
+  document versioning, checksums, project ABAC and short-lived signed URLs.
+Status: Resolved in backend; Claude frontend wiring remains
 ```
 
 ### OPEN-014 - Client visibility scope for Phase 2 API
@@ -287,7 +302,12 @@ Options:
 - Add explicit client membership/ownership if needed later.
 Recommended next action: Human/Codex confirm the desired client visibility rule before production.
 Owner: Human / Codex
-Status: Open
+Resolution:
+  Docker Desktop was started. `npx supabase db reset` passed and both Phase 2 SQL
+  probes passed. The pipeline-style `Get-Content ... | docker exec -i ...` command
+  intermittently hit a Windows Docker pipe permission issue, so the second probe was
+  validated by copying the SQL file into the database container and running `psql -f`.
+Status: Resolved
 ```
 
 ### OPEN-015 - Folder hierarchy import preservation
@@ -305,7 +325,141 @@ Options:
 - Defer import workflow if MVP only needs manual folder/document creation first.
 Recommended next action: Include this explicitly in CODEX-PHASE2-002 planning.
 Owner: Codex
+Resolution:
+  Archive exports now preserve the database folder hierarchy when generating ZIP paths.
+  No bulk import endpoint exists yet; if the business needs folder/document import later,
+  it should be scoped as a separate import workflow.
+Status: Archive hierarchy preservation resolved; bulk import workflow not in current backend contract
+```
+
+### OPEN-023 — Local Docker Desktop unavailable for final Phase 2 Supabase validation
+
+```text
+Date: 2026-06-06
+Category: Local Development / Validation
+Severity: Medium
+Question or issue:
+  `npx supabase db reset` failed because Docker Desktop's Linux engine pipe was unavailable:
+  `//./pipe/dockerDesktopLinuxEngine` was not found.
+Why it matters:
+  Backend Python tests, lint and type checks pass, but Phase 2 cannot be marked fully verified
+  until migrations and SQL probes run against local Supabase.
+Recommended next action:
+  Start Docker Desktop, then run:
+    npx supabase db reset
+    Get-Content supabase/tests/phase2_clients_projects_rpc.sql | docker exec -i supabase_db_iems-erp psql -U postgres -d postgres
+    Get-Content supabase/tests/phase2_documents_archive_physical_rpc.sql | docker exec -i supabase_db_iems-erp psql -U postgres -d postgres
+Owner: Human / Codex
 Status: Open
+```
+
+### OPEN-028 — QR code rendering: library not installed
+
+```text
+Date: 2026-06-06
+Category: Frontend / Physical Archive
+Severity: Low
+Affected module: apps/web/src/app/archive/files/[id]/page.tsx
+Question or issue:
+  GET /v1/physical-files/{id}/label returns a qr_token string. The physical file label
+  page displays this token as text and provides a copy button, but cannot render an
+  actual QR code because no QR library is installed in the frontend.
+  Currently: token is displayed as text (OPEN-028 note on page).
+Required:
+  Approval to install qrcode.react (client-side QR generation; no external network calls).
+  After approval: add the package and render <QRCodeSVG value={label.qr_token} /> on the label page.
+Owner: Human
+Status: Open — pending library approval
+```
+
+### OPEN-027 — Physical archive: no endpoint to list locations by room
+
+```text
+Date: 2026-06-06
+Category: API Contract
+Severity: Medium
+Affected module: apps/web/src/app/archive/rooms/[id]/page.tsx
+Question or issue:
+  GET /v1/archive/rooms returns a flat list of rooms but no room detail endpoint.
+  There is also no GET /v1/archive/locations?room_id=xxx to list locations for a room.
+  GET /v1/archive/locations/{location_id}/contents requires a known location_id.
+  The room detail page currently shows room info and a form to create locations, but
+  cannot browse the location hierarchy — users must manually enter a location UUID.
+Required from Codex:
+  Either:
+  - GET /v1/archive/rooms/{room_id} returning room + its top-level locations, or
+  - GET /v1/archive/locations?room_id=xxx to list all locations for a room
+Owner: Codex
+Status: Open
+```
+
+### OPEN-026 — Confidentiality level and document type lookup endpoints missing
+
+```text
+Date: 2026-06-06
+Category: API Contract
+Severity: Medium
+Affected module: apps/web/src/components/projects/document-upload-dialog.tsx
+Question or issue:
+  POST /v1/folders/{folder_id}/documents requires a confidentiality_level_id UUID
+  (mandatory) and optionally a document_type_id UUID. No GET lookup endpoints exist
+  in the API contract to retrieve valid UUIDs for these fields.
+  Current state: upload form shows a text input for confidentiality_level_id with a
+  placeholder noting this open item. Users must manually enter the UUID.
+  The upload will succeed once valid UUIDs are provided, but the UX is unusable for
+  non-technical staff without a selector.
+Required from Codex:
+  GET /v1/confidentiality-levels  (returns [{id, code, name}])
+  GET /v1/document-types          (returns [{id, code, name}])
+Owner: Codex
+Status: Open
+```
+
+### OPEN-025 — GET /v1/documents/search query parameters undocumented
+
+```text
+Date: 2026-06-06
+Category: API Contract
+Severity: Medium
+Affected module: apps/web/src/hooks/use-documents.ts
+Question or issue:
+  GET /v1/documents/search is documented in the API contract but its accepted query
+  parameters are not listed. The frontend uses:
+    folder_id=<uuid>     to list documents inside a selected folder
+    project_id=<uuid>    for additional project-level scoping
+    q=<string>           for text search
+  If these parameter names do not match what the backend accepts, folder document
+  listing will silently return empty results.
+Required from Codex:
+  Confirm accepted query parameter names for GET /v1/documents/search and update
+  api-contract.md with the parameter table.
+Owner: Codex
+Status: Open
+```
+
+### OPEN-024 — Claude wiring required for new Phase 2 backend endpoints
+
+```text
+Date: 2026-06-06
+Category: Frontend Integration
+Severity: Medium
+Question or issue:
+  Codex added backend Phase 2 document, archive-export and physical-archive endpoints.
+  Claude needs to wire UI screens to the documented API contract without inventing
+  alternate backend behavior.
+Resolution:
+  All four areas wired:
+  - Folder CRUD: create/rename/delete with inline editing in FolderTreePanel; INVALID_STATE
+    and RESOURCE_CONFLICT errors shown inline.
+  - Document upload (multipart FormData), version upload, signed download (on-demand fetch),
+    folder document list via GET /v1/documents/search.
+  - Archive export: POST/GET with 5s auto-poll while QUEUED or PROCESSING, download on READY.
+  - Physical archive: rooms list/create, location create, location content browser,
+    physical file detail, checkout/return/move/verify action pages, QR label display.
+  New OPEN items: OPEN-025 (search params), OPEN-026 (lookup endpoints),
+  OPEN-027 (location listing), OPEN-028 (QR library).
+Owner: Claude
+Status: Resolved
 ```
 
 ### OPEN-008 — Frontend local env uses a secret Supabase key

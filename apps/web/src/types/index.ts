@@ -194,6 +194,153 @@ export interface FolderNode {
   children: FolderNode[]
 }
 
+export interface CreateFolderPayload {
+  name: string
+  parent_folder_id?: string
+}
+
+export interface UpdateFolderPayload {
+  name: string
+}
+
+// ─── Documents ────────────────────────────────────────────────────────────────
+
+export interface DocumentVersion {
+  id: string
+  version_number: number
+  storage_bucket: string
+  storage_key: string
+  original_filename: string
+  mime_type: string
+  size_bytes: number
+  checksum_sha256: string
+  preview_supported: boolean
+}
+
+export interface Document {
+  id: string
+  project_id: string
+  folder_id: string
+  document_type_id: string | null
+  confidentiality_level_id: string
+  display_name: string
+  status: string
+  latest_version: DocumentVersion | null
+  created_at: string
+  updated_at: string
+}
+
+export interface DownloadUrlResponse {
+  url: string
+  expires_in_seconds: number
+  expires_at: string
+}
+
+// ─── Archive exports ──────────────────────────────────────────────────────────
+
+export type ExportStatus = 'QUEUED' | 'PROCESSING' | 'READY' | 'FAILED' | 'EXPIRED'
+
+export interface ArchiveExport {
+  id: string
+  project_id: string
+  status: ExportStatus
+  requested_by: string
+  requested_at: string
+  completed_at: string | null
+  file_size_bytes: number | null
+  error_message: string | null
+}
+
+// ─── Physical archive ─────────────────────────────────────────────────────────
+
+export interface PhysicalRoom {
+  id: string
+  name: string
+  code: string
+  description: string | null
+  is_active: boolean
+  created_at: string
+}
+
+export interface CreatePhysicalRoomPayload {
+  name: string
+  code: string
+  description?: string
+}
+
+export type PhysicalLocationType = 'RACK' | 'SHELF' | 'CABINET' | 'BOX' | 'FILE_SLOT'
+
+export interface PhysicalLocation {
+  id: string
+  room_id: string
+  parent_location_id: string | null
+  type: PhysicalLocationType
+  label: string
+  description: string | null
+  is_active: boolean
+}
+
+export interface CreatePhysicalLocationPayload {
+  room_id: string
+  parent_location_id?: string
+  type: PhysicalLocationType
+  label: string
+  description?: string
+}
+
+export type PhysicalFileState = 'IN_STORAGE' | 'CHECKED_OUT' | 'MISSING' | 'DISPOSED'
+
+export interface PhysicalFile {
+  id: string
+  project_id: string
+  location_id: string
+  location: PhysicalLocation | null
+  file_code: string
+  description: string | null
+  state: PhysicalFileState
+  checked_out_to: string | null
+  checked_out_at: string | null
+  qr_token: string
+  created_at: string
+  updated_at: string
+}
+
+export interface CreatePhysicalFilePayload {
+  location_id: string
+  file_code: string
+  description?: string
+}
+
+export interface PhysicalFileCheckoutPayload {
+  notes?: string
+}
+
+export interface PhysicalFileReturnPayload {
+  notes?: string
+}
+
+export interface PhysicalFileMovePayload {
+  location_id: string
+  notes?: string
+}
+
+export interface PhysicalFileVerifyPayload {
+  notes?: string
+}
+
+export interface PhysicalFileLabel {
+  file_code: string
+  qr_token: string
+  project_name: string
+  location_label: string
+  description: string | null
+}
+
+export interface PhysicalLocationContents {
+  location: PhysicalLocation
+  files: PhysicalFile[]
+}
+
 // ─── Employees (used in member picker) ────────────────────────────────────────
 
 export interface EmployeeSummary {

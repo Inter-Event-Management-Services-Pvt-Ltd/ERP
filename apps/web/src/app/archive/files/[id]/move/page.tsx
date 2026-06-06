@@ -8,27 +8,29 @@ import { AppShell } from '@/components/layout/app-shell'
 import { PageHeader } from '@/components/layout/page-header'
 import { ContentArea } from '@/components/layout/content-area'
 import { SkeletonScreen } from '@/components/states/skeleton-screen'
-import { usePhysicalFile, useCheckoutPhysicalFile } from '@/hooks/use-physical-archive'
+import { usePhysicalFile, useMovePhysicalFile } from '@/hooks/use-physical-archive'
 import { apiErrorMessage } from '@/lib/errors'
 
 interface Props {
   params: Promise<{ id: string }>
 }
 
-export default function CheckoutPage({ params }: Props) {
+export default function MovePage({ params }: Props) {
   const { id } = use(params)
   const router = useRouter()
   const { data: file, isLoading } = usePhysicalFile(id)
-  const { mutate: checkout, isPending } = useCheckoutPhysicalFile(id)
+  const { mutate: move, isPending } = useMovePhysicalFile(id)
 
+  const [locationId, setLocationId] = useState('')
   const [notes, setNotes] = useState('')
   const [error, setError] = useState<string | null>(null)
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
+    if (!locationId.trim()) { setError('Destination location ID is required.'); return }
     setError(null)
-    checkout(
-      { notes: notes.trim() || undefined },
+    move(
+      { location_id: locationId.trim(), notes: notes.trim() || undefined },
       {
         onSuccess: () => router.push(`/archive/files/${id}`),
         onError: (err) => setError(apiErrorMessage(err)),
@@ -39,7 +41,7 @@ export default function CheckoutPage({ params }: Props) {
   return (
     <AppShell>
       <PageHeader
-        title="Check Out File"
+        title="Move File"
         subtitle={
           <nav aria-label="Breadcrumb" className="flex items-center gap-1 text-xs text-text-primary/40 font-sans">
             <Link href="/archive" className="hover:text-text-primary/70 transition-colors">Archive</Link>
@@ -48,7 +50,7 @@ export default function CheckoutPage({ params }: Props) {
               {file?.file_code ?? id}
             </Link>
             <ChevronRight size={12} aria-hidden="true" />
-            <span className="text-text-primary/60">Check Out</span>
+            <span className="text-text-primary/60">Move</span>
           </nav>
         }
       />
@@ -56,37 +58,49 @@ export default function CheckoutPage({ params }: Props) {
       <ContentArea>
         {isLoading && <SkeletonScreen rows={4} />}
 
-        {!isLoading && file && file.state !== 'IN_STORAGE' && (
-          <div className="rounded-lg border border-accent-warning/30 bg-accent-warning/5 px-4 py-3 max-w-md">
-            <p className="text-sm font-sans text-accent-warning">
-              This file is currently <strong>{file.state}</strong> and cannot be checked out.
-            </p>
-            <Link href={`/archive/files/${id}`} className="text-xs text-accent-saffron/70 hover:text-accent-saffron mt-2 block">
-              ← Back to file
-            </Link>
-          </div>
-        )}
-
-        {!isLoading && file && file.state === 'IN_STORAGE' && (
+        {!isLoading && file && (
           <form onSubmit={handleSubmit} className="max-w-md space-y-4">
             <div className="rounded-lg border border-surface-border bg-surface-raised px-4 py-3">
               <p className="text-xs text-text-primary/40 font-sans uppercase tracking-wider mb-1">File</p>
               <p className="text-sm font-mono text-text-primary">{file.file_code}</p>
-              {file.description && (
-                <p className="text-xs font-sans text-text-primary/50 mt-0.5">{file.description}</p>
+              {file.location && (
+                <p className="text-xs font-mono text-text-primary/40 mt-0.5">
+                  Current: {file.location.label} ({file.location.type})
+                </p>
               )}
             </div>
 
             <div>
-              <label htmlFor="checkout-notes" className="text-xs font-sans text-text-primary/70 font-medium block mb-1">
+              <label htmlFor="move-location" className="text-xs font-sans text-text-primary/70 font-medium block mb-1">
+                Destination Location ID <span className="text-accent-critical">*</span>
+              </label>
+              <input
+                id="move-location"
+                type="text"
+                value={locationId}
+                onChange={(e) => setLocationId(e.target.value)}
+                placeholder="UUID of target FILE_SLOT location"
+                className="w-full rounded-md border border-surface-border bg-surface-base px-3 py-2 text-sm font-mono text-text-primary placeholder:text-text-primary/20 focus:outline-none focus:ring-2 focus:ring-accent-saffron"
+              />
+              <p className="text-xs text-text-primary/30 font-sans mt-0.5">
+                Must be an active FILE_SLOT. Browse locations at{' '}
+                <Link href="/archive/rooms" className="text-accent-saffron/60 hover:text-accent-saffron">
+                  Archive Rooms
+                </Link>
+                .
+              </p>
+            </div>
+
+            <div>
+              <label htmlFor="move-notes" className="text-xs font-sans text-text-primary/70 font-medium block mb-1">
                 Notes <span className="text-text-primary/30">(optional)</span>
               </label>
               <textarea
-                id="checkout-notes"
+                id="move-notes"
                 value={notes}
                 onChange={(e) => setNotes(e.target.value)}
-                rows={3}
-                placeholder="Reason for checkout, destination, etc."
+                rows={2}
+                placeholder="Reason for move, etc."
                 className="w-full rounded-md border border-surface-border bg-surface-base px-3 py-2 text-sm font-sans text-text-primary placeholder:text-text-primary/30 focus:outline-none focus:ring-2 focus:ring-accent-saffron resize-none"
               />
             </div>
@@ -107,7 +121,7 @@ export default function CheckoutPage({ params }: Props) {
                 className="flex items-center gap-1.5 px-4 py-2 text-sm font-sans font-medium rounded-md bg-accent-saffron text-surface-deep hover:bg-accent-warning disabled:opacity-40 transition-colors"
               >
                 {isPending && <Loader2 size={14} className="animate-spin" aria-hidden="true" />}
-                Confirm Check Out
+                Confirm Move
               </button>
             </div>
           </form>

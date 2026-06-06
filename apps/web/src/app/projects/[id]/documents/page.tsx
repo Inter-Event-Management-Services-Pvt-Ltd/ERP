@@ -2,24 +2,48 @@
 
 import { use, useState } from 'react'
 import Link from 'next/link'
-import { ChevronRight, FileText } from 'lucide-react'
+import { ChevronRight, FolderPlus } from 'lucide-react'
 import { AppShell } from '@/components/layout/app-shell'
 import { PageHeader } from '@/components/layout/page-header'
 import { EmptyState } from '@/components/states/empty-state'
 import { FolderTreePanel } from '@/components/projects/folder-tree-panel'
+import { DocumentListPanel } from '@/components/projects/document-list-panel'
+import { ArchiveExportPanel } from '@/components/projects/archive-export-panel'
 import { useProject } from '@/hooks/use-projects'
 import { useFolderTree } from '@/hooks/use-folder-tree'
+import { useMe } from '@/hooks/use-me'
 
 interface Props {
   params: Promise<{ id: string }>
 }
 
+function findFolderName(id: string | null, root: { id: string; name: string; children: { id: string; name: string; children: unknown[] }[] } | undefined): string {
+  if (!id || !root) return ''
+  if (root.id === id) return root.name
+  for (const child of root.children) {
+    const found = findFolderName(id, child as Parameters<typeof findFolderName>[1])
+    if (found) return found
+  }
+  return id
+}
+
 export default function ProjectDocumentsPage({ params }: Props) {
   const { id } = use(params)
+  const { data: user } = useMe()
   const { data: project } = useProject(id)
   const { data: tree, isLoading: treeLoading, error: treeError } = useFolderTree(id)
 
   const [selectedFolderId, setSelectedFolderId] = useState<string | null>(null)
+
+  const canManage =
+    (user?.isSuperUser || user?.permissions.includes('project.manage')) ?? false
+  const canUpload = user?.permissions.includes('document.upload') ?? false
+  const canExport = user?.permissions.includes('archive.export') ?? false
+
+  const selectedFolderName = findFolderName(
+    selectedFolderId,
+    tree as Parameters<typeof findFolderName>[1]
+  )
 
   return (
     <AppShell>
@@ -48,14 +72,27 @@ export default function ProjectDocumentsPage({ params }: Props) {
       />
 
       <div className="flex flex-1 overflow-hidden">
+        {/* Sidebar */}
         <aside
-          className="w-56 flex-none border-r border-surface-border bg-surface-deep overflow-y-auto"
+          className="w-60 flex-none border-r border-surface-border bg-surface-deep overflow-y-auto flex flex-col"
           aria-label="Folder navigation"
         >
-          <div className="px-3 pt-3 pb-2">
-            <p className="text-xs font-sans font-semibold text-text-primary/40 uppercase tracking-wider mb-1">
+          <div className="px-3 pt-3 pb-2 flex items-center justify-between flex-none">
+            <p className="text-xs font-sans font-semibold text-text-primary/40 uppercase tracking-wider">
               Folders
             </p>
+            {canManage && tree && (
+              <button
+                type="button"
+                onClick={() => {/* root-level create is via the tree node's + button */}}
+                title="Use the + button on any folder to add a subfolder"
+                className="text-text-primary/20 cursor-default p-0.5"
+                aria-hidden="true"
+                tabIndex={-1}
+              >
+                <FolderPlus size={12} aria-hidden="true" />
+              </button>
+            )}
           </div>
 
           {treeLoading && (
@@ -77,20 +114,30 @@ export default function ProjectDocumentsPage({ params }: Props) {
           )}
 
           {!treeLoading && !treeError && !tree && (
-            <p className="px-3 text-xs text-text-primary/30 font-sans py-2">
-              No folders
-            </p>
+            <p className="px-3 text-xs text-text-primary/30 font-sans py-2">No folders</p>
           )}
 
           {!treeLoading && tree && (
-            <FolderTreePanel
-              root={tree}
-              selectedId={selectedFolderId}
-              onSelect={setSelectedFolderId}
-            />
+            <div className="flex-1">
+              <FolderTreePanel
+                root={tree}
+                selectedId={selectedFolderId}
+                onSelect={setSelectedFolderId}
+                projectId={id}
+                canManage={canManage}
+              />
+            </div>
+          )}
+
+          {/* Archive export section */}
+          {(canExport || true) && (
+            <div className="flex-none border-t border-surface-border/50 px-3 py-3 mt-2">
+              <ArchiveExportPanel projectId={id} canExport={canExport} />
+            </div>
           )}
         </aside>
 
+        {/* Main content */}
         <main className="flex-1 overflow-y-auto p-5">
           {!selectedFolderId ? (
             <EmptyState
@@ -98,18 +145,12 @@ export default function ProjectDocumentsPage({ params }: Props) {
               body="Choose a folder from the sidebar to view its documents."
             />
           ) : (
-            <div className="space-y-4">
-              <div className="flex items-center gap-2 text-xs font-mono text-text-primary/40">
-                <FileText size={12} aria-hidden="true" />
-                <span>Folder: {selectedFolderId}</span>
-              </div>
-              {/* Document list — POST /v1/folders/{id}/documents and GET
-                  endpoints are Phase 3 scope (OPEN-018). */}
-              <EmptyState
-                heading="Documents coming in Phase 3"
-                body="File upload and document listing will be available once the document endpoints are implemented."
-              />
-            </div>
+            <DocumentListPanel
+              folderId={selectedFolderId}
+              folderName={selectedFolderName}
+              projectId={id}
+              canUpload={canUpload}
+            />
           )}
         </main>
       </div>
