@@ -10,10 +10,9 @@ import { SkeletonScreen } from '@/components/states/skeleton-screen'
 import { ErrorState } from '@/components/states/error-state'
 import { ProjectStatusBadge } from '@/components/projects/project-status-badge'
 import { ProjectMembersPanel } from '@/components/projects/project-members-panel'
-import { useProject } from '@/hooks/use-projects'
+import { useProject, useProjectMembers } from '@/hooks/use-projects'
 import { useMe } from '@/hooks/use-me'
 import { format } from 'date-fns'
-import type { ProjectMember } from '@/types'
 
 interface Props {
   params: Promise<{ id: string }>
@@ -23,11 +22,9 @@ export default function ProjectDetailPage({ params }: Props) {
   const { id } = use(params)
   const { data: user } = useMe()
   const { data: project, isLoading, error, refetch } = useProject(id)
+  const { data: members = [] } = useProjectMembers(id)
 
   const canManage = user?.permissions.includes('project.manage') ?? false
-
-  // Members list requires GET /v1/projects/{id}/members — see OPEN-017.
-  const members: ProjectMember[] = []
 
   return (
     <AppShell>

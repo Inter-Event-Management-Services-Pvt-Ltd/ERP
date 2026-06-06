@@ -14,43 +14,17 @@ import { CreateProjectDialog } from '@/components/projects/create-project-dialog
 import { CreateClientDialog } from '@/components/projects/create-client-dialog'
 import { SearchInput } from '@/components/ui/search-input'
 import { useProjects } from '@/hooks/use-projects'
+import { useProjectTypes, useProjectStatuses, usePriorityLevels } from '@/hooks/use-lookups'
 import { useMe } from '@/hooks/use-me'
 import { format } from 'date-fns'
-
-// Static lookup names match 001_reference_seed.sql codes.
-// IDs are resolved at runtime once GET /v1/project-types etc. exist (OPEN-016).
-// Until then these placeholder IDs will be rejected by the API — the form
-// should be disabled or gated behind the lookup endpoints.
-const STATIC_LOOKUPS = {
-  projectTypes: [
-    { id: 'type-conference', name: 'Conference' },
-    { id: 'type-exhibition', name: 'Exhibition' },
-    { id: 'type-corporate', name: 'Corporate Event' },
-    { id: 'type-government', name: 'Government Event' },
-    { id: 'type-product-launch', name: 'Product Launch' },
-    { id: 'type-vendor-file', name: 'Vendor File' },
-    { id: 'type-hr-file', name: 'HR File' },
-    { id: 'type-legal-file', name: 'Legal File' },
-  ],
-  projectStatuses: [
-    { id: 'status-planning', name: 'Planning' },
-    { id: 'status-active', name: 'Active' },
-    { id: 'status-on-hold', name: 'On Hold' },
-    { id: 'status-completed', name: 'Completed' },
-    { id: 'status-cancelled', name: 'Cancelled' },
-  ],
-  priorityLevels: [
-    { id: 'priority-low', name: 'Low' },
-    { id: 'priority-normal', name: 'Normal' },
-    { id: 'priority-high', name: 'High' },
-    { id: 'priority-urgent', name: 'Urgent' },
-  ],
-}
 
 export default function ProjectsPage() {
   const router = useRouter()
   const { data: user } = useMe()
   const { data: projects, isLoading, error, refetch } = useProjects()
+  const { data: projectTypes = [] } = useProjectTypes()
+  const { data: projectStatuses = [] } = useProjectStatuses()
+  const { data: priorityLevels = [] } = usePriorityLevels()
 
   const [search, setSearch] = useState('')
   const [statusFilter, setStatusFilter] = useState('')
@@ -234,7 +208,7 @@ export default function ProjectsPage() {
         open={showCreateProject}
         onClose={() => setShowCreateProject(false)}
         onCreated={(id) => router.push(`/projects/${id}`)}
-        lookups={STATIC_LOOKUPS}
+        lookups={{ projectTypes, projectStatuses, priorityLevels }}
       />
 
       <CreateClientDialog

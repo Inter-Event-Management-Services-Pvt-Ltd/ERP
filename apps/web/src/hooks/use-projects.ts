@@ -2,6 +2,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import {
   fetchProjects,
   fetchProject,
+  fetchProjectMembers,
   createProject,
   updateProject,
   addProjectMember,
@@ -48,6 +49,15 @@ export function useUpdateProject(id: string) {
       qc.invalidateQueries({ queryKey: PROJECTS_KEY })
       qc.invalidateQueries({ queryKey: [...PROJECTS_KEY, id] })
     },
+  })
+}
+
+export function useProjectMembers(projectId: string) {
+  return useQuery({
+    queryKey: [...PROJECTS_KEY, projectId, 'members'],
+    queryFn: () => fetchProjectMembers(projectId),
+    enabled: Boolean(projectId),
+    staleTime: 2 * 60 * 1000,
   })
 }
 

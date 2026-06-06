@@ -117,8 +117,8 @@ export function ProjectMembersPanel({
               className="flex items-center justify-between rounded-md px-3 py-2 bg-surface-base border border-surface-border"
             >
               <div className="min-w-0">
-                <p className="text-sm font-sans text-text-primary truncate">{m.full_name}</p>
-                <p className="text-xs font-mono text-text-primary/40">{m.employee_code} · {m.designation}</p>
+                <p className="text-sm font-sans text-text-primary truncate">{m.employee.full_name}</p>
+                <p className="text-xs font-mono text-text-primary/40">{m.employee.employee_code}</p>
               </div>
               <div className="flex items-center gap-2 flex-none ml-2">
                 <span
@@ -138,7 +138,7 @@ export function ProjectMembersPanel({
                     type="button"
                     onClick={() => remove(m.employee_id)}
                     disabled={removing}
-                    aria-label={`Remove ${m.full_name}`}
+                    aria-label={`Remove ${m.employee.full_name}`}
                     className="text-text-primary/30 hover:text-accent-critical transition-colors disabled:opacity-50"
                   >
                     <Trash2 size={13} aria-hidden="true" />

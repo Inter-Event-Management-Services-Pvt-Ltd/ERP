@@ -154,18 +154,28 @@ export interface UpdateProjectPayload {
 export type ProjectMemberRole = 'VIEW' | 'CONTRIBUTE' | 'MANAGE'
 
 export interface ProjectMember {
+  project_id: string
   employee_id: string
-  full_name: string
-  employee_code: string
-  designation: string
+  employee: {
+    id: string
+    employee_code: string
+    full_name: string
+  }
   access_level: ProjectMemberRole
-  joined_at: string
+  assigned_by: string
+  assigned_at: string
   removed_at: string | null
 }
 
 export interface AddProjectMemberPayload {
   employee_id: string
   access_level: ProjectMemberRole
+}
+
+export interface ReferenceLookup {
+  id: string
+  code: string
+  name: string
 }
 
 // ─── Folders ──────────────────────────────────────────────────────────────────

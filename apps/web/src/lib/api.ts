@@ -7,7 +7,9 @@ import type {
   Project,
   CreateProjectPayload,
   UpdateProjectPayload,
+  ProjectMember,
   AddProjectMemberPayload,
+  ReferenceLookup,
   FolderNode,
   EmployeeSummary,
 } from '@/types'
@@ -105,6 +107,10 @@ export async function updateProject(
   })
 }
 
+export async function fetchProjectMembers(projectId: string): Promise<ProjectMember[]> {
+  return apiFetch<ProjectMember[]>(`/v1/projects/${projectId}/members`)
+}
+
 export async function addProjectMember(
   projectId: string,
   payload: AddProjectMemberPayload
@@ -122,6 +128,20 @@ export async function removeProjectMember(
   await apiFetch<unknown>(`/v1/projects/${projectId}/members/${employeeId}`, {
     method: 'DELETE',
   })
+}
+
+// ─── Reference lookups ────────────────────────────────────────────────────────
+
+export async function fetchProjectTypes(): Promise<ReferenceLookup[]> {
+  return apiFetch<ReferenceLookup[]>('/v1/project-types')
+}
+
+export async function fetchProjectStatuses(): Promise<ReferenceLookup[]> {
+  return apiFetch<ReferenceLookup[]>('/v1/project-statuses')
+}
+
+export async function fetchPriorityLevels(): Promise<ReferenceLookup[]> {
+  return apiFetch<ReferenceLookup[]>('/v1/priority-levels')
 }
 
 // ─── Folders ──────────────────────────────────────────────────────────────────
