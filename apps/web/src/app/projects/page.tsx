@@ -31,7 +31,7 @@ export default function ProjectsPage() {
   const [showCreateProject, setShowCreateProject] = useState(false)
   const [showCreateClient, setShowCreateClient] = useState(false)
 
-  const canManage = user?.permissions.includes('project.manage') ?? false
+  const canManage = (user?.isSuperUser || user?.permissions.includes('project.manage')) ?? false
 
   const filtered = useMemo(() => {
     if (!projects) return []

@@ -24,7 +24,7 @@ export default function ProjectDetailPage({ params }: Props) {
   const { data: project, isLoading, error, refetch } = useProject(id)
   const { data: members = [] } = useProjectMembers(id)
 
-  const canManage = user?.permissions.includes('project.manage') ?? false
+  const canManage = (user?.isSuperUser || user?.permissions.includes('project.manage')) ?? false
 
   return (
     <AppShell>

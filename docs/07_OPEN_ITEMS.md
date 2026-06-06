@@ -162,7 +162,49 @@ Recommended next action:
   Codex adds the search endpoint. Claude wires a typeahead/combobox into the Add Member
   form using that endpoint, replacing the current disabled state.
 Owner: Codex
-Status: Open
+Resolution:
+  Added authenticated GET /v1/employees with status, search, limit and offset filters.
+  Users with employee.view can filter any employment status. Users with project.manage can
+  list assignable ACTIVE or ON_LEAVE employees for project-member assignment.
+  Response includes id, employee_code, full_name, official_email, designation and employment_status.
+Verification:
+  uv run --group dev pytest tests/test_employees_api.py tests/test_employees_service.py -q
+Status: Resolved in CODEX-PHASE2-001 integration fixes
+```
+
+### OPEN-022 — Director cannot open Create Project UI because frontend ignores Super User flag
+
+```text
+Date: 2026-06-06
+Category: Frontend Authorization / API Contract
+Severity: Medium
+Affected modules:
+  apps/web/src/app/projects/page.tsx
+  apps/web/src/app/projects/[id]/page.tsx
+Question or issue:
+  The backend allows Super User accounts, including the Director bootstrap account, to pass
+  project.manage checks. FastAPI RBACService.has_permission returns true when
+  current_user.account.is_super_user is true.
+  The frontend currently derives canManage with:
+    user?.permissions.includes('project.manage')
+  This excludes Director because the Director role permission list includes project.view but not
+  project.manage; Director's elevated access is returned separately as is_super_user / isSuperUser.
+Why it matters:
+  Director cannot access the Create Project UI even though POST /v1/projects is supported by
+  backend authorization for Super User.
+Required frontend fix:
+  Use the effective permission check:
+    user?.isSuperUser || user?.permissions.includes('project.manage')
+  Apply this wherever frontend gates project create/edit/member assignment actions.
+Backend status:
+  No backend change required. Backend supports Director project creation through Super User RBAC.
+Owner: Claude
+Resolution:
+  Changed canManage derivation in projects/page.tsx and projects/[id]/page.tsx to:
+    (user?.isSuperUser || user?.permissions.includes('project.manage')) ?? false
+  Super User flag is returned by GET /v1/me as account.is_super_user and mapped to
+  AuthUser.isSuperUser in use-me.ts. No backend change required.
+Status: Resolved
 ```
 
 ### OPEN-016 — Project type / status / priority lookup endpoints missing
