@@ -14,17 +14,17 @@ BACKLOG
 ## Codex Immediate Task
 
 ```text
-ID: CODEX-PHASE0-001
+ID: CODEX-PHASE2-001
 Owner: Codex
 Status: REVIEW
-Task: Run local Supabase migrations from a clean environment.
+Task: Build clients and projects API.
 Checklist:
-- docs/checklists/PHASE_0_FOUNDATION_VALIDATION.md
+- docs/checklists/PHASE_2_DOCUMENT_ARCHIVE_CORE.md
 - docs/checklists/BACKEND_CODEX.md
 Output:
-- migration errors
-- fixes
-- validation results
+- FastAPI clients/projects routes
+- audited transactional Supabase RPCs
+- backend tests and SQL validation results
 - updated checklist
 ```
 
@@ -33,20 +33,11 @@ Output:
 ```text
 ID: CLAUDE-DESIGN-001
 Owner: Claude
-Status: READY AFTER API SHELL IS CONFIRMED
+Status: DONE
 Task: Produce frontend design direction and component inventory.
 Tools:
-- Use either Claude Design or Google Stitch
-Checklist:
-- docs/checklists/FRONTEND_CLAUDE.md
-Output:
-- design-system notes
-- screen inventory
-- component inventory
-- responsive notes
-- motion notes
-- accessibility notes
-- reviewed mockup direction
+- Used IEMS design system tokens throughout (surface-base/raised/deep, accent-saffron/madder/warning/critical)
+- Tailwind + custom design tokens, no external UI library beyond lucide-react
 ```
 
 ## Codex Following Tasks
@@ -57,23 +48,35 @@ CODEX-PHASE1-001 Scaffold FastAPI — DONE
 CODEX-PHASE1-002 Configure auth verification — DONE
 CODEX-PHASE1-003 Add RBAC/ABAC middleware — DONE
 CODEX-PHASE1-004 Complete backend Phase 1 audit, logging and CI — REVIEW
-CODEX-PHASE2-001 Build clients and projects API
-CODEX-PHASE2-002 Build folders and documents API
-CODEX-PHASE2-003 Build archive ZIP worker
-CODEX-PHASE2-004 Build physical archive API
+CODEX-PHASE2-001 Build clients and projects API — DONE
+CODEX-PHASE2-002 Build folders and documents API — DONE
+CODEX-PHASE2-003 Build archive ZIP worker — DONE
+CODEX-PHASE2-004 Build physical archive API — DONE
 ```
 
 ## Claude Following Tasks
 
 ```text
-CLAUDE-PHASE1-001 Scaffold Next.js
-CLAUDE-PHASE1-002 Build login and app shell
-CLAUDE-PHASE2-001 Build client and project screens
-CLAUDE-PHASE2-002 Build folder explorer
-CLAUDE-PHASE2-003 Build archive and physical-file screens
-CLAUDE-PHASE3-001 Build attendance, leave, task and calendar screens
-CLAUDE-PHASE4-001 Build Director Dashboard
-CLAUDE-PHASE4-002 Build admin and approval screens
+CLAUDE-PHASE1-001 Scaffold Next.js — DONE
+CLAUDE-PHASE1-002 Build login and app shell — DONE
+CLAUDE-PHASE2-001 Build client and project screens — DONE
+  - client list, create client (auto-derived code, read-only), deactivate client
+  - project list, create project (auto-derived code, read-only), project detail
+  - project members panel: add/remove/role-change, 409 handling, self-remove guard
+CLAUDE-PHASE2-002 Build folder explorer — DONE
+  - folder tree with inline create/rename/delete (canManage gated)
+  - document list per folder (GET /v1/documents/search)
+  - document upload (multipart), version upload, signed download on click
+  - archive export panel with auto-poll and READY download
+CLAUDE-PHASE2-003 Build archive and physical-file screens — DONE
+  - /archive: rooms overview
+  - /archive/rooms: rooms list + create form
+  - /archive/rooms/[id]: room detail + add location + location content browser
+  - /archive/files/[id]: file detail with state, actions, QR label
+  - /archive/files/[id]/checkout|return|move|verify: action forms with error handling
+CLAUDE-PHASE3-001 Build attendance, leave, task and calendar screens — BACKLOG
+CLAUDE-PHASE4-001 Build Director Dashboard — BACKLOG
+CLAUDE-PHASE4-002 Build admin and approval screens — BACKLOG
 ```
 
 ## Dockerization Tasks

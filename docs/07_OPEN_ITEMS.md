@@ -353,6 +353,26 @@ Owner: Human / Codex
 Status: Open
 ```
 
+### OPEN-029 — Archive export: no cancel endpoint
+
+```text
+Date: 2026-06-06
+Category: Backend / Archive Export
+Severity: Low
+Affected module: apps/web/src/components/projects/archive-export-panel.tsx
+Question or issue:
+  The frontend shows a spinner on QUEUED/PROCESSING exports. Users expect to be able
+  to cancel an in-progress export job but the API contract exposes no
+  DELETE /v1/exports/{export_id} or equivalent cancel endpoint.
+  The Cancel button has not been added to the UI to avoid a non-functional affordance.
+Required:
+  Codex to add DELETE /v1/exports/{export_id} (or POST /v1/exports/{export_id}/cancel)
+  that revokes the queued/processing Celery task and sets status to CANCELLED.
+  Once available, Claude will add the cancel button to ExportRow for QUEUED/PROCESSING rows.
+Owner: Codex
+Status: Open — backend endpoint needed
+```
+
 ### OPEN-028 — QR code rendering: library not installed
 
 ```text
@@ -369,7 +389,7 @@ Required:
   Approval to install qrcode.react (client-side QR generation; no external network calls).
   After approval: add the package and render <QRCodeSVG value={label.qr_token} /> on the label page.
 Owner: Human
-Status: Open — pending library approval
+Status: Resolved (2026-06-06) — qrcode.react installed; QRCodeSVG renders on file detail page
 ```
 
 ### OPEN-027 — Physical archive: no endpoint to list locations by room
@@ -412,7 +432,13 @@ Required from Codex:
   GET /v1/confidentiality-levels  (returns [{id, code, name}])
   GET /v1/document-types          (returns [{id, code, name}])
 Owner: Codex
-Status: Open
+Resolution:
+  Added authenticated GET /v1/confidentiality-levels and GET /v1/document-types.
+  Both return ReferenceSummary arrays: {id, code, name}. The upload form should
+  use these values instead of raw UUID entry.
+Verification:
+  uv run --directory apps/api --group dev pytest tests/test_documents_archive_service.py tests/test_documents_archive_api.py -q
+Status: Resolved
 ```
 
 ### OPEN-025 — GET /v1/documents/search query parameters undocumented
@@ -434,7 +460,13 @@ Required from Codex:
   Confirm accepted query parameter names for GET /v1/documents/search and update
   api-contract.md with the parameter table.
 Owner: Codex
-Status: Open
+Resolution:
+  Updated docs/api-contract.md with project_id, folder_id, search, q, limit and
+  offset. Fixed route ordering so /v1/documents/search is handled before
+  /v1/documents/{document_id}. Backend accepts q as an alias for search.
+Verification:
+  uv run --directory apps/api --group dev pytest tests/test_documents_archive_api.py::test_search_documents_accepts_q_alias -q
+Status: Resolved
 ```
 
 ### OPEN-024 — Claude wiring required for new Phase 2 backend endpoints

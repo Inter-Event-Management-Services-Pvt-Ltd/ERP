@@ -2,7 +2,30 @@
   "permissions": {
     "allow": [
       "Bash(bash *)",
-      "WebFetch(domain:claude.ai)"
+      "WebFetch(domain:claude.ai)",
+      "Bash(git checkout *)",
+      "Bash(npm install *)",
+      "Bash(node -e \"require\\('./node_modules/next/package.json'\\)\")",
+      "Bash(node -e \"require\\('./node_modules/tailwindcss/package.json'\\)\")",
+      "Bash(node -e \"require\\('./node_modules/@supabase/ssr/package.json'\\)\")",
+      "Bash(node -e \"require\\('./node_modules/vitest/package.json'\\)\")",
+      "Bash(npm run *)",
+      "Bash(node -e \"const m = require\\('@supabase/ssr'\\); console.log\\(Object.keys\\(m\\).filter\\(k => k.includes\\('Cookie'\\)\\)\\)\")",
+      "Bash(git add *)",
+      "Bash(git commit *)",
+      "Bash(git push *)",
+      "Bash(gh pr create --title 'feat\\(web\\): Phase 1 frontend shell' --body ' *)",
+      "Bash(gh pr *)",
+      "Bash(gh run *)",
+      "Bash(npx supabase *)",
+      "Bash(curl -s http://127.0.0.1:8000/v1/health)",
+      "Bash(curl -s http://127.0.0.1:3001/v1/health)",
+      "Bash(curl -s http://127.0.0.1:8080/v1/health)",
+      "Bash(psql \"postgresql://postgres:postgres@127.0.0.1:54322/postgres\" -c \"SELECT count\\(*\\) FROM public.projects;\")",
+      "Bash(curl *)",
+      "Bash(netstat -ano)",
+      "Bash(findstr \":3000 \")",
+      "Bash(npx tsc *)"
     ]
   },
   "disabledMcpjsonServers": [

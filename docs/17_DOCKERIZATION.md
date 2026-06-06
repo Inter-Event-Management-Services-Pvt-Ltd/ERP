@@ -23,10 +23,21 @@ supabase start
 
 ## Development
 
+Default local development keeps FastAPI and Next.js on the host through `npm run dev`.
+Use Docker for the archive-export dependencies:
+
+```bash
+supabase start
+npm run dev:archive
+npm run dev
+```
+
+Full-stack Docker development remains available behind an explicit profile:
+
 ```bash
 cp .env.example .env.development
 supabase start
-docker compose -f compose.dev.yaml up --build
+docker compose -f compose.dev.yaml --profile fullstack up --build
 ```
 
 ## Production
