@@ -1,5 +1,6 @@
 'use client'
 
+import { useState } from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import {
@@ -18,6 +19,7 @@ import { cn } from '@/lib/utils'
 import { useMe } from '@/hooks/use-me'
 import { canAccess } from '@/hooks/use-role'
 import { createClient } from '@/lib/supabase/client'
+import { ConfirmDialog } from '@/components/status/confirm-dialog'
 import type { UserRole } from '@/types'
 
 interface NavItem {
@@ -76,6 +78,7 @@ export function Sidebar() {
   const pathname = usePathname()
   const { data: user } = useMe()
   const roles = user?.roles ?? []
+  const [confirmSignOut, setConfirmSignOut] = useState(false)
 
   const isActive = (href: string) =>
     href === '/dashboard' ? pathname === href : pathname.startsWith(href)
@@ -151,7 +154,7 @@ export function Sidebar() {
           </div>
         )}
         <button
-          onClick={handleSignOut}
+          onClick={() => setConfirmSignOut(true)}
           aria-label="Sign out"
           className="flex items-center gap-3 w-full px-1 py-2 rounded-md overflow-hidden text-text-primary/40 hover:text-text-primary/70 hover:bg-surface-raised transition-colors"
         >
@@ -161,6 +164,15 @@ export function Sidebar() {
           </span>
         </button>
       </div>
+
+      <ConfirmDialog
+        open={confirmSignOut}
+        title="Sign out?"
+        description="You'll be returned to the login screen."
+        confirmLabel="Sign out"
+        onConfirm={handleSignOut}
+        onCancel={() => setConfirmSignOut(false)}
+      />
     </nav>
   )
 }

@@ -2,7 +2,7 @@
 
 import { use, useState } from 'react'
 import Link from 'next/link'
-import { ChevronRight, FolderPlus } from 'lucide-react'
+import { ChevronRight } from 'lucide-react'
 import { AppShell } from '@/components/layout/app-shell'
 import { PageHeader } from '@/components/layout/page-header'
 import { EmptyState } from '@/components/states/empty-state'
@@ -37,8 +37,10 @@ export default function ProjectDocumentsPage({ params }: Props) {
 
   const canManage =
     (user?.isSuperUser || user?.permissions.includes('project.manage')) ?? false
-  const canUpload = user?.permissions.includes('document.upload') ?? false
-  const canExport = user?.permissions.includes('archive.export') ?? false
+  const canUpload =
+    (user?.isSuperUser || user?.permissions.includes('document.upload')) ?? false
+  const canExport =
+    (user?.isSuperUser || user?.permissions.includes('archive.export')) ?? false
 
   const selectedFolderName = findFolderName(
     selectedFolderId,
@@ -77,22 +79,10 @@ export default function ProjectDocumentsPage({ params }: Props) {
           className="w-60 flex-none border-r border-surface-border bg-surface-deep overflow-y-auto flex flex-col"
           aria-label="Folder navigation"
         >
-          <div className="px-3 pt-3 pb-2 flex items-center justify-between flex-none">
+          <div className="px-3 pt-3 pb-2 flex-none">
             <p className="text-xs font-sans font-semibold text-text-primary/40 uppercase tracking-wider">
               Folders
             </p>
-            {canManage && tree && (
-              <button
-                type="button"
-                onClick={() => {/* root-level create is via the tree node's + button */}}
-                title="Use the + button on any folder to add a subfolder"
-                className="text-text-primary/20 cursor-default p-0.5"
-                aria-hidden="true"
-                tabIndex={-1}
-              >
-                <FolderPlus size={12} aria-hidden="true" />
-              </button>
-            )}
           </div>
 
           {treeLoading && (

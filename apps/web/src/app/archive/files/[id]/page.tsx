@@ -3,6 +3,7 @@
 import { use } from 'react'
 import Link from 'next/link'
 import { ChevronRight, LogIn, LogOut, ArrowRightLeft, ShieldCheck, Tag } from 'lucide-react'
+import { QRCodeSVG } from 'qrcode.react'
 import { AppShell } from '@/components/layout/app-shell'
 import { PageHeader } from '@/components/layout/page-header'
 import { ContentArea } from '@/components/layout/content-area'
@@ -146,32 +147,38 @@ export default function PhysicalFileDetailPage({ params }: Props) {
 
             {/* QR Label */}
             {label && (
-              <div className="rounded-lg border border-surface-border bg-surface-raised px-4 py-4 space-y-2">
+              <div className="rounded-lg border border-surface-border bg-surface-raised px-4 py-4 space-y-3">
                 <div className="flex items-center gap-2">
                   <Tag size={14} className="text-accent-saffron" aria-hidden="true" />
                   <p className="text-xs font-sans font-semibold text-text-primary/40 uppercase tracking-wider">
                     QR Label
                   </p>
                 </div>
-                <div className="rounded-md bg-surface-base border border-surface-border/50 px-4 py-3 space-y-1.5">
-                  <p className="text-sm font-mono text-text-primary">{label.file_code}</p>
+                <div className="inline-flex flex-col items-center gap-2 rounded-lg bg-white px-5 py-4">
+                  <QRCodeSVG
+                    value={label.qr_token}
+                    size={128}
+                    bgColor="#ffffff"
+                    fgColor="#000000"
+                    level="M"
+                  />
+                  <p className="text-sm font-mono text-black font-semibold">{label.file_code}</p>
                   {label.location_label && (
-                    <p className="text-xs font-mono text-text-primary/50">{label.location_label}</p>
+                    <p className="text-xs font-mono text-gray-500">{label.location_label}</p>
                   )}
                   {label.project_name && (
-                    <p className="text-xs font-sans text-text-primary/50">{label.project_name}</p>
+                    <p className="text-xs font-sans text-gray-500 text-center">{label.project_name}</p>
                   )}
-                  <div className="pt-1 border-t border-surface-border/50">
-                    <p className="text-xs font-sans text-text-primary/30 mb-1">QR token (OPEN-028: QR rendering pending library approval)</p>
-                    <p className="text-xs font-mono text-text-primary/60 break-all">{label.qr_token}</p>
-                    <button
-                      type="button"
-                      onClick={() => navigator.clipboard.writeText(label.qr_token)}
-                      className="mt-1 text-xs text-accent-saffron/60 hover:text-accent-saffron transition-colors font-sans"
-                    >
-                      Copy token
-                    </button>
-                  </div>
+                </div>
+                <div className="flex items-center gap-3">
+                  <p className="text-xs font-mono text-text-primary/25 break-all flex-1">{label.qr_token}</p>
+                  <button
+                    type="button"
+                    onClick={() => navigator.clipboard.writeText(label.qr_token)}
+                    className="flex-none text-xs text-accent-saffron/60 hover:text-accent-saffron transition-colors font-sans"
+                  >
+                    Copy
+                  </button>
                 </div>
               </div>
             )}

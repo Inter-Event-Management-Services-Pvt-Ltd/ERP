@@ -165,58 +165,65 @@ function FolderNodeItem({
             />
           </div>
         ) : (
-          <button
-            type="button"
-            onClick={() => {
-              if (hasChildren) setExpanded((e) => !e)
-              onSelect(node.id)
-            }}
-            aria-expanded={hasChildren ? expanded : undefined}
+          <div
             className={cn(
-              'flex w-full items-center gap-1.5 rounded-md px-2 py-1.5 text-left text-sm font-sans transition-colors duration-100',
+              'flex items-center rounded-md transition-colors duration-100',
               isSelected
-                ? 'bg-accent-madder/30 text-text-primary'
-                : 'text-text-primary/60 hover:bg-surface-raised hover:text-text-primary'
+                ? 'bg-accent-madder/30'
+                : 'hover:bg-surface-raised'
             )}
             style={{ paddingLeft: `${0.5 + depth * 1}rem` }}
           >
-            {hasChildren ? (
-              <ChevronRight
-                size={12}
-                aria-hidden="true"
-                className={cn(
-                  'flex-none transition-transform duration-180',
-                  expanded && 'rotate-90'
-                )}
-              />
-            ) : (
-              <span className="w-3 flex-none" aria-hidden="true" />
-            )}
-            {expanded && node.children.length > 0 ? (
-              <FolderOpen size={14} aria-hidden="true" className="flex-none text-accent-saffron" />
-            ) : (
-              <Folder size={14} aria-hidden="true" className="flex-none text-accent-saffron/70" />
-            )}
-            <span className="truncate flex-1">{node.name}</span>
+            <button
+              type="button"
+              onClick={() => {
+                if (hasChildren) setExpanded((e) => !e)
+                onSelect(node.id)
+              }}
+              aria-expanded={hasChildren ? expanded : undefined}
+              className={cn(
+                'flex flex-1 min-w-0 items-center gap-1.5 py-1.5 pr-1 text-left text-sm font-sans',
+                isSelected ? 'text-text-primary' : 'text-text-primary/60 group-hover:text-text-primary'
+              )}
+            >
+              {hasChildren ? (
+                <ChevronRight
+                  size={12}
+                  aria-hidden="true"
+                  className={cn(
+                    'flex-none transition-transform duration-180',
+                    expanded && 'rotate-90'
+                  )}
+                />
+              ) : (
+                <span className="w-3 flex-none" aria-hidden="true" />
+              )}
+              {expanded && node.children.length > 0 ? (
+                <FolderOpen size={14} aria-hidden="true" className="flex-none text-accent-saffron" />
+              ) : (
+                <Folder size={14} aria-hidden="true" className="flex-none text-accent-saffron/70" />
+              )}
+              <span className="truncate flex-1">{node.name}</span>
+            </button>
 
             {canManage && (
-              <span className="flex-none flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity ml-1">
+              <span className="flex-none flex items-center gap-0.5 pr-1 opacity-0 group-hover:opacity-100 transition-opacity">
                 <ActionBtn
                   icon={<Plus size={11} />}
                   label={`Add subfolder in ${node.name}`}
-                  onClick={(e) => { e.stopPropagation(); startCreate() }}
+                  onClick={startCreate}
                 />
                 {!isRoot && (
                   <>
                     <ActionBtn
                       icon={<Pencil size={11} />}
                       label={`Rename ${node.name}`}
-                      onClick={(e) => { e.stopPropagation(); startRename() }}
+                      onClick={startRename}
                     />
                     <ActionBtn
                       icon={deleting ? <Loader2 size={11} className="animate-spin" /> : <Trash2 size={11} />}
                       label={`Delete ${node.name}`}
-                      onClick={(e) => { e.stopPropagation(); setPendingDelete(true) }}
+                      onClick={() => setPendingDelete(true)}
                       danger
                       disabled={deleting}
                     />
@@ -224,7 +231,7 @@ function FolderNodeItem({
                 )}
               </span>
             )}
-          </button>
+          </div>
         )}
 
         {actionError && (
@@ -292,7 +299,7 @@ function ActionBtn({
 }: {
   icon: React.ReactNode
   label: string
-  onClick: (e: React.MouseEvent) => void
+  onClick: () => void
   danger?: boolean
   disabled?: boolean
 }) {

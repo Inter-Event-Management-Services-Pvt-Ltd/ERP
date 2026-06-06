@@ -1,9 +1,9 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { Archive, ChevronRight, Plus, Loader2 } from 'lucide-react'
-import { useForm } from 'react-hook-form'
+import { useForm, useWatch } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import { AppShell } from '@/components/layout/app-shell'
@@ -16,9 +16,21 @@ import { useRooms, useCreateRoom } from '@/hooks/use-physical-archive'
 import { useMe } from '@/hooks/use-me'
 import { apiErrorMessage } from '@/lib/errors'
 
+function deriveRoomCode(name: string): string {
+  const words = name
+    .trim()
+    .toUpperCase()
+    .replace(/[^A-Z0-9\s]/g, '')
+    .split(/\s+/)
+    .filter(Boolean)
+  if (words.length === 0) return ''
+  if (words.length === 1) return words[0].slice(0, 12)
+  return words.map((w) => w[0]).join('').slice(0, 12)
+}
+
 const schema = z.object({
   name: z.string().min(1, 'Name is required'),
-  code: z.string().min(1, 'Code is required').max(20),
+  code: z.string().min(1),
   description: z.string().optional(),
 })
 type FormValues = z.infer<typeof schema>
@@ -36,8 +48,15 @@ export default function RoomsPage() {
     register,
     handleSubmit,
     reset,
+    setValue,
+    control,
     formState: { errors },
   } = useForm<FormValues>({ resolver: zodResolver(schema) })
+
+  const roomName = useWatch({ control, name: 'name', defaultValue: '' })
+  useEffect(() => {
+    setValue('code', deriveRoomCode(roomName), { shouldValidate: false })
+  }, [roomName, setValue])
 
   function onSubmit(values: FormValues) {
     setCreateError(null)
@@ -75,29 +94,22 @@ export default function RoomsPage() {
             <p className="text-xs font-sans font-semibold text-text-primary/50 uppercase tracking-wider">
               New Room
             </p>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              <div>
-                <label htmlFor="room-name" className="text-xs font-sans text-text-primary/70 font-medium block mb-1">
-                  Name <span className="text-accent-critical">*</span>
-                </label>
-                <input
-                  id="room-name"
-                  {...register('name')}
-                  className="w-full rounded-md border border-surface-border bg-surface-base px-3 py-2 text-sm font-sans text-text-primary focus:outline-none focus:ring-2 focus:ring-accent-saffron"
-                />
-                {errors.name && <p className="text-xs text-accent-critical mt-0.5">{errors.name.message}</p>}
-              </div>
-              <div>
-                <label htmlFor="room-code" className="text-xs font-sans text-text-primary/70 font-medium block mb-1">
-                  Code <span className="text-accent-critical">*</span>
-                </label>
-                <input
-                  id="room-code"
-                  {...register('code')}
-                  className="w-full rounded-md border border-surface-border bg-surface-base px-3 py-2 text-sm font-mono text-text-primary focus:outline-none focus:ring-2 focus:ring-accent-saffron"
-                />
-                {errors.code && <p className="text-xs text-accent-critical mt-0.5">{errors.code.message}</p>}
-              </div>
+            <div>
+              <label htmlFor="room-name" className="text-xs font-sans text-text-primary/70 font-medium block mb-1">
+                Name <span className="text-accent-critical">*</span>
+              </label>
+              <input
+                id="room-name"
+                {...register('name')}
+                className="w-full rounded-md border border-surface-border bg-surface-base px-3 py-2 text-sm font-sans text-text-primary focus:outline-none focus:ring-2 focus:ring-accent-saffron"
+              />
+              {errors.name && <p className="text-xs text-accent-critical mt-0.5">{errors.name.message}</p>}
+              {deriveRoomCode(roomName) && (
+                <p className="text-xs font-mono text-text-primary/40 mt-1">
+                  Code: <span className="text-accent-saffron/60">{deriveRoomCode(roomName)}</span>
+                </p>
+              )}
+              <input type="hidden" {...register('code')} />
             </div>
             <div>
               <label htmlFor="room-desc" className="text-xs font-sans text-text-primary/70 font-medium block mb-1">
