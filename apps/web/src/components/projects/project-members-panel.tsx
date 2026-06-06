@@ -2,8 +2,13 @@
 
 import { useId, useRef, useState, useEffect, KeyboardEvent } from 'react'
 import { UserPlus, Trash2, X, Loader2 } from 'lucide-react'
-import { useRemoveProjectMember, useAddProjectMember } from '@/hooks/use-projects'
+import {
+  useRemoveProjectMember,
+  useAddProjectMember,
+  useUpdateProjectMemberRole,
+} from '@/hooks/use-projects'
 import { useEmployeeSearch } from '@/hooks/use-employees'
+import { useMe } from '@/hooks/use-me'
 import { cn } from '@/lib/utils'
 import type { ProjectMember, ProjectMemberRole, EmployeeSummary } from '@/types'
 
@@ -19,6 +24,39 @@ export function ProjectMembersPanel({
   canManage,
 }: ProjectMembersPanelProps) {
   const { mutate: remove, isPending: removing } = useRemoveProjectMember(projectId)
+  const { mutate: changeRole } = useUpdateProjectMemberRole(projectId)
+  const { data: currentUser } = useMe()
+  const [actionError, setActionError] = useState<string | null>(null)
+  const [changingRoleFor, setChangingRoleFor] = useState<string | null>(null)
+
+  function handleRemove(employeeId: string) {
+    setActionError(null)
+    remove(employeeId, {
+      onError: (err) => {
+        const code = (err as { code?: string }).code
+        if (code === 'INVALID_PROJECT_MEMBER_STATE') {
+          setActionError('Project must retain at least one manager.')
+        }
+      },
+    })
+  }
+
+  function handleRoleChange(employeeId: string, newRole: ProjectMemberRole) {
+    setChangingRoleFor(employeeId)
+    setActionError(null)
+    changeRole(
+      { employeeId, accessLevel: newRole },
+      {
+        onSettled: () => setChangingRoleFor(null),
+        onError: (err) => {
+          const code = (err as { code?: string }).code
+          if (code === 'INVALID_PROJECT_MEMBER_STATE') {
+            setActionError('Project must retain at least one manager.')
+          }
+        },
+      }
+    )
+  }
 
   return (
     <section aria-label="Project members">
@@ -31,7 +69,7 @@ export function ProjectMembersPanel({
       {members.length === 0 ? (
         <p className="text-sm text-text-primary/40 font-sans py-2">No members assigned yet.</p>
       ) : (
-        <ul className="space-y-1 mb-3">
+        <ul className="space-y-1 mb-1">
           {members.map((m) => (
             <li
               key={m.employee_id}
@@ -42,22 +80,47 @@ export function ProjectMembersPanel({
                 <p className="text-xs font-mono text-text-primary/40">{m.employee.employee_code}</p>
               </div>
               <div className="flex items-center gap-2 flex-none ml-2">
-                <span
-                  className={cn(
-                    'text-xs font-mono px-1.5 py-0.5 rounded',
-                    m.access_level === 'MANAGE'
-                      ? 'bg-accent-madder/20 text-accent-warning'
-                      : m.access_level === 'CONTRIBUTE'
-                      ? 'bg-accent-saffron/10 text-accent-saffron'
-                      : 'bg-surface-border text-text-primary/50'
-                  )}
-                >
-                  {m.access_level}
-                </span>
-                {canManage && (
+                {canManage ? (
+                  <select
+                    value={m.access_level}
+                    onChange={(e) =>
+                      handleRoleChange(m.employee_id, e.target.value as ProjectMemberRole)
+                    }
+                    disabled={changingRoleFor === m.employee_id}
+                    aria-label={`Access level for ${m.employee.full_name}`}
+                    className={cn(
+                      'text-xs font-mono px-1.5 py-0.5 rounded border cursor-pointer',
+                      'focus:outline-none focus:ring-1 focus:ring-accent-saffron focus:border-accent-saffron/40',
+                      'transition-opacity disabled:opacity-40',
+                      m.access_level === 'MANAGE'
+                        ? 'bg-accent-madder/20 text-accent-warning border-accent-madder/30'
+                        : m.access_level === 'CONTRIBUTE'
+                        ? 'bg-accent-saffron/10 text-accent-saffron border-accent-saffron/20'
+                        : 'bg-surface-border/60 text-text-primary/50 border-surface-border'
+                    )}
+                  >
+                    <option value="VIEW">VIEW</option>
+                    <option value="CONTRIBUTE">CONTRIBUTE</option>
+                    <option value="MANAGE">MANAGE</option>
+                  </select>
+                ) : (
+                  <span
+                    className={cn(
+                      'text-xs font-mono px-1.5 py-0.5 rounded',
+                      m.access_level === 'MANAGE'
+                        ? 'bg-accent-madder/20 text-accent-warning'
+                        : m.access_level === 'CONTRIBUTE'
+                        ? 'bg-accent-saffron/10 text-accent-saffron'
+                        : 'bg-surface-border text-text-primary/50'
+                    )}
+                  >
+                    {m.access_level}
+                  </span>
+                )}
+                {canManage && m.employee_id !== currentUser?.employeeId && (
                   <button
                     type="button"
-                    onClick={() => remove(m.employee_id)}
+                    onClick={() => handleRemove(m.employee_id)}
                     disabled={removing}
                     aria-label={`Remove ${m.employee.full_name}`}
                     className="text-text-primary/30 hover:text-accent-critical transition-colors disabled:opacity-50"
@@ -71,8 +134,19 @@ export function ProjectMembersPanel({
         </ul>
       )}
 
+      {actionError && (
+        <p role="alert" className="text-xs font-sans text-accent-critical mb-2 px-1">
+          {actionError}
+        </p>
+      )}
+
       {canManage && (
-        <AddMemberForm projectId={projectId} existingMemberIds={members.map((m) => m.employee_id)} />
+        <div className="mt-2">
+          <AddMemberForm
+            projectId={projectId}
+            existingMemberIds={members.map((m) => m.employee_id)}
+          />
+        </div>
       )}
     </section>
   )
@@ -212,7 +286,9 @@ function AddMemberForm({
           <div className="flex items-center justify-between rounded-md border border-accent-saffron/30 bg-surface-raised px-3 py-2">
             <div className="min-w-0">
               <p className="text-sm font-sans text-text-primary truncate">{selected.full_name}</p>
-              <p className="text-xs font-mono text-text-primary/40">{selected.employee_code} · {selected.designation}</p>
+              <p className="text-xs font-mono text-text-primary/40">
+                {selected.employee_code} · {selected.designation}
+              </p>
             </div>
             <button
               type="button"
@@ -328,7 +404,7 @@ function AddMemberForm({
           )}
         >
           <option value="VIEW">VIEW — read-only</option>
-          <option value="CONTRIBUTE">CONTRIBUTE — upload & edit</option>
+          <option value="CONTRIBUTE">CONTRIBUTE — upload &amp; edit</option>
           <option value="MANAGE">MANAGE — full control</option>
         </select>
       </div>

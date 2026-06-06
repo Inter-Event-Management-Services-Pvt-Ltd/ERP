@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useRef } from 'react'
 import { useForm, useWatch } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
@@ -53,7 +53,6 @@ export function CreateClientDialog({
 }: CreateClientDialogProps) {
   const { mutate, isPending, error } = useCreateClient()
   const firstRef = useRef<HTMLInputElement>(null)
-  const [codeTouched, setCodeTouched] = useState(false)
 
   const {
     register,
@@ -67,15 +66,12 @@ export function CreateClientDialog({
   const legalName = useWatch({ control, name: 'legal_name', defaultValue: '' })
 
   useEffect(() => {
-    if (!codeTouched) {
-      setValue('client_code', deriveClientCode(legalName), { shouldValidate: false })
-    }
-  }, [legalName, codeTouched, setValue])
+    setValue('client_code', deriveClientCode(legalName), { shouldValidate: false })
+  }, [legalName, setValue])
 
   useEffect(() => {
     if (open) {
       reset()
-      setCodeTouched(false)
       setTimeout(() => firstRef.current?.focus(), 50)
     }
   }, [open, reset])
@@ -139,28 +135,19 @@ export function CreateClientDialog({
               />
             </FormField>
 
-            <FormField
-              label="Client Code"
-              htmlFor="client_code"
-              required
-              error={errors.client_code?.message}
-            >
+            <FormField label="Client Code" htmlFor="client_code" error={errors.client_code?.message}>
               <div className="relative">
                 <input
                   {...register('client_code')}
                   id="client_code"
-                  placeholder="Auto-generated"
-                  onChange={(e) => {
-                    register('client_code').onChange(e)
-                    setCodeTouched(true)
-                  }}
-                  className={cn(inputCls, errors.client_code && 'border-accent-critical', !codeTouched && 'text-text-primary/60')}
+                  readOnly
+                  tabIndex={-1}
+                  placeholder="—"
+                  className={cn(inputCls, 'cursor-default text-text-primary/50 select-none')}
                 />
-                {!codeTouched && (
-                  <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[10px] font-mono text-text-primary/30 pointer-events-none select-none">
-                    auto
-                  </span>
-                )}
+                <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[10px] font-mono text-text-primary/30 pointer-events-none select-none">
+                  auto
+                </span>
               </div>
             </FormField>
 

@@ -12,6 +12,7 @@ import { ErrorState } from '@/components/states/error-state'
 import { ProjectStatusBadge } from '@/components/projects/project-status-badge'
 import { CreateProjectDialog } from '@/components/projects/create-project-dialog'
 import { CreateClientDialog } from '@/components/projects/create-client-dialog'
+import { ManageClientsDialog } from '@/components/projects/manage-clients-dialog'
 import { SearchInput } from '@/components/ui/search-input'
 import { useProjects } from '@/hooks/use-projects'
 import { useProjectTypes, useProjectStatuses, usePriorityLevels } from '@/hooks/use-lookups'
@@ -30,6 +31,7 @@ export default function ProjectsPage() {
   const [statusFilter, setStatusFilter] = useState('')
   const [showCreateProject, setShowCreateProject] = useState(false)
   const [showCreateClient, setShowCreateClient] = useState(false)
+  const [showManageClients, setShowManageClients] = useState(false)
 
   const canManage = (user?.isSuperUser || user?.permissions.includes('project.manage')) ?? false
 
@@ -71,11 +73,11 @@ export default function ProjectsPage() {
             <div className="flex gap-2">
               <button
                 type="button"
-                onClick={() => setShowCreateClient(true)}
+                onClick={() => setShowManageClients(true)}
                 className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-sans text-text-primary/60 border border-surface-border rounded-md hover:bg-surface-raised hover:text-text-primary transition-colors focus-visible:ring-2 focus-visible:ring-accent-saffron"
               >
                 <Building2 size={13} aria-hidden="true" />
-                New Client
+                Clients
               </button>
               <button
                 type="button"
@@ -214,6 +216,15 @@ export default function ProjectsPage() {
       <CreateClientDialog
         open={showCreateClient}
         onClose={() => setShowCreateClient(false)}
+      />
+
+      <ManageClientsDialog
+        open={showManageClients}
+        onClose={() => setShowManageClients(false)}
+        onNewClient={() => {
+          setShowManageClients(false)
+          setShowCreateClient(true)
+        }}
       />
     </AppShell>
   )

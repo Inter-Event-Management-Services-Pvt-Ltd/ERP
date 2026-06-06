@@ -7,11 +7,13 @@ import {
   updateProject,
   addProjectMember,
   removeProjectMember,
+  updateProjectMemberRole,
 } from '@/lib/api'
 import type {
   CreateProjectPayload,
   UpdateProjectPayload,
   AddProjectMemberPayload,
+  ProjectMemberRole,
 } from '@/types'
 
 export const PROJECTS_KEY = ['projects'] as const
@@ -76,6 +78,22 @@ export function useRemoveProjectMember(projectId: string) {
   return useMutation({
     mutationFn: (employeeId: string) =>
       removeProjectMember(projectId, employeeId),
+    onSuccess: () =>
+      qc.invalidateQueries({ queryKey: [...PROJECTS_KEY, projectId] }),
+  })
+}
+
+export function useUpdateProjectMemberRole(projectId: string) {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: ({
+      employeeId,
+      accessLevel,
+    }: {
+      employeeId: string
+      accessLevel: ProjectMemberRole
+    }) =>
+      updateProjectMemberRole(projectId, employeeId, { access_level: accessLevel }),
     onSuccess: () =>
       qc.invalidateQueries({ queryKey: [...PROJECTS_KEY, projectId] }),
   })

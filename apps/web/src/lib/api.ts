@@ -9,6 +9,7 @@ import type {
   UpdateProjectPayload,
   ProjectMember,
   AddProjectMemberPayload,
+  UpdateProjectMemberPayload,
   ReferenceLookup,
   FolderNode,
   EmployeeSummary,
@@ -80,6 +81,10 @@ export async function updateClient(
   })
 }
 
+export async function deactivateClient(id: string): Promise<void> {
+  await apiFetch<unknown>(`/v1/clients/${id}`, { method: 'DELETE' })
+}
+
 // ─── Projects ─────────────────────────────────────────────────────────────────
 
 export async function fetchProjects(): Promise<Project[]> {
@@ -130,6 +135,17 @@ export async function removeProjectMember(
   })
 }
 
+export async function updateProjectMemberRole(
+  projectId: string,
+  employeeId: string,
+  payload: UpdateProjectMemberPayload
+): Promise<void> {
+  await apiFetch<unknown>(`/v1/projects/${projectId}/members/${employeeId}`, {
+    method: 'PATCH',
+    body: JSON.stringify(payload),
+  })
+}
+
 // ─── Reference lookups ────────────────────────────────────────────────────────
 
 export async function fetchProjectTypes(): Promise<ReferenceLookup[]> {
@@ -152,6 +168,13 @@ export async function fetchFolderTree(projectId: string): Promise<FolderNode> {
 
 // ─── Employees ────────────────────────────────────────────────────────────────
 
-export async function fetchEmployees(): Promise<EmployeeSummary[]> {
-  return apiFetch<EmployeeSummary[]>('/v1/employees')
+export async function fetchEmployees(params?: {
+  status?: string
+  search?: string
+}): Promise<EmployeeSummary[]> {
+  const qs = new URLSearchParams()
+  if (params?.status) qs.set('status', params.status)
+  if (params?.search) qs.set('search', params.search)
+  const q = qs.toString()
+  return apiFetch<EmployeeSummary[]>(`/v1/employees${q ? `?${q}` : ''}`)
 }

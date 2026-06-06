@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect } from 'react'
 import { useForm, useWatch } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
@@ -72,7 +72,6 @@ export function CreateProjectDialog({
 }: CreateProjectDialogProps) {
   const { mutate, isPending, error } = useCreateProject()
   const { data: clients = [] } = useClients()
-  const [codeTouched, setCodeTouched] = useState(false)
 
   const {
     register,
@@ -87,16 +86,11 @@ export function CreateProjectDialog({
   const eventDate = useWatch({ control, name: 'event_date', defaultValue: '' })
 
   useEffect(() => {
-    if (!codeTouched) {
-      setValue('project_code', deriveProjectCode(projectName, eventDate), { shouldValidate: false })
-    }
-  }, [projectName, eventDate, codeTouched, setValue])
+    setValue('project_code', deriveProjectCode(projectName, eventDate), { shouldValidate: false })
+  }, [projectName, eventDate, setValue])
 
   useEffect(() => {
-    if (open) {
-      reset()
-      setCodeTouched(false)
-    }
+    if (open) reset()
   }, [open, reset])
 
   function onSubmit(values: FormValues) {
@@ -174,23 +168,19 @@ export function CreateProjectDialog({
               />
             </FormField>
 
-            <FormField label="Project Code" htmlFor="project_code" required error={errors.project_code?.message}>
+            <FormField label="Project Code" htmlFor="project_code" error={errors.project_code?.message}>
               <div className="relative">
                 <input
                   {...register('project_code')}
                   id="project_code"
-                  placeholder="Auto-generated"
-                  onChange={(e) => {
-                    register('project_code').onChange(e)
-                    setCodeTouched(true)
-                  }}
-                  className={cn(inputCls, errors.project_code && 'border-accent-critical', !codeTouched && 'text-text-primary/60')}
+                  readOnly
+                  tabIndex={-1}
+                  placeholder="—"
+                  className={cn(inputCls, 'cursor-default text-text-primary/50 select-none')}
                 />
-                {!codeTouched && (
-                  <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[10px] font-mono text-text-primary/30 pointer-events-none select-none">
-                    auto
-                  </span>
-                )}
+                <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[10px] font-mono text-text-primary/30 pointer-events-none select-none">
+                  auto
+                </span>
               </div>
             </FormField>
           </div>

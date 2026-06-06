@@ -4,6 +4,7 @@ import {
   fetchClient,
   createClient,
   updateClient,
+  deactivateClient,
 } from '@/lib/api'
 import type { CreateClientPayload } from '@/types'
 
@@ -42,5 +43,13 @@ export function useUpdateClient(id: string) {
       qc.invalidateQueries({ queryKey: CLIENTS_KEY })
       qc.invalidateQueries({ queryKey: [...CLIENTS_KEY, id] })
     },
+  })
+}
+
+export function useDeactivateClient() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: (id: string) => deactivateClient(id),
+    onSuccess: () => qc.invalidateQueries({ queryKey: CLIENTS_KEY }),
   })
 }

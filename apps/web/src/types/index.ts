@@ -173,6 +173,10 @@ export interface AddProjectMemberPayload {
   access_level: ProjectMemberRole
 }
 
+export interface UpdateProjectMemberPayload {
+  access_level: ProjectMemberRole
+}
+
 export interface ReferenceLookup {
   id: string
   code: string
