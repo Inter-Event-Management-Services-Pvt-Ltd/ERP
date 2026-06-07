@@ -14,15 +14,18 @@ BACKLOG
 ## Codex Immediate Task
 
 ```text
-ID: CODEX-PHASE2-001
+ID: CODEX-PHASE2-BACKEND
 Owner: Codex
-Status: REVIEW
-Task: Build clients and projects API.
+Status: DONE
+Task: Build Phase 2 backend for clients, projects, documents, archive exports and physical archive.
 Checklist:
 - docs/checklists/PHASE_2_DOCUMENT_ARCHIVE_CORE.md
 - docs/checklists/BACKEND_CODEX.md
 Output:
 - FastAPI clients/projects routes
+- FastAPI folder/document routes
+- archive export APIs and Celery ZIP worker
+- physical archive routes
 - audited transactional Supabase RPCs
 - backend tests and SQL validation results
 - updated checklist

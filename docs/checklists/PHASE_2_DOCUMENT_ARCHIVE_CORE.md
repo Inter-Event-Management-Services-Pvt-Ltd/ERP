@@ -14,7 +14,7 @@
 - [x] Expose project type, status and priority reference lookups.
 - [x] Apply folder template.
 - [x] Render folder tree.
-- [ ] Preserve existing folder hierarchy during import.
+- [x] Preserve existing folder hierarchy during archive export, including empty folders.
 
 ## Documents
 
@@ -44,6 +44,7 @@
 
 - [x] Create rooms.
 - [x] Create racks, shelves, cabinets, boxes and file slots.
+- [x] List locations by archive room for hierarchy browsing.
 - [x] Assign file location.
 - [x] Print label.
 - [x] Check out file.
@@ -66,7 +67,8 @@
 
 ## Exit Criteria
 
-- [ ] Complete core workflow passes end-to-end.
+- [x] Backend core workflow passes end-to-end through API tests, local Supabase reset, SQL probes and Celery worker validation.
+- [ ] Full browser workflow passes end-to-end after Claude wires final backend refinements.
 
 
 ## Agent Split
@@ -77,10 +79,10 @@
 
 ### Claude frontend
 
-- [ ] Implement project list.
-- [ ] Implement folder explorer.
-- [ ] Implement upload interface.
+- [x] Implement project list.
+- [x] Implement folder explorer.
+- [x] Implement upload interface.
 - [ ] Implement preview drawer.
-- [ ] Implement ZIP export status UI.
-- [ ] Implement physical-file label and checkout screens.
+- [x] Implement ZIP export status UI.
+- [x] Implement physical-file label and checkout screens.
 - [ ] Validate responsive, accessibility and reduced-motion states.

@@ -18,6 +18,7 @@ from app.services.physical_archive import PhysicalArchiveError, PhysicalArchiveS
 AUTH_USER_ID = UUID("11111111-1111-4111-8111-111111111111")
 EMPLOYEE_ID = UUID("22222222-2222-4222-8222-222222222222")
 PROJECT_ID = UUID("33333333-3333-4333-8333-333333333333")
+ROOM_ID = UUID("44444444-4444-4444-8444-444444444444")
 LOCATION_ID = UUID("55555555-5555-4555-8555-555555555555")
 OTHER_LOCATION_ID = UUID("66666666-6666-4666-8666-666666666666")
 PHYSICAL_FILE_ID = UUID("77777777-7777-4777-8777-777777777777")
@@ -121,6 +122,49 @@ def test_checkout_physical_file_calls_audited_rpc() -> None:
     body = json.loads(seen_requests[2].content)
     assert body["p_physical_file_id"] == str(PHYSICAL_FILE_ID)
     assert body["p_purpose"] == "Audit review"
+
+
+def test_list_locations_fetches_active_locations_for_room() -> None:
+    seen_requests: list[httpx.Request] = []
+
+    def handler(request: httpx.Request) -> Response:
+        seen_requests.append(request)
+        if request.url.path == "/rest/v1/archive_locations":
+            return Response(
+                200,
+                json=[
+                    {
+                        "id": str(LOCATION_ID),
+                        "archive_room_id": str(ROOM_ID),
+                        "parent_location_id": None,
+                        "location_type": "RACK",
+                        "code": "R1",
+                        "label": "Rack 1",
+                        "qr_token": "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa",
+                        "is_active": True,
+                    }
+                ],
+            )
+        return Response(500)
+
+    service = PhysicalArchiveService(
+        supabase_url="http://localhost:54321",
+        service_role_key="legacy-service-role-key",
+        transport=httpx.MockTransport(handler),
+    )
+
+    result = asyncio.run(
+        service.list_locations(
+            room_id=ROOM_ID,
+            current_user=_current_user(permissions=["archive.view"]),
+        )
+    )
+
+    assert result[0].archive_room_id == ROOM_ID
+    assert result[0].code == "R1"
+    assert seen_requests[0].url.params["archive_room_id"] == f"eq.{ROOM_ID}"
+    assert seen_requests[0].url.params["is_active"] == "eq.true"
+    assert seen_requests[0].url.params["order"] == "location_type.asc,code.asc"
 
 
 def test_physical_file_checked_out_state_maps_to_conflict() -> None:

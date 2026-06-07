@@ -1,7 +1,7 @@
 from typing import Annotated
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, HTTPException, Request, status
+from fastapi import APIRouter, Depends, HTTPException, Query, Request, status
 
 from app.api.dependencies import (
     get_physical_archive_service,
@@ -95,6 +95,23 @@ async def create_archive_location(
             payload=payload,
             current_user=current_user,
             context=audit_context_from_request(request),
+        )
+    except PhysicalArchiveError as exc:
+        raise _http_error(exc) from exc
+
+
+@router.get("/archive/locations", response_model=list[ArchiveLocationResponse])
+async def list_archive_locations(
+    current_user: ArchiveReadUser,
+    service: PhysicalArchiveServiceDep,
+    room_id: Annotated[UUID, Query()],
+    include_inactive: bool = False,
+) -> list[ArchiveLocationResponse]:
+    try:
+        return await service.list_locations(
+            current_user=current_user,
+            room_id=room_id,
+            include_inactive=include_inactive,
         )
     except PhysicalArchiveError as exc:
         raise _http_error(exc) from exc
@@ -255,4 +272,3 @@ def _http_error(exc: PhysicalArchiveError) -> HTTPException:
             "message": exc.message,
         },
     )
-

@@ -9,6 +9,7 @@ from app.core.audit import AuditContext
 from app.main import app
 from app.schemas.current_user import CurrentUser, EmployeeProfile, UserAccount
 from app.schemas.physical_archive import (
+    ArchiveLocationResponse,
     ArchiveRoomCreate,
     ArchiveRoomResponse,
     PhysicalFileCheckoutCreate,
@@ -43,6 +44,27 @@ class RecordingPhysicalArchiveService:
             description=payload.description,
             is_active=True,
         )
+
+    async def list_locations(
+        self,
+        *,
+        current_user: CurrentUser,
+        room_id: UUID,
+        include_inactive: bool = False,
+    ) -> list[ArchiveLocationResponse]:
+        self.calls.append(("list_locations", (room_id, include_inactive), current_user, None))
+        return [
+            ArchiveLocationResponse(
+                id=LOCATION_ID,
+                archive_room_id=room_id,
+                parent_location_id=None,
+                location_type="RACK",
+                code="R1",
+                label="Rack 1",
+                qr_token=UUID("77777777-7777-4777-8777-777777777777"),
+                is_active=True,
+            )
+        ]
 
     async def checkout_physical_file(
         self,
@@ -159,6 +181,43 @@ def test_create_archive_room_returns_created_room() -> None:
     assert service.calls[0][0] == "create_room"
 
 
+def test_list_archive_locations_requires_archive_read() -> None:
+    service = _install_overrides(current_user=_current_user(permissions=[]))
+    try:
+        response = asyncio.run(
+            _request(
+                "GET",
+                f"/v1/archive/locations?room_id={ROOM_ID}",
+                headers={"Authorization": "Bearer test-token"},
+            )
+        )
+    finally:
+        app.dependency_overrides.clear()
+
+    assert response.status_code == 403
+    assert service.calls == []
+
+
+def test_list_archive_locations_returns_room_locations() -> None:
+    service = _install_overrides(current_user=_current_user(permissions=["archive.view"]))
+    try:
+        response = asyncio.run(
+            _request(
+                "GET",
+                f"/v1/archive/locations?room_id={ROOM_ID}",
+                headers={"Authorization": "Bearer test-token"},
+            )
+        )
+    finally:
+        app.dependency_overrides.clear()
+
+    assert response.status_code == 200
+    assert response.json()[0]["archive_room_id"] == str(ROOM_ID)
+    assert response.json()[0]["code"] == "R1"
+    assert service.calls[0][0] == "list_locations"
+    assert service.calls[0][1] == (ROOM_ID, False)
+
+
 def test_checkout_physical_file_requires_checkout_permission() -> None:
     service = _install_overrides(current_user=_current_user(permissions=["archive.view"]))
     try:
@@ -196,4 +255,3 @@ def test_checkout_physical_file_returns_checked_out_file() -> None:
     assert response.status_code == 200
     assert response.json()["status"] == "CHECKED_OUT"
     assert service.calls[0][0] == "checkout"
-

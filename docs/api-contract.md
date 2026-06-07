@@ -529,6 +529,7 @@ states return `INVALID_STATE`.
 ```text
 GET    /v1/archive/rooms
 POST   /v1/archive/rooms
+GET    /v1/archive/locations?room_id={room_id}
 POST   /v1/archive/locations
 GET    /v1/archive/locations/{location_id}/contents
 
@@ -543,7 +544,11 @@ GET    /v1/physical-files/{physical_file_id}/label
 
 Physical archive writes require `archive.manage`, except checkout which requires
 `physical_file.checkout`. Creating a physical file also requires project
-`MANAGE` access. Location hierarchy is enforced as:
+`MANAGE` access. `GET /v1/archive/locations?room_id={room_id}` requires
+`archive.view` or `archive.manage` and returns all active locations in that room
+as `ArchiveLocationResponse[]`; each row includes `parent_location_id` so the
+frontend can rebuild the hierarchy. Add `include_inactive=true` to include
+inactive locations. Location hierarchy is enforced as:
 
 ```text
 RACK -> SHELF -> CABINET -> BOX -> FILE_SLOT

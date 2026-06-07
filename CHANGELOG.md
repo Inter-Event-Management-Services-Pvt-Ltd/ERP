@@ -37,6 +37,7 @@
 - Fixed document search route ordering and accepted `q` as a search alias for frontend compatibility.
 - Added queued archive export cancellation with audited `CANCELLED` state and worker skip behavior.
 - Fixed archive ZIP generation to write explicit directory entries for every active folder, preserving empty folders in downloaded exports.
+- Added `GET /v1/archive/locations?room_id=...` so physical archive room screens can load location hierarchies without manual UUID entry.
 
 - Wired Phase 2 folder CRUD to live backend: inline create, rename, and delete in FolderTreePanel with INVALID_STATE protection and canManage gating.
 - Added DocumentListPanel with per-folder document list, multipart upload dialog (INVALID_FILE_NAME, INVALID_MIME_TYPE, INVALID_FILE_SIZE error display), version upload, and signed download URLs fetched on-demand.

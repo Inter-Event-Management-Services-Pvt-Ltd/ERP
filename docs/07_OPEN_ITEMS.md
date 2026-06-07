@@ -350,27 +350,38 @@ Recommended next action:
     Get-Content supabase/tests/phase2_clients_projects_rpc.sql | docker exec -i supabase_db_iems-erp psql -U postgres -d postgres
     Get-Content supabase/tests/phase2_documents_archive_physical_rpc.sql | docker exec -i supabase_db_iems-erp psql -U postgres -d postgres
 Owner: Human / Codex
-Status: Open
+Resolution:
+  Docker Desktop/local Supabase validation is now available. `npx supabase db reset`
+  passed, and both Phase 2 SQL probes passed using `docker cp` plus
+  `docker exec psql -f` to avoid intermittent Windows pipe issues.
+Verification:
+  npx supabase db reset
+  docker exec supabase_db_iems-erp psql -U postgres -d postgres -f /tmp/phase2_clients_projects_rpc.sql
+  docker exec supabase_db_iems-erp psql -U postgres -d postgres -f /tmp/phase2_documents_archive_physical_rpc.sql
+Status: Resolved
 ```
 
-### OPEN-029 — Archive export: no cancel endpoint
+### OPEN-029 - Archive export cancel frontend wiring
 
 ```text
 Date: 2026-06-06
-Category: Backend / Archive Export
+Category: Frontend / Archive Export
 Severity: Low
 Affected module: apps/web/src/components/projects/archive-export-panel.tsx
 Question or issue:
-  The frontend shows a spinner on QUEUED/PROCESSING exports. Users expect to be able
-  to cancel an in-progress export job but the API contract exposes no
-  DELETE /v1/exports/{export_id} or equivalent cancel endpoint.
-  The Cancel button has not been added to the UI to avoid a non-functional affordance.
-Required:
-  Codex to add DELETE /v1/exports/{export_id} (or POST /v1/exports/{export_id}/cancel)
-  that revokes the queued/processing Celery task and sets status to CANCELLED.
-  Once available, Claude will add the cancel button to ExportRow for QUEUED/PROCESSING rows.
-Owner: Codex
-Status: Open — backend endpoint needed
+  The backend now exposes POST /v1/exports/{export_id}/cancel for QUEUED exports.
+  The frontend should show a Cancel action only for QUEUED rows and refresh the
+  export status after cancellation.
+Backend status:
+  Codex added POST /v1/exports/{export_id}/cancel. It returns status CANCELLED,
+  writes an audit event, and the Celery worker skips cancelled exports before generation.
+Frontend follow-up:
+  Add a Cancel action only for QUEUED exports. Backend intentionally rejects READY,
+  FAILED, EXPIRED and CANCELLED exports with INVALID_STATE.
+Verification:
+  uv run --directory apps/api --group dev pytest tests/test_documents_archive_service.py tests/test_documents_archive_api.py tests/test_archive_exports_worker.py -q
+Owner: Claude
+Status: Backend resolved; Claude wiring pending
 ```
 
 ### OPEN-028 — QR code rendering: library not installed
@@ -392,25 +403,27 @@ Owner: Human
 Status: Resolved (2026-06-06) — qrcode.react installed; QRCodeSVG renders on file detail page
 ```
 
-### OPEN-027 — Physical archive: no endpoint to list locations by room
+### OPEN-027 - Physical archive location hierarchy frontend wiring
 
 ```text
 Date: 2026-06-06
-Category: API Contract
+Category: Frontend / Physical Archive
 Severity: Medium
 Affected module: apps/web/src/app/archive/rooms/[id]/page.tsx
 Question or issue:
-  GET /v1/archive/rooms returns a flat list of rooms but no room detail endpoint.
-  There is also no GET /v1/archive/locations?room_id=xxx to list locations for a room.
-  GET /v1/archive/locations/{location_id}/contents requires a known location_id.
-  The room detail page currently shows room info and a form to create locations, but
-  cannot browse the location hierarchy — users must manually enter a location UUID.
-Required from Codex:
-  Either:
-  - GET /v1/archive/rooms/{room_id} returning room + its top-level locations, or
-  - GET /v1/archive/locations?room_id=xxx to list all locations for a room
-Owner: Codex
-Status: Open
+  The backend now exposes GET /v1/archive/locations?room_id={room_id}. It returns
+  active ArchiveLocationResponse rows for the requested room and preserves
+  parent_location_id so the frontend can rebuild the hierarchy.
+Backend status:
+  Codex added GET /v1/archive/locations?room_id={room_id}. include_inactive=true
+  is supported when inactive locations need to be shown.
+Frontend follow-up:
+  Use this endpoint on room detail instead of requiring users to manually enter
+  location UUIDs.
+Verification:
+  uv run --directory apps/api --group dev pytest tests/test_physical_archive_api.py tests/test_physical_archive_service.py -q
+Owner: Claude
+Status: Backend resolved; Claude wiring pending
 ```
 
 ### OPEN-026 — Confidentiality level and document type lookup endpoints missing
@@ -488,8 +501,8 @@ Resolution:
   - Archive export: POST/GET with 5s auto-poll while QUEUED or PROCESSING, download on READY.
   - Physical archive: rooms list/create, location create, location content browser,
     physical file detail, checkout/return/move/verify action pages, QR label display.
-  New OPEN items: OPEN-025 (search params), OPEN-026 (lookup endpoints),
-  OPEN-027 (location listing), OPEN-028 (QR library).
+  Follow-up frontend refinements remain in OPEN-027 and OPEN-029 after backend
+  endpoints were added.
 Owner: Claude
 Status: Resolved
 ```

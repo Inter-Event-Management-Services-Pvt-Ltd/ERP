@@ -115,6 +115,24 @@ class PhysicalArchiveService:
         )
         return _location_from_row(row)
 
+    async def list_locations(
+        self,
+        *,
+        current_user: CurrentUser,
+        room_id: UUID,
+        include_inactive: bool = False,
+    ) -> list[ArchiveLocationResponse]:
+        self._require_archive_read(current_user)
+        params = {
+            "select": LOCATION_SELECT,
+            "archive_room_id": f"eq.{room_id}",
+            "order": "location_type.asc,code.asc",
+        }
+        if not include_inactive:
+            params["is_active"] = "eq.true"
+        rows = await self._get_rows("/rest/v1/archive_locations", params=params)
+        return [_location_from_row(row) for row in rows]
+
     async def get_location_contents(
         self,
         *,
