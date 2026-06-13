@@ -4,6 +4,7 @@ from uuid import UUID
 from fastapi import APIRouter, Depends, HTTPException, Query, Request, status
 
 from app.api.dependencies import (
+    get_current_user,
     get_physical_archive_service,
     require_any_permission,
     require_permission,
@@ -28,6 +29,7 @@ from app.services.physical_archive import PhysicalArchiveError, PhysicalArchiveS
 
 router = APIRouter(prefix="/v1", tags=["physical archive"])
 
+AuthenticatedUser = Annotated[CurrentUser, Depends(get_current_user)]
 ArchiveReadUser = Annotated[
     CurrentUser,
     Depends(require_any_permission({"archive.view", "archive.manage"})),
@@ -135,6 +137,21 @@ async def get_archive_location_contents(
         raise _http_error(exc) from exc
 
 
+@router.get("/projects/{project_id}/physical-files", response_model=list[PhysicalFileResponse])
+async def list_project_physical_files(
+    project_id: UUID,
+    current_user: AuthenticatedUser,
+    service: PhysicalArchiveServiceDep,
+) -> list[PhysicalFileResponse]:
+    try:
+        return await service.list_project_physical_files(
+            project_id=project_id,
+            current_user=current_user,
+        )
+    except PhysicalArchiveError as exc:
+        raise _http_error(exc) from exc
+
+
 @router.post(
     "/projects/{project_id}/physical-files",
     response_model=PhysicalFileResponse,
@@ -167,6 +184,21 @@ async def get_physical_file(
     try:
         return await service.get_physical_file(
             physical_file_id=physical_file_id,
+            current_user=current_user,
+        )
+    except PhysicalArchiveError as exc:
+        raise _http_error(exc) from exc
+
+
+@router.get("/physical-files/by-qr/{qr_token}", response_model=PhysicalFileResponse)
+async def get_physical_file_by_qr_token(
+    qr_token: UUID,
+    current_user: ArchiveReadUser,
+    service: PhysicalArchiveServiceDep,
+) -> PhysicalFileResponse:
+    try:
+        return await service.get_physical_file_by_qr_token(
+            qr_token=qr_token,
             current_user=current_user,
         )
     except PhysicalArchiveError as exc:

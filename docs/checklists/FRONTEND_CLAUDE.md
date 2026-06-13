@@ -3,7 +3,7 @@
 ## Ownership
 
 - [x] Only frontend-owned files were modified.
-- [x] Any backend requirement was recorded for Codex (OPEN-025, OPEN-026, OPEN-027, OPEN-028).
+- [x] Any backend requirement was recorded for Codex (OPEN-025, OPEN-026, OPEN-027, OPEN-028, OPEN-029 — all resolved).
 - [x] API contract was followed (no invented endpoints; undocumented details noted as OPEN items).
 
 ## Design Workflow
@@ -14,7 +14,7 @@
 - [x] Generated output reviewed before implementation.
 - [x] Shared components reused (AppShell, PageHeader, ContentArea, SkeletonScreen, ConfirmDialog).
 - [x] Responsive states implemented.
-- [x] Empty state implemented (no folder selected, no exports, no rooms).
+- [x] Empty state implemented (no folder selected, no exports, no rooms, no locations, no contents at selected location).
 - [x] Loading state implemented (SkeletonScreen, Loader2 spinners, isPending).
 - [x] Error state implemented (role="alert" inline errors, apiErrorMessage mapping).
 - [x] Permission-denied state implemented (buttons hidden by permission, actions unavailable on wrong state).

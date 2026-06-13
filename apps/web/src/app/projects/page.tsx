@@ -2,7 +2,7 @@
 
 import { useState, useMemo } from 'react'
 import { useRouter } from 'next/navigation'
-import { Plus, Building2 } from 'lucide-react'
+import { Plus, Building2, Archive } from 'lucide-react'
 import { AppShell } from '@/components/layout/app-shell'
 import { PageHeader } from '@/components/layout/page-header'
 import { ContentArea } from '@/components/layout/content-area'
@@ -22,7 +22,10 @@ import { format } from 'date-fns'
 export default function ProjectsPage() {
   const router = useRouter()
   const { data: user } = useMe()
-  const { data: projects, isLoading, error, refetch } = useProjects()
+  const canManage = (user?.isSuperUser || user?.permissions.includes('project.manage')) ?? false
+
+  const [showArchived, setShowArchived] = useState(false)
+  const { data: projects, isLoading, error, refetch } = useProjects(canManage && showArchived)
   const { data: projectTypes = [] } = useProjectTypes()
   const { data: projectStatuses = [] } = useProjectStatuses()
   const { data: priorityLevels = [] } = usePriorityLevels()
@@ -32,8 +35,6 @@ export default function ProjectsPage() {
   const [showCreateProject, setShowCreateProject] = useState(false)
   const [showCreateClient, setShowCreateClient] = useState(false)
   const [showManageClients, setShowManageClients] = useState(false)
-
-  const canManage = (user?.isSuperUser || user?.permissions.includes('project.manage')) ?? false
 
   const filtered = useMemo(() => {
     if (!projects) return []
@@ -116,6 +117,17 @@ export default function ProjectsPage() {
               ))}
             </select>
           )}
+          {canManage && (
+            <label className="flex items-center gap-2 px-3 py-2 text-sm font-sans text-text-primary/60 cursor-pointer select-none">
+              <input
+                type="checkbox"
+                checked={showArchived}
+                onChange={(e) => setShowArchived(e.target.checked)}
+                className="h-4 w-4 rounded border-surface-border text-accent-saffron focus:outline-none focus:ring-2 focus:ring-accent-saffron"
+              />
+              Show archived projects
+            </label>
+          )}
         </div>
 
         {/* Content states */}
@@ -174,7 +186,18 @@ export default function ProjectsPage() {
                       {p.project_code}
                     </td>
                     <td className="px-4 py-3 font-sans text-text-primary max-w-xs">
-                      <span className="truncate block">{p.name}</span>
+                      <span className="flex items-center gap-1.5 min-w-0">
+                        <span className="truncate">{p.name}</span>
+                        {p.archived_at && (
+                          <span
+                            title={`Archived ${format(new Date(p.archived_at), 'dd MMM yyyy')}`}
+                            className="flex-none inline-flex items-center gap-1 rounded-full border border-text-primary/15 px-1.5 py-0.5 text-[10px] font-sans text-text-primary/40 uppercase tracking-wide"
+                          >
+                            <Archive size={10} aria-hidden="true" />
+                            Archived
+                          </span>
+                        )}
+                      </span>
                     </td>
                     <td className="px-4 py-3 text-text-primary/70 whitespace-nowrap">
                       {p.client.display_name}

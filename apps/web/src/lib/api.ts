@@ -121,8 +121,9 @@ export async function deactivateClient(id: string): Promise<void> {
 
 // ─── Projects ─────────────────────────────────────────────────────────────────
 
-export async function fetchProjects(): Promise<Project[]> {
-  return apiFetch<Project[]>('/v1/projects')
+export async function fetchProjects(options?: { includeArchived?: boolean }): Promise<Project[]> {
+  const query = options?.includeArchived ? '?include_archived=true' : ''
+  return apiFetch<Project[]>(`/v1/projects${query}`)
 }
 
 export async function fetchProject(id: string): Promise<Project> {
@@ -264,6 +265,14 @@ export async function getDocumentVersionDownloadUrl(
   )
 }
 
+export async function fetchConfidentialityLevels(): Promise<ReferenceLookup[]> {
+  return apiFetch<ReferenceLookup[]>('/v1/confidentiality-levels')
+}
+
+export async function fetchDocumentTypes(): Promise<ReferenceLookup[]> {
+  return apiFetch<ReferenceLookup[]>('/v1/document-types')
+}
+
 // ─── Archive exports ──────────────────────────────────────────────────────────
 
 export async function createExport(projectId: string): Promise<ArchiveExport> {
@@ -287,6 +296,13 @@ export async function getExportDownloadUrl(
   return apiFetch<DownloadUrlResponse>(`/v1/exports/${exportId}/download-url`)
 }
 
+export async function cancelExport(exportId: string): Promise<ArchiveExport> {
+  return apiFetch<ArchiveExport>(`/v1/exports/${exportId}/cancel`, {
+    method: 'POST',
+    body: JSON.stringify({}),
+  })
+}
+
 // ─── Physical archive ─────────────────────────────────────────────────────────
 
 export async function listRooms(): Promise<PhysicalRoom[]> {
@@ -300,6 +316,12 @@ export async function createRoom(
     method: 'POST',
     body: JSON.stringify(payload),
   })
+}
+
+export async function listLocations(roomId: string): Promise<PhysicalLocation[]> {
+  return apiFetch<PhysicalLocation[]>(
+    `/v1/archive/locations?room_id=${encodeURIComponent(roomId)}`
+  )
 }
 
 export async function createLocation(
@@ -331,6 +353,14 @@ export async function createPhysicalFile(
 
 export async function getPhysicalFile(fileId: string): Promise<PhysicalFile> {
   return apiFetch<PhysicalFile>(`/v1/physical-files/${fileId}`)
+}
+
+export async function listProjectPhysicalFiles(projectId: string): Promise<PhysicalFile[]> {
+  return apiFetch<PhysicalFile[]>(`/v1/projects/${projectId}/physical-files`)
+}
+
+export async function getPhysicalFileByQrToken(qrToken: string): Promise<PhysicalFile> {
+  return apiFetch<PhysicalFile>(`/v1/physical-files/by-qr/${qrToken}`)
 }
 
 export async function checkoutPhysicalFile(

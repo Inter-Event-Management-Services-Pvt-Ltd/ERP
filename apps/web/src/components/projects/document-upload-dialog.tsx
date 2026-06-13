@@ -3,6 +3,7 @@
 import { useRef, useState } from 'react'
 import { X, Upload, Loader2, FileText } from 'lucide-react'
 import { useUploadDocument } from '@/hooks/use-documents'
+import { useConfidentialityLevels, useDocumentTypes } from '@/hooks/use-lookups'
 import { apiErrorMessage } from '@/lib/errors'
 import { cn } from '@/lib/utils'
 
@@ -34,6 +35,8 @@ export function DocumentUploadDialog({
   const [error, setError] = useState<string | null>(null)
 
   const { mutate: upload, isPending } = useUploadDocument(folderId)
+  const { data: confidentialityLevels = [] } = useConfidentialityLevels()
+  const { data: documentTypes = [] } = useDocumentTypes()
 
   function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
     const f = e.target.files?.[0] ?? null
@@ -55,16 +58,16 @@ export function DocumentUploadDialog({
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     if (!file) { setError('Select a file to upload.'); return }
-    if (!confidentialityLevelId.trim()) {
-      setError('Confidentiality level ID is required.')
+    if (!confidentialityLevelId) {
+      setError('Confidentiality level is required.')
       return
     }
 
     const fd = new FormData()
     fd.append('file', file)
-    fd.append('confidentiality_level_id', confidentialityLevelId.trim())
+    fd.append('confidentiality_level_id', confidentialityLevelId)
     if (displayName.trim()) fd.append('display_name', displayName.trim())
-    if (documentTypeId.trim()) fd.append('document_type_id', documentTypeId.trim())
+    if (documentTypeId) fd.append('document_type_id', documentTypeId)
     if (changeNote.trim()) fd.append('change_note', changeNote.trim())
 
     setError(null)
@@ -167,20 +170,19 @@ export function DocumentUploadDialog({
                 htmlFor="upload-confidentiality"
                 className="text-xs font-sans text-text-primary/70 font-medium block mb-1"
               >
-                Confidentiality level ID{' '}
-                <span className="text-accent-critical">*</span>
+                Confidentiality level <span className="text-accent-critical">*</span>
               </label>
-              <input
+              <select
                 id="upload-confidentiality"
-                type="text"
                 value={confidentialityLevelId}
                 onChange={(e) => setConfidentialityLevelId(e.target.value)}
-                placeholder="UUID — see OPEN-026 for lookup endpoint"
-                className="w-full rounded-md border border-surface-border bg-surface-base px-3 py-2 text-sm font-mono text-text-primary placeholder:text-text-primary/20 focus:outline-none focus:ring-2 focus:ring-accent-saffron"
-              />
-              <p className="text-xs text-text-primary/30 font-sans mt-0.5">
-                Lookup endpoint pending (OPEN-026)
-              </p>
+                className="w-full rounded-md border border-surface-border bg-surface-base px-3 py-2 text-sm font-sans text-text-primary focus:outline-none focus:ring-2 focus:ring-accent-saffron"
+              >
+                <option value="">Select a confidentiality level…</option>
+                {confidentialityLevels.map((level) => (
+                  <option key={level.id} value={level.id}>{level.name}</option>
+                ))}
+              </select>
             </div>
 
             {/* Document type */}
@@ -189,16 +191,19 @@ export function DocumentUploadDialog({
                 htmlFor="upload-doc-type"
                 className="text-xs font-sans text-text-primary/70 font-medium block mb-1"
               >
-                Document type ID <span className="text-text-primary/30">(optional)</span>
+                Document type <span className="text-text-primary/30">(optional)</span>
               </label>
-              <input
+              <select
                 id="upload-doc-type"
-                type="text"
                 value={documentTypeId}
                 onChange={(e) => setDocumentTypeId(e.target.value)}
-                placeholder="UUID — see OPEN-026 for lookup endpoint"
-                className="w-full rounded-md border border-surface-border bg-surface-base px-3 py-2 text-sm font-mono text-text-primary placeholder:text-text-primary/20 focus:outline-none focus:ring-2 focus:ring-accent-saffron"
-              />
+                className="w-full rounded-md border border-surface-border bg-surface-base px-3 py-2 text-sm font-sans text-text-primary focus:outline-none focus:ring-2 focus:ring-accent-saffron"
+              >
+                <option value="">No document type</option>
+                {documentTypes.map((type) => (
+                  <option key={type.id} value={type.id}>{type.name}</option>
+                ))}
+              </select>
             </div>
 
             {/* Change note */}

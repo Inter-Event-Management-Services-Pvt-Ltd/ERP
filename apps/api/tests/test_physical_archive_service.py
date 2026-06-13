@@ -22,6 +22,7 @@ ROOM_ID = UUID("44444444-4444-4444-8444-444444444444")
 LOCATION_ID = UUID("55555555-5555-4555-8555-555555555555")
 OTHER_LOCATION_ID = UUID("66666666-6666-4666-8666-666666666666")
 PHYSICAL_FILE_ID = UUID("77777777-7777-4777-8777-777777777777")
+QR_TOKEN = UUID("99999999-9999-4999-8999-999999999999")
 REQUEST_ID = UUID("88888888-8888-4888-8888-888888888888")
 CREATED_AT = "2026-06-06T08:00:00+00:00"
 
@@ -165,6 +166,93 @@ def test_list_locations_fetches_active_locations_for_room() -> None:
     assert seen_requests[0].url.params["archive_room_id"] == f"eq.{ROOM_ID}"
     assert seen_requests[0].url.params["is_active"] == "eq.true"
     assert seen_requests[0].url.params["order"] == "location_type.asc,code.asc"
+
+
+def test_get_physical_file_by_qr_token_fetches_matching_file() -> None:
+    seen_requests: list[httpx.Request] = []
+
+    def handler(request: httpx.Request) -> Response:
+        seen_requests.append(request)
+        if request.url.path == "/rest/v1/physical_files":
+            return Response(200, json=[_physical_file_row()])
+        return Response(500)
+
+    service = PhysicalArchiveService(
+        supabase_url="http://localhost:54321",
+        service_role_key="legacy-service-role-key",
+        transport=httpx.MockTransport(handler),
+    )
+
+    result = asyncio.run(
+        service.get_physical_file_by_qr_token(
+            qr_token=QR_TOKEN,
+            current_user=_current_user(permissions=["archive.manage"]),
+        )
+    )
+
+    assert result.id == PHYSICAL_FILE_ID
+    assert seen_requests[0].url.path == "/rest/v1/physical_files"
+    assert seen_requests[0].url.params["qr_token"] == f"eq.{QR_TOKEN}"
+    assert seen_requests[0].url.params["limit"] == "1"
+
+
+def test_list_project_physical_files_fetches_files_after_membership_check() -> None:
+    seen_requests: list[httpx.Request] = []
+
+    def handler(request: httpx.Request) -> Response:
+        seen_requests.append(request)
+        if request.url.path == "/rest/v1/project_members":
+            return Response(200, json=[_membership_row()])
+        if request.url.path == "/rest/v1/physical_files":
+            return Response(200, json=[_physical_file_row()])
+        return Response(500)
+
+    service = PhysicalArchiveService(
+        supabase_url="http://localhost:54321",
+        service_role_key="legacy-service-role-key",
+        transport=httpx.MockTransport(handler),
+    )
+
+    result = asyncio.run(
+        service.list_project_physical_files(
+            project_id=PROJECT_ID,
+            current_user=_current_user(permissions=[]),
+        )
+    )
+
+    assert result[0].id == PHYSICAL_FILE_ID
+    assert seen_requests[0].url.path == "/rest/v1/project_members"
+    assert seen_requests[1].url.path == "/rest/v1/physical_files"
+    assert seen_requests[1].url.params["project_id"] == f"eq.{PROJECT_ID}"
+    assert seen_requests[1].url.params["order"] == "created_at.desc"
+
+
+def test_list_project_physical_files_denies_non_member() -> None:
+    seen_requests: list[httpx.Request] = []
+
+    def handler(request: httpx.Request) -> Response:
+        seen_requests.append(request)
+        if request.url.path == "/rest/v1/project_members":
+            return Response(200, json=[])
+        return Response(500)
+
+    service = PhysicalArchiveService(
+        supabase_url="http://localhost:54321",
+        service_role_key="legacy-service-role-key",
+        transport=httpx.MockTransport(handler),
+    )
+
+    with pytest.raises(PhysicalArchiveError) as exc_info:
+        asyncio.run(
+            service.list_project_physical_files(
+                project_id=PROJECT_ID,
+                current_user=_current_user(permissions=[]),
+            )
+        )
+
+    assert exc_info.value.status_code == 403
+    assert exc_info.value.code == "ABAC_DENIED"
+    assert [request.url.path for request in seen_requests] == ["/rest/v1/project_members"]
 
 
 def test_physical_file_checked_out_state_maps_to_conflict() -> None:

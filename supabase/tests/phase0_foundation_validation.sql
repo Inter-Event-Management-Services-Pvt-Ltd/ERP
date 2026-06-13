@@ -181,6 +181,18 @@ select pg_temp.phase0_assert(
 );
 
 select pg_temp.phase0_assert(
+  not exists (
+    select 1
+    from pg_class c
+    join pg_namespace n on n.oid = c.relnamespace
+    where n.nspname = 'public'
+      and c.relkind = 'r'
+      and not has_table_privilege('service_role', c.oid, 'SELECT')
+  ),
+  'service_role can read public tables for server-side FastAPI data access'
+);
+
+select pg_temp.phase0_assert(
   exists (
     select 1
     from pg_policies

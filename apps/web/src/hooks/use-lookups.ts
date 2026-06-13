@@ -1,5 +1,11 @@
 import { useQuery } from '@tanstack/react-query'
-import { fetchProjectTypes, fetchProjectStatuses, fetchPriorityLevels } from '@/lib/api'
+import {
+  fetchProjectTypes,
+  fetchProjectStatuses,
+  fetchPriorityLevels,
+  fetchConfidentialityLevels,
+  fetchDocumentTypes,
+} from '@/lib/api'
 
 export function useProjectTypes() {
   return useQuery({
@@ -21,6 +27,22 @@ export function usePriorityLevels() {
   return useQuery({
     queryKey: ['priority-levels'],
     queryFn: fetchPriorityLevels,
+    staleTime: 10 * 60 * 1000,
+  })
+}
+
+export function useConfidentialityLevels() {
+  return useQuery({
+    queryKey: ['confidentiality-levels'],
+    queryFn: fetchConfidentialityLevels,
+    staleTime: 10 * 60 * 1000,
+  })
+}
+
+export function useDocumentTypes() {
+  return useQuery({
+    queryKey: ['document-types'],
+    queryFn: fetchDocumentTypes,
     staleTime: 10 * 60 * 1000,
   })
 }

@@ -2,10 +2,13 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import {
   listRooms,
   createRoom,
+  listLocations,
   createLocation,
   getLocationContents,
   createPhysicalFile,
   getPhysicalFile,
+  listProjectPhysicalFiles,
+  getPhysicalFileByQrToken,
   checkoutPhysicalFile,
   returnPhysicalFile,
   movePhysicalFile,
@@ -40,11 +43,22 @@ export function useCreateRoom() {
   })
 }
 
-export function useCreateLocation() {
+const locationsKey = (roomId: string) => ['archive', 'rooms', roomId, 'locations']
+
+export function useLocations(roomId: string) {
+  return useQuery({
+    queryKey: locationsKey(roomId),
+    queryFn: () => listLocations(roomId),
+    enabled: Boolean(roomId),
+    staleTime: 60 * 1000,
+  })
+}
+
+export function useCreateLocation(roomId: string) {
   const qc = useQueryClient()
   return useMutation({
     mutationFn: (payload: CreatePhysicalLocationPayload) => createLocation(payload),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ROOMS_KEY }),
+    onSuccess: () => qc.invalidateQueries({ queryKey: locationsKey(roomId) }),
   })
 }
 
@@ -64,7 +78,10 @@ export function useCreatePhysicalFile(projectId: string) {
       createPhysicalFile(projectId, payload),
     onSuccess: (_, payload) => {
       qc.invalidateQueries({
-        queryKey: ['archive', 'locations', payload.location_id, 'contents'],
+        queryKey: ['archive', 'locations', payload.archive_location_id, 'contents'],
+      })
+      qc.invalidateQueries({
+        queryKey: ['archive', 'projects', projectId, 'physical-files'],
       })
     },
   })
@@ -75,6 +92,25 @@ export function usePhysicalFile(fileId: string) {
     queryKey: ['archive', 'files', fileId],
     queryFn: () => getPhysicalFile(fileId),
     enabled: Boolean(fileId),
+    staleTime: 30 * 1000,
+  })
+}
+
+export function useProjectPhysicalFiles(projectId: string) {
+  return useQuery({
+    queryKey: ['archive', 'projects', projectId, 'physical-files'],
+    queryFn: () => listProjectPhysicalFiles(projectId),
+    enabled: Boolean(projectId),
+    staleTime: 30 * 1000,
+  })
+}
+
+export function usePhysicalFileByQrToken(qrToken: string) {
+  return useQuery({
+    queryKey: ['archive', 'files', 'by-qr', qrToken],
+    queryFn: () => getPhysicalFileByQrToken(qrToken),
+    enabled: Boolean(qrToken),
+    retry: false,
     staleTime: 30 * 1000,
   })
 }

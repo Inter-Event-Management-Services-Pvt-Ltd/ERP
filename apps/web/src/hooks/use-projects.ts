@@ -18,10 +18,10 @@ import type {
 
 export const PROJECTS_KEY = ['projects'] as const
 
-export function useProjects() {
+export function useProjects(includeArchived = false) {
   return useQuery({
-    queryKey: PROJECTS_KEY,
-    queryFn: fetchProjects,
+    queryKey: includeArchived ? [...PROJECTS_KEY, 'with-archived'] : PROJECTS_KEY,
+    queryFn: () => fetchProjects({ includeArchived }),
     staleTime: 2 * 60 * 1000,
   })
 }

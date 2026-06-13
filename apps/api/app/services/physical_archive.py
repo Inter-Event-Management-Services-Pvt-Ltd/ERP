@@ -190,6 +190,27 @@ class PhysicalArchiveService:
         )
         return _physical_file_from_row(row)
 
+    async def list_project_physical_files(
+        self,
+        *,
+        project_id: UUID,
+        current_user: CurrentUser,
+    ) -> list[PhysicalFileResponse]:
+        if not self._has_global_archive_read(current_user):
+            await self._require_project_read_access(
+                project_id=project_id,
+                current_user=current_user,
+            )
+        rows = await self._get_rows(
+            "/rest/v1/physical_files",
+            params={
+                "select": PHYSICAL_FILE_SELECT,
+                "project_id": f"eq.{project_id}",
+                "order": "created_at.desc",
+            },
+        )
+        return [_physical_file_from_row(_normalize_physical_file_row(row)) for row in rows]
+
     async def get_physical_file(
         self,
         *,
@@ -197,7 +218,21 @@ class PhysicalArchiveService:
         current_user: CurrentUser,
     ) -> PhysicalFileResponse:
         row = await self._get_physical_file_row(physical_file_id)
-        if not (current_user.account.is_super_user or "archive.view" in current_user.permissions):
+        if not self._has_global_archive_read(current_user):
+            await self._require_project_read_access(
+                project_id=UUID(str(row["project_id"])),
+                current_user=current_user,
+            )
+        return _physical_file_from_row(_normalize_physical_file_row(row))
+
+    async def get_physical_file_by_qr_token(
+        self,
+        *,
+        qr_token: UUID,
+        current_user: CurrentUser,
+    ) -> PhysicalFileResponse:
+        row = await self._get_physical_file_row_by_qr_token(qr_token)
+        if not self._has_global_archive_read(current_user):
             await self._require_project_read_access(
                 project_id=UUID(str(row["project_id"])),
                 current_user=current_user,
@@ -214,7 +249,7 @@ class PhysicalArchiveService:
     ) -> PhysicalFileResponse:
         self._require_permission(current_user, "physical_file.checkout")
         row = await self._get_physical_file_row(physical_file_id)
-        if not (current_user.account.is_super_user or "archive.view" in current_user.permissions):
+        if not self._has_global_archive_read(current_user):
             await self._require_project_read_access(
                 project_id=UUID(str(row["project_id"])),
                 current_user=current_user,
@@ -353,6 +388,26 @@ class PhysicalArchiveService:
         if not rows:
             raise PhysicalArchiveError(404, "NOT_FOUND", "Physical file not found")
         return rows[0]
+
+    async def _get_physical_file_row_by_qr_token(self, qr_token: UUID) -> dict[str, Any]:
+        rows = await self._get_rows(
+            "/rest/v1/physical_files",
+            params={
+                "select": PHYSICAL_FILE_SELECT,
+                "qr_token": f"eq.{qr_token}",
+                "limit": "1",
+            },
+        )
+        if not rows:
+            raise PhysicalArchiveError(404, "NOT_FOUND", "Physical file not found")
+        return rows[0]
+
+    def _has_global_archive_read(self, current_user: CurrentUser) -> bool:
+        return (
+            current_user.account.is_super_user
+            or "archive.view" in current_user.permissions
+            or "archive.manage" in current_user.permissions
+        )
 
     async def _require_project_read_access(
         self,

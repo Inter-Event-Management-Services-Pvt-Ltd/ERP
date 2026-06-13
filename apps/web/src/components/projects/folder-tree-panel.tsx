@@ -207,7 +207,7 @@ function FolderNodeItem({
             </button>
 
             {canManage && (
-              <span className="flex-none flex items-center gap-0.5 pr-1 opacity-0 group-hover:opacity-100 transition-opacity">
+              <span className="flex-none flex items-center gap-0.5 pr-1 opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 focus-within:opacity-100 transition-opacity">
                 <ActionBtn
                   icon={<Plus size={11} />}
                   label={`Add subfolder in ${node.name}`}

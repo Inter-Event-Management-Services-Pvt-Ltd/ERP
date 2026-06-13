@@ -2,7 +2,7 @@
 
 import { use } from 'react'
 import Link from 'next/link'
-import { ChevronRight, LogIn, LogOut, ArrowRightLeft, ShieldCheck, Tag } from 'lucide-react'
+import { ChevronRight, LogIn, LogOut, ArrowRightLeft, ShieldCheck, Tag, Printer } from 'lucide-react'
 import { QRCodeSVG } from 'qrcode.react'
 import { AppShell } from '@/components/layout/app-shell'
 import { PageHeader } from '@/components/layout/page-header'
@@ -13,20 +13,23 @@ import { usePhysicalFile, usePhysicalFileLabel } from '@/hooks/use-physical-arch
 import { useMe } from '@/hooks/use-me'
 import { cn } from '@/lib/utils'
 import { format } from 'date-fns'
+import { locationDisplayName } from '@/lib/locations'
 import type { PhysicalFileState } from '@/types'
 
 const STATE_LABEL: Record<PhysicalFileState, string> = {
-  IN_STORAGE: 'In Storage',
+  AVAILABLE: 'Available',
   CHECKED_OUT: 'Checked Out',
   MISSING: 'Missing',
-  DISPOSED: 'Disposed',
+  UNDER_VERIFICATION: 'Under Verification',
+  ARCHIVED: 'Archived',
 }
 
 const STATE_CLASS: Record<PhysicalFileState, string> = {
-  IN_STORAGE: 'text-green-400',
+  AVAILABLE: 'text-green-400',
   CHECKED_OUT: 'text-accent-warning',
   MISSING: 'text-accent-critical',
-  DISPOSED: 'text-text-primary/30',
+  UNDER_VERIFICATION: 'text-accent-saffron',
+  ARCHIVED: 'text-text-primary/30',
 }
 
 interface Props {
@@ -45,14 +48,14 @@ export default function PhysicalFileDetailPage({ params }: Props) {
   return (
     <AppShell>
       <PageHeader
-        title={file?.file_code ?? 'Physical File'}
+        title={file?.physical_file_code ?? 'Physical File'}
         subtitle={
           <nav aria-label="Breadcrumb" className="flex items-center gap-1 text-xs text-text-primary/40 font-sans">
             <Link href="/archive" className="hover:text-text-primary/70 transition-colors">
               Archive
             </Link>
             <ChevronRight size={12} aria-hidden="true" />
-            <span className="text-text-primary/60">{file?.file_code ?? id}</span>
+            <span className="text-text-primary/60">{file?.physical_file_code ?? id}</span>
           </nav>
         }
       />
@@ -70,38 +73,52 @@ export default function PhysicalFileDetailPage({ params }: Props) {
         {!isLoading && !error && file && (
           <div className="space-y-5">
             {/* State + details */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-              <InfoCard label="File Code" value={file.file_code} mono />
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+              <InfoCard label="File Code" value={file.physical_file_code} mono />
               <InfoCard
-                label="State"
-                value={STATE_LABEL[file.state]}
-                valueClass={STATE_CLASS[file.state]}
+                label="Status"
+                value={STATE_LABEL[file.status]}
+                valueClass={STATE_CLASS[file.status]}
               />
-              {file.location && (
+              {file.archive_location ? (
                 <InfoCard
                   label="Location"
-                  value={file.location.label}
-                  sub={file.location.type}
+                  value={locationDisplayName(file.archive_location)}
+                  sub={file.archive_room ? `${file.archive_room.name} · ${file.archive_location.location_type}` : file.archive_location.location_type}
                 />
-              )}
-              {!file.location && (
+              ) : (
                 <InfoCard label="Location" value="—" />
+              )}
+              {file.project ? (
+                <InfoCard
+                  label="Project"
+                  value={file.project.name}
+                  sub={file.project.project_code}
+                />
+              ) : (
+                <InfoCard label="Project" value="—" />
               )}
             </div>
 
-            {file.description && (
+            {file.notes && (
               <div className="rounded-lg border border-surface-border bg-surface-raised px-4 py-3">
-                <p className="text-xs text-text-primary/40 font-sans uppercase tracking-wider mb-1">Description</p>
-                <p className="text-sm font-sans text-text-primary/80">{file.description}</p>
+                <p className="text-xs text-text-primary/40 font-sans uppercase tracking-wider mb-1">Notes</p>
+                <p className="text-sm font-sans text-text-primary/80">{file.notes}</p>
               </div>
             )}
 
-            {file.state === 'CHECKED_OUT' && file.checked_out_at && (
-              <div className="rounded-lg border border-accent-warning/20 bg-accent-warning/5 px-4 py-3">
-                <p className="text-xs font-sans text-accent-warning font-semibold mb-1">Currently checked out</p>
+            {file.status === 'CHECKED_OUT' && file.open_checkout && (
+              <div className="rounded-lg border border-accent-warning/20 bg-accent-warning/5 px-4 py-3 space-y-1">
+                <p className="text-xs font-sans text-accent-warning font-semibold">Currently checked out</p>
                 <p className="text-xs font-mono text-text-primary/50">
-                  Since {format(new Date(file.checked_out_at), 'dd MMM yyyy HH:mm')}
+                  Since {format(new Date(file.open_checkout.checked_out_at), 'dd MMM yyyy HH:mm')}
                 </p>
+                <p className="text-xs font-sans text-text-primary/50">{file.open_checkout.purpose}</p>
+                {file.open_checkout.expected_return_at && (
+                  <p className="text-xs font-mono text-text-primary/40">
+                    Expected back {format(new Date(file.open_checkout.expected_return_at), 'dd MMM yyyy')}
+                  </p>
+                )}
               </div>
             )}
 
@@ -111,21 +128,21 @@ export default function PhysicalFileDetailPage({ params }: Props) {
                 Actions
               </p>
               <div className="flex flex-wrap gap-2">
-                {canCheckout && file.state === 'IN_STORAGE' && (
+                {canCheckout && file.status === 'AVAILABLE' && (
                   <ActionLink
                     href={`/archive/files/${id}/checkout`}
                     icon={<LogIn size={13} />}
                     label="Check Out"
                   />
                 )}
-                {canManage && file.state === 'CHECKED_OUT' && (
+                {canManage && file.status === 'CHECKED_OUT' && (
                   <ActionLink
                     href={`/archive/files/${id}/return`}
                     icon={<LogOut size={13} />}
                     label="Return"
                   />
                 )}
-                {canManage && (file.state === 'IN_STORAGE' || file.state === 'CHECKED_OUT') && (
+                {canManage && (file.status === 'AVAILABLE' || file.status === 'CHECKED_OUT') && (
                   <ActionLink
                     href={`/archive/files/${id}/move`}
                     icon={<ArrowRightLeft size={13} />}
@@ -148,11 +165,21 @@ export default function PhysicalFileDetailPage({ params }: Props) {
             {/* QR Label */}
             {label && (
               <div className="rounded-lg border border-surface-border bg-surface-raised px-4 py-4 space-y-3">
-                <div className="flex items-center gap-2">
-                  <Tag size={14} className="text-accent-saffron" aria-hidden="true" />
-                  <p className="text-xs font-sans font-semibold text-text-primary/40 uppercase tracking-wider">
-                    QR Label
-                  </p>
+                <div className="flex items-center justify-between gap-2">
+                  <div className="flex items-center gap-2">
+                    <Tag size={14} className="text-accent-saffron" aria-hidden="true" />
+                    <p className="text-xs font-sans font-semibold text-text-primary/40 uppercase tracking-wider">
+                      QR Label
+                    </p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => window.print()}
+                    className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-sans text-text-primary/60 border border-surface-border rounded-md hover:bg-surface-raised hover:text-text-primary transition-colors focus-visible:ring-2 focus-visible:ring-accent-saffron"
+                  >
+                    <Printer size={13} aria-hidden="true" />
+                    Print Label
+                  </button>
                 </div>
                 <div className="inline-flex flex-col items-center gap-2 rounded-lg bg-white px-5 py-4">
                   <QRCodeSVG
@@ -162,13 +189,14 @@ export default function PhysicalFileDetailPage({ params }: Props) {
                     fgColor="#000000"
                     level="M"
                   />
-                  <p className="text-sm font-mono text-black font-semibold">{label.file_code}</p>
-                  {label.location_label && (
-                    <p className="text-xs font-mono text-gray-500">{label.location_label}</p>
-                  )}
-                  {label.project_name && (
-                    <p className="text-xs font-sans text-gray-500 text-center">{label.project_name}</p>
-                  )}
+                  <p className="text-sm font-mono text-black font-semibold">{label.physical_file_code}</p>
+                  <div className="text-center">
+                    <p className="text-[10px] font-sans uppercase tracking-wider text-gray-400">Archive Location</p>
+                    <p className="text-xs font-mono text-gray-600">
+                      {label.archive_room} · {label.location_code}
+                    </p>
+                  </div>
+                  <p className="text-xs font-sans text-gray-500 text-center">{label.project_name}</p>
                 </div>
                 <div className="flex items-center gap-3">
                   <p className="text-xs font-mono text-text-primary/25 break-all flex-1">{label.qr_token}</p>
@@ -183,9 +211,43 @@ export default function PhysicalFileDetailPage({ params }: Props) {
               </div>
             )}
 
+            {/* Print-only label layout — shown solely when printing (see globals.css "print-label" rules) */}
+            {label && (
+              <div className="print-label hidden print:flex flex-col items-center gap-3 text-center">
+                <QRCodeSVG
+                  value={label.qr_token}
+                  size={180}
+                  bgColor="#ffffff"
+                  fgColor="#000000"
+                  level="M"
+                />
+                <p className="text-lg font-mono font-bold text-black">{label.physical_file_code}</p>
+                <p className="text-sm font-sans text-black">{label.project_name}</p>
+                <div>
+                  <p className="text-[10px] font-sans uppercase tracking-wider text-black/50">Archive Location</p>
+                  <p className="text-sm font-mono text-black">
+                    {label.archive_room} · {label.location_code}
+                  </p>
+                </div>
+                <p className="text-xs font-sans text-black max-w-xs">{label.label_text}</p>
+              </div>
+            )}
+
             <dl className="flex flex-wrap gap-x-6 gap-y-1 text-xs font-mono text-text-primary/30">
               <div className="flex gap-1"><dt>ID:</dt><dd>{file.id}</dd></div>
-              <div className="flex gap-1"><dt>Project:</dt><dd>{file.project_id}</dd></div>
+              <div className="flex gap-1"><dt>Volume:</dt><dd>{file.volume_number}</dd></div>
+              {file.archived_on && (
+                <div className="flex gap-1">
+                  <dt>Archived on:</dt>
+                  <dd>{format(new Date(file.archived_on), 'dd MMM yyyy')}</dd>
+                </div>
+              )}
+              {file.last_verified_at && (
+                <div className="flex gap-1">
+                  <dt>Last verified:</dt>
+                  <dd>{format(new Date(file.last_verified_at), 'dd MMM yyyy')}</dd>
+                </div>
+              )}
               <div className="flex gap-1">
                 <dt>Registered:</dt>
                 <dd>{format(new Date(file.created_at), 'dd MMM yyyy')}</dd>

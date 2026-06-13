@@ -1,7 +1,8 @@
 'use client'
 
-import { Archive, Download, Loader2, RefreshCw } from 'lucide-react'
-import { useProjectExports, useCreateExport, useExportDownloadUrl } from '@/hooks/use-exports'
+import { useState } from 'react'
+import { Archive, Download, Loader2, RefreshCw, X } from 'lucide-react'
+import { useProjectExports, useCreateExport, useExportDownloadUrl, useCancelExport } from '@/hooks/use-exports'
 import { apiErrorMessage } from '@/lib/errors'
 import { cn } from '@/lib/utils'
 import { format } from 'date-fns'
@@ -9,18 +10,20 @@ import type { ArchiveExport, ExportStatus } from '@/types'
 
 const STATUS_LABEL: Record<ExportStatus, string> = {
   QUEUED: 'Queued',
-  PROCESSING: 'Processing',
+  GENERATING: 'Generating',
   READY: 'Ready',
   FAILED: 'Failed',
   EXPIRED: 'Expired',
+  CANCELLED: 'Cancelled',
 }
 
 const STATUS_CLASS: Record<ExportStatus, string> = {
   QUEUED: 'text-accent-warning',
-  PROCESSING: 'text-accent-saffron',
+  GENERATING: 'text-accent-saffron',
   READY: 'text-green-400',
   FAILED: 'text-accent-critical',
   EXPIRED: 'text-text-primary/30',
+  CANCELLED: 'text-text-primary/30',
 }
 
 interface ArchiveExportPanelProps {
@@ -32,6 +35,8 @@ export function ArchiveExportPanel({ projectId, canExport }: ArchiveExportPanelP
   const { data: exports, isLoading, refetch } = useProjectExports(projectId)
   const { mutate: createExport, isPending: requesting, error: createError } = useCreateExport(projectId)
   const { mutate: getDownloadUrl, isPending: downloading } = useExportDownloadUrl()
+  const { mutate: cancelExport, isPending: cancelling } = useCancelExport(projectId)
+  const [cancelError, setCancelError] = useState<string | null>(null)
 
   function handleExport() {
     createExport()
@@ -40,6 +45,20 @@ export function ArchiveExportPanel({ projectId, canExport }: ArchiveExportPanelP
   function handleDownload(exportId: string) {
     getDownloadUrl(exportId, {
       onSuccess: (res) => window.open(res.url, '_blank', 'noopener,noreferrer'),
+    })
+  }
+
+  function handleCancel(exportId: string) {
+    setCancelError(null)
+    cancelExport(exportId, {
+      onError: (err) => {
+        const code = (err as { code?: string })?.code
+        setCancelError(
+          code === 'INVALID_STATE'
+            ? 'This export can no longer be cancelled.'
+            : apiErrorMessage(err)
+        )
+      },
     })
   }
 
@@ -82,6 +101,12 @@ export function ArchiveExportPanel({ projectId, canExport }: ArchiveExportPanelP
         </p>
       )}
 
+      {cancelError && (
+        <p role="alert" className="text-xs text-accent-critical font-sans">
+          {cancelError}
+        </p>
+      )}
+
       {isLoading && (
         <div className="space-y-1">
           {Array.from({ length: 2 }).map((_, i) => (
@@ -102,6 +127,8 @@ export function ArchiveExportPanel({ projectId, canExport }: ArchiveExportPanelP
               exp={exp}
               onDownload={() => handleDownload(exp.id)}
               downloading={downloading}
+              onCancel={() => handleCancel(exp.id)}
+              cancelling={cancelling}
             />
           ))}
         </ul>
@@ -114,12 +141,16 @@ function ExportRow({
   exp,
   onDownload,
   downloading,
+  onCancel,
+  cancelling,
 }: {
   exp: ArchiveExport
   onDownload: () => void
   downloading: boolean
+  onCancel: () => void
+  cancelling: boolean
 }) {
-  const isActive = exp.status === 'QUEUED' || exp.status === 'PROCESSING'
+  const isActive = exp.status === 'QUEUED' || exp.status === 'GENERATING'
 
   return (
     <li className="flex items-center justify-between rounded px-2 py-1.5 bg-surface-deep/40 border border-surface-border/50">
@@ -137,21 +168,39 @@ function ExportRow({
         </p>
       </div>
 
-      {exp.status === 'READY' && (
-        <button
-          type="button"
-          onClick={onDownload}
-          disabled={downloading}
-          aria-label="Download export ZIP"
-          className="ml-2 flex-none text-text-primary/30 hover:text-accent-saffron transition-colors disabled:opacity-40"
-        >
-          {downloading ? (
-            <Loader2 size={12} className="animate-spin" aria-hidden="true" />
-          ) : (
-            <Download size={12} aria-hidden="true" />
-          )}
-        </button>
-      )}
+      <div className="flex items-center gap-1 flex-none">
+        {exp.status === 'QUEUED' && (
+          <button
+            type="button"
+            onClick={onCancel}
+            disabled={cancelling}
+            aria-label="Cancel export"
+            className="text-text-primary/30 hover:text-accent-critical transition-colors disabled:opacity-40"
+          >
+            {cancelling ? (
+              <Loader2 size={12} className="animate-spin" aria-hidden="true" />
+            ) : (
+              <X size={12} aria-hidden="true" />
+            )}
+          </button>
+        )}
+
+        {exp.status === 'READY' && (
+          <button
+            type="button"
+            onClick={onDownload}
+            disabled={downloading}
+            aria-label="Download export ZIP"
+            className="text-text-primary/30 hover:text-accent-saffron transition-colors disabled:opacity-40"
+          >
+            {downloading ? (
+              <Loader2 size={12} className="animate-spin" aria-hidden="true" />
+            ) : (
+              <Download size={12} aria-hidden="true" />
+            )}
+          </button>
+        )}
+      </div>
     </li>
   )
 }

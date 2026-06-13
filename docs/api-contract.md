@@ -533,8 +533,10 @@ GET    /v1/archive/locations?room_id={room_id}
 POST   /v1/archive/locations
 GET    /v1/archive/locations/{location_id}/contents
 
+GET    /v1/projects/{project_id}/physical-files
 POST   /v1/projects/{project_id}/physical-files
 GET    /v1/physical-files/{physical_file_id}
+GET    /v1/physical-files/by-qr/{qr_token}
 POST   /v1/physical-files/{physical_file_id}/checkout
 POST   /v1/physical-files/{physical_file_id}/return
 POST   /v1/physical-files/{physical_file_id}/move
@@ -554,11 +556,18 @@ inactive locations. Location hierarchy is enforced as:
 RACK -> SHELF -> CABINET -> BOX -> FILE_SLOT
 ```
 
-Physical files can only be assigned to active `FILE_SLOT` locations. Checkout is
-transactional, writes a movement row and audit event, and the database prevents
-a second open checkout. Return, move and verification also write movement or
-verification history plus audit events. Labels return printable metadata and the
-file QR token; frontend can render the QR code from that token.
+Physical files can only be assigned to active `FILE_SLOT` locations. `GET
+/v1/projects/{project_id}/physical-files` returns `PhysicalFileResponse[]` newest
+first and allows Super User, `archive.view`, `archive.manage`, or active project
+membership for that project. Checkout is transactional, writes a movement row and
+audit event, and the database prevents a second open checkout. Return, move and
+verification also write movement or verification history plus audit events. Labels
+return printable metadata and the file QR token; frontend can render the QR code
+from that token. `GET /v1/physical-files/by-qr/{qr_token}` requires `archive.view`
+or `archive.manage` and resolves a scanned physical-file label token to the same
+`PhysicalFileResponse` shape as `GET /v1/physical-files/{physical_file_id}`. The
+QR token is an opaque inventory identifier, not a Storage URL, download token, or
+authorization secret.
 
 ## Tasks and Calendar
 

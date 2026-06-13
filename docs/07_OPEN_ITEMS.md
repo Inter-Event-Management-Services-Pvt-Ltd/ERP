@@ -378,10 +378,17 @@ Backend status:
 Frontend follow-up:
   Add a Cancel action only for QUEUED exports. Backend intentionally rejects READY,
   FAILED, EXPIRED and CANCELLED exports with INVALID_STATE.
+Resolution:
+  Wired POST /v1/exports/{export_id}/cancel via useCancelExport. The export row in
+  ArchiveExportPanel now shows a Cancel (X) button only for QUEUED exports; on success
+  the list refetches and shows CANCELLED. INVALID_STATE errors are caught and shown as
+  "This export can no longer be cancelled." Status labels/colors updated to the real
+  ExportStatus union (QUEUED | GENERATING | READY | FAILED | EXPIRED | CANCELLED) —
+  the previous PROCESSING placeholder was removed.
 Verification:
   uv run --directory apps/api --group dev pytest tests/test_documents_archive_service.py tests/test_documents_archive_api.py tests/test_archive_exports_worker.py -q
 Owner: Claude
-Status: Backend resolved; Claude wiring pending
+Status: Resolved
 ```
 
 ### OPEN-028 — QR code rendering: library not installed
@@ -403,6 +410,92 @@ Owner: Human
 Status: Resolved (2026-06-06) — qrcode.react installed; QRCodeSVG renders on file detail page
 ```
 
+### OPEN-030 - Physical archive QR scan route frontend wiring
+
+```text
+Date: 2026-06-07
+Category: Frontend / Physical Archive
+Severity: Medium
+Affected module: apps/web/src/app/archive/**
+Question or issue:
+  Scanning a physical-file label currently returns the raw qr_token UUID string.
+  The backend now exposes a resolver endpoint so the frontend can turn that token
+  into the physical file record and route the user to the file detail page.
+Backend status:
+  Codex added GET /v1/physical-files/by-qr/{qr_token}. It requires archive.view
+  or archive.manage and returns the same PhysicalFileResponse shape as
+  GET /v1/physical-files/{physical_file_id}. The qr_token is an opaque inventory
+  identifier only; it is not a Storage URL, download token or auth secret.
+Frontend follow-up:
+  Add a scanner/deep-link route such as /archive/scan/{qr_token}. After scanning,
+  call GET /v1/physical-files/by-qr/{qr_token}, then navigate to
+  /archive/files/{physical_file_id}. If lookup returns NOT_FOUND, show a clear
+  "label not found" state. Do not call Supabase Storage.
+Resolution:
+  Added GET /v1/physical-files/by-qr/{qr_token} wiring (lib/api.ts
+  getPhysicalFileByQrToken, hooks/use-physical-archive.ts
+  usePhysicalFileByQrToken) and a new /archive/scan/[qr_token] route
+  (apps/web/src/app/archive/scan/[qr_token]/page.tsx) that resolves the token,
+  redirects to /archive/files/{physical_file_id} on success, shows a "Label not
+  found" empty state on NOT_FOUND, and a generic ErrorState (via apiErrorMessage)
+  for any other failure. Added a "Look up a label by QR token" form on the
+  Archive overview page (/archive) so the route is reachable from the UI without
+  needing a physical scanner. No Supabase Storage calls involved — qr_token is
+  treated as an opaque inventory identifier only.
+Verification:
+  npx tsc --noEmit && npx eslint src/ --ext .ts,.tsx,.js,.jsx && npx next build   (apps/web)
+Owner: Claude
+Status: Resolved
+```
+
+### OPEN-031 - Project detail cannot list its archived physical files
+
+```text
+Date: 2026-06-07
+Category: Backend / Physical Archive
+Severity: Medium
+Affected module: apps/api/app/api/v1/physical_archive.py, apps/web/src/app/projects/[id]/page.tsx
+Question or issue:
+  The project detail page can register a new physical file via
+  POST /v1/projects/{project_id}/physical-files (the "Archive Physical File"
+  action), but there is no endpoint to list the physical files already archived
+  for a project. Users can only discover existing physical files for a project by
+  opening each one directly (e.g. from a freshly created file's redirect, a QR
+  scan via /archive/scan/{qr_token}, or by browsing every archive room's location
+  tree and reading each file's project field) — there is no project-scoped view.
+Backend status:
+  Codex added GET /v1/projects/{project_id}/physical-files. It returns
+  list[PhysicalFileResponse] newest first and is gated by Super User,
+  archive.view, archive.manage or active project membership for that project.
+Frontend follow-up:
+  Add a "Physical Archive" panel to the project detail page (alongside the existing
+  "Archive Physical File" action) listing each physical file's code, status badge,
+  current location and volume, linking to /archive/files/{id}, mirroring the
+  existing DocumentListPanel pattern.
+Verification:
+  uv run --directory apps/api --group dev pytest tests/test_physical_archive_api.py tests/test_physical_archive_service.py -q
+Owner: Claude
+Status: Resolved
+Resolution:
+  Added a "Physical Archive" panel to the project detail page
+  (apps/web/src/app/projects/[id]/page.tsx) that lists every physical file
+  archived for the project — file code, status badge, volume number, archive
+  room/location, archived-on and last-verified-at dates, and an open-checkout
+  indicator — each row linking to /archive/files/{id}. The panel renders for
+  any user who can view the project page, matching the backend's Super User /
+  archive.view / archive.manage / active-project-membership gating, with
+  loading (skeleton), error and "No physical files archived for this project."
+  empty states consistent with the rest of the project detail page.
+  Files changed:
+    - apps/web/src/lib/api.ts (added listProjectPhysicalFiles)
+    - apps/web/src/hooks/use-physical-archive.ts (added useProjectPhysicalFiles,
+      invalidate on physical-file creation)
+    - apps/web/src/components/projects/physical-archive-panel.tsx (new)
+    - apps/web/src/app/projects/[id]/page.tsx (render PhysicalArchivePanel)
+  Frontend verification:
+    cd apps/web && npm run type-check && npm run lint && npm run build
+```
+
 ### OPEN-027 - Physical archive location hierarchy frontend wiring
 
 ```text
@@ -420,10 +513,28 @@ Backend status:
 Frontend follow-up:
   Use this endpoint on room detail instead of requiring users to manually enter
   location UUIDs.
+Resolution:
+  Wired GET /v1/archive/locations?room_id={room_id} via useLocations. Room detail now
+  renders a real expandable tree (lib/locations.ts buildLocationTree, keyed off
+  parent_location_id) with click-to-browse contents, replacing the manual UUID-entry
+  placeholder. Location creation refetches the list on success and offers a parent
+  picker built from the same data. Checkout/return/move forms now use a FileSlotPicker
+  (apps/web/src/components/archive/file-slot-picker.tsx) that lists active FILE_SLOT
+  locations from the hierarchy instead of free-text UUID inputs.
+
+  While wiring this, found that the entire physical-archive frontend type layer
+  (PhysicalLocation, PhysicalFile, PhysicalFileLabel, checkout/return/move/verify
+  payloads) used field names that did not match the real Pydantic response/request
+  schemas (e.g. file_code vs physical_file_code, state vs status, location vs
+  archive_location, notes vs description, location_id vs archive_location_id/
+  to_location_id/returned_to_location_id). Corrected all frontend types and consuming
+  pages to match apps/api/app/schemas/physical_archive.py exactly (verified via
+  model_validate(row) with no field aliasing).
 Verification:
   uv run --directory apps/api --group dev pytest tests/test_physical_archive_api.py tests/test_physical_archive_service.py -q
+  npx tsc --noEmit && npx next lint --dir src   (apps/web)
 Owner: Claude
-Status: Backend resolved; Claude wiring pending
+Status: Resolved
 ```
 
 ### OPEN-026 — Confidentiality level and document type lookup endpoints missing
@@ -447,8 +558,11 @@ Required from Codex:
 Owner: Codex
 Resolution:
   Added authenticated GET /v1/confidentiality-levels and GET /v1/document-types.
-  Both return ReferenceSummary arrays: {id, code, name}. The upload form should
-  use these values instead of raw UUID entry.
+  Both return ReferenceSummary arrays: {id, code, name}.
+  Frontend: document-upload-dialog.tsx now uses useConfidentialityLevels and
+  useDocumentTypes (lib/lookups via ReferenceLookup) to render <select> dropdowns —
+  confidentiality level required, document type optional — replacing the raw UUID
+  text inputs and the "lookup pending" notes.
 Verification:
   uv run --directory apps/api --group dev pytest tests/test_documents_archive_service.py tests/test_documents_archive_api.py -q
 Status: Resolved
@@ -498,7 +612,8 @@ Resolution:
     and RESOURCE_CONFLICT errors shown inline.
   - Document upload (multipart FormData), version upload, signed download (on-demand fetch),
     folder document list via GET /v1/documents/search.
-  - Archive export: POST/GET with 5s auto-poll while QUEUED or PROCESSING, download on READY.
+  - Archive export: POST/GET with 5s auto-poll while QUEUED or GENERATING, download on READY,
+    cancel while QUEUED.
   - Physical archive: rooms list/create, location create, location content browser,
     physical file detail, checkout/return/move/verify action pages, QR label display.
   Follow-up frontend refinements remain in OPEN-027 and OPEN-029 after backend

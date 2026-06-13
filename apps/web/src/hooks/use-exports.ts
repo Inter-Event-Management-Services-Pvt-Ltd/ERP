@@ -1,8 +1,8 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { createExport, listExports, getExportDownloadUrl } from '@/lib/api'
+import { createExport, listExports, getExportDownloadUrl, cancelExport } from '@/lib/api'
 import type { ExportStatus } from '@/types'
 
-const ACTIVE_STATUSES: ExportStatus[] = ['QUEUED', 'PROCESSING']
+const ACTIVE_STATUSES: ExportStatus[] = ['QUEUED', 'GENERATING']
 
 export function useProjectExports(projectId: string) {
   const { data: exports = [], ...rest } = useQuery({
@@ -29,5 +29,13 @@ export function useCreateExport(projectId: string) {
 export function useExportDownloadUrl() {
   return useMutation({
     mutationFn: (exportId: string) => getExportDownloadUrl(exportId),
+  })
+}
+
+export function useCancelExport(projectId: string) {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: (exportId: string) => cancelExport(exportId),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['exports', projectId] }),
   })
 }

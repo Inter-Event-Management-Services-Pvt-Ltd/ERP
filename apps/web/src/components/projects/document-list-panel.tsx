@@ -4,6 +4,7 @@ import { useState } from 'react'
 import {
   FileText,
   Download,
+  Eye,
   UploadCloud,
   Loader2,
   Plus,
@@ -11,6 +12,7 @@ import {
 } from 'lucide-react'
 import { useFolderDocuments, useDocumentVersionDownloadUrl, useUploadDocumentVersion } from '@/hooks/use-documents'
 import { DocumentUploadDialog } from '@/components/projects/document-upload-dialog'
+import { DocumentPreviewDrawer } from '@/components/projects/document-preview-drawer'
 import { apiErrorMessage } from '@/lib/errors'
 import { cn } from '@/lib/utils'
 import type { Document } from '@/types'
@@ -45,6 +47,7 @@ export function DocumentListPanel({
 }: DocumentListPanelProps) {
   const { data: documents = [], isLoading, error, refetch } = useFolderDocuments(folderId, projectId)
   const [showUpload, setShowUpload] = useState(false)
+  const [previewDoc, setPreviewDoc] = useState<Document | null>(null)
 
   return (
     <div className="space-y-4">
@@ -117,6 +120,7 @@ export function DocumentListPanel({
               doc={doc}
               folderId={folderId}
               canUpload={canUpload}
+              onPreview={() => setPreviewDoc(doc)}
             />
           ))}
         </ul>
@@ -128,6 +132,8 @@ export function DocumentListPanel({
         folderName={folderName}
         onClose={() => setShowUpload(false)}
       />
+
+      <DocumentPreviewDrawer document={previewDoc} onClose={() => setPreviewDoc(null)} />
     </div>
   )
 }
@@ -136,10 +142,12 @@ function DocumentRow({
   doc,
   folderId,
   canUpload,
+  onPreview,
 }: {
   doc: Document
   folderId: string
   canUpload: boolean
+  onPreview: () => void
 }) {
   const [versionFile, setVersionFile] = useState<File | null>(null)
   const [versionError, setVersionError] = useState<string | null>(null)
@@ -199,6 +207,16 @@ function DocumentRow({
         </div>
 
         <div className="flex items-center gap-1.5 flex-none">
+          <button
+            type="button"
+            onClick={onPreview}
+            disabled={!v}
+            aria-label={`Preview ${doc.display_name}`}
+            className="p-1 rounded transition-colors text-text-primary/30 hover:text-accent-saffron disabled:opacity-30 disabled:cursor-not-allowed"
+          >
+            <Eye size={13} aria-hidden="true" />
+          </button>
+
           {canUpload && (
             <label
               title="Upload new version"

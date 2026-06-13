@@ -21,14 +21,20 @@ export default function CheckoutPage({ params }: Props) {
   const { data: file, isLoading } = usePhysicalFile(id)
   const { mutate: checkout, isPending } = useCheckoutPhysicalFile(id)
 
-  const [notes, setNotes] = useState('')
+  const [purpose, setPurpose] = useState('')
+  const [expectedReturnAt, setExpectedReturnAt] = useState('')
   const [error, setError] = useState<string | null>(null)
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
+    if (!purpose.trim()) { setError('Purpose is required.'); return }
+    if (!expectedReturnAt) { setError('Expected return date is required.'); return }
     setError(null)
     checkout(
-      { notes: notes.trim() || undefined },
+      {
+        purpose: purpose.trim(),
+        expected_return_at: expectedReturnAt,
+      },
       {
         onSuccess: () => router.push(`/archive/files/${id}`),
         onError: (err) => setError(apiErrorMessage(err)),
@@ -45,7 +51,7 @@ export default function CheckoutPage({ params }: Props) {
             <Link href="/archive" className="hover:text-text-primary/70 transition-colors">Archive</Link>
             <ChevronRight size={12} aria-hidden="true" />
             <Link href={`/archive/files/${id}`} className="hover:text-text-primary/70 transition-colors">
-              {file?.file_code ?? id}
+              {file?.physical_file_code ?? id}
             </Link>
             <ChevronRight size={12} aria-hidden="true" />
             <span className="text-text-primary/60">Check Out</span>
@@ -56,10 +62,10 @@ export default function CheckoutPage({ params }: Props) {
       <ContentArea>
         {isLoading && <SkeletonScreen rows={4} />}
 
-        {!isLoading && file && file.state !== 'IN_STORAGE' && (
+        {!isLoading && file && file.status !== 'AVAILABLE' && (
           <div className="rounded-lg border border-accent-warning/30 bg-accent-warning/5 px-4 py-3 max-w-md">
             <p className="text-sm font-sans text-accent-warning">
-              This file is currently <strong>{file.state}</strong> and cannot be checked out.
+              This file is currently <strong>{file.status}</strong> and cannot be checked out.
             </p>
             <Link href={`/archive/files/${id}`} className="text-xs text-accent-saffron/70 hover:text-accent-saffron mt-2 block">
               ← Back to file
@@ -67,27 +73,42 @@ export default function CheckoutPage({ params }: Props) {
           </div>
         )}
 
-        {!isLoading && file && file.state === 'IN_STORAGE' && (
+        {!isLoading && file && file.status === 'AVAILABLE' && (
           <form onSubmit={handleSubmit} className="max-w-md space-y-4">
             <div className="rounded-lg border border-surface-border bg-surface-raised px-4 py-3">
               <p className="text-xs text-text-primary/40 font-sans uppercase tracking-wider mb-1">File</p>
-              <p className="text-sm font-mono text-text-primary">{file.file_code}</p>
-              {file.description && (
-                <p className="text-xs font-sans text-text-primary/50 mt-0.5">{file.description}</p>
+              <p className="text-sm font-mono text-text-primary">{file.physical_file_code}</p>
+              {file.notes && (
+                <p className="text-xs font-sans text-text-primary/50 mt-0.5">{file.notes}</p>
               )}
             </div>
 
             <div>
-              <label htmlFor="checkout-notes" className="text-xs font-sans text-text-primary/70 font-medium block mb-1">
-                Notes <span className="text-text-primary/30">(optional)</span>
+              <label htmlFor="checkout-purpose" className="text-xs font-sans text-text-primary/70 font-medium block mb-1">
+                Purpose <span className="text-accent-critical">*</span>
               </label>
               <textarea
-                id="checkout-notes"
-                value={notes}
-                onChange={(e) => setNotes(e.target.value)}
+                id="checkout-purpose"
+                value={purpose}
+                onChange={(e) => setPurpose(e.target.value)}
                 rows={3}
                 placeholder="Reason for checkout, destination, etc."
                 className="w-full rounded-md border border-surface-border bg-surface-base px-3 py-2 text-sm font-sans text-text-primary placeholder:text-text-primary/30 focus:outline-none focus:ring-2 focus:ring-accent-saffron resize-none"
+              />
+            </div>
+
+            <div>
+              <label htmlFor="checkout-expected-return" className="text-xs font-sans text-text-primary/70 font-medium block mb-1">
+                Expected return date <span className="text-accent-critical">*</span>
+              </label>
+              <input
+                id="checkout-expected-return"
+                type="date"
+                required
+                aria-required="true"
+                value={expectedReturnAt}
+                onChange={(e) => setExpectedReturnAt(e.target.value)}
+                className="w-full rounded-md border border-surface-border bg-surface-base px-3 py-2 text-sm font-mono text-text-primary focus:outline-none focus:ring-2 focus:ring-accent-saffron"
               />
             </div>
 

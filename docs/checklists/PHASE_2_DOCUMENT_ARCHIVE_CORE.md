@@ -46,7 +46,9 @@
 - [x] Create racks, shelves, cabinets, boxes and file slots.
 - [x] List locations by archive room for hierarchy browsing.
 - [x] Assign file location.
+- [x] List project physical files.
 - [x] Print label.
+- [x] Resolve scanned physical-file QR tokens through authenticated API.
 - [x] Check out file.
 - [x] Return file.
 - [x] Record movement.
@@ -82,7 +84,7 @@
 - [x] Implement project list.
 - [x] Implement folder explorer.
 - [x] Implement upload interface.
-- [ ] Implement preview drawer.
+- [x] Implement preview drawer.
 - [x] Implement ZIP export status UI.
 - [x] Implement physical-file label and checkout screens.
-- [ ] Validate responsive, accessibility and reduced-motion states.
+- [x] Validate responsive, accessibility and reduced-motion states.

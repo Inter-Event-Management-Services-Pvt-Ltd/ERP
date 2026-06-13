@@ -22,6 +22,7 @@ PROJECT_ID = UUID("33333333-3333-4333-8333-333333333333")
 ROOM_ID = UUID("44444444-4444-4444-8444-444444444444")
 LOCATION_ID = UUID("55555555-5555-4555-8555-555555555555")
 PHYSICAL_FILE_ID = UUID("66666666-6666-4666-8666-666666666666")
+QR_TOKEN = UUID("77777777-7777-4777-8777-777777777777")
 CREATED_AT = datetime(2026, 6, 6, 8, 0, tzinfo=UTC)
 
 
@@ -76,6 +77,24 @@ class RecordingPhysicalArchiveService:
     ) -> PhysicalFileResponse:
         self.calls.append(("checkout", (physical_file_id, payload), current_user, context))
         return _physical_file_response(status="CHECKED_OUT")
+
+    async def get_physical_file_by_qr_token(
+        self,
+        *,
+        qr_token: UUID,
+        current_user: CurrentUser,
+    ) -> PhysicalFileResponse:
+        self.calls.append(("get_by_qr", qr_token, current_user, None))
+        return _physical_file_response()
+
+    async def list_project_physical_files(
+        self,
+        *,
+        project_id: UUID,
+        current_user: CurrentUser,
+    ) -> list[PhysicalFileResponse]:
+        self.calls.append(("list_project_physical_files", project_id, current_user, None))
+        return [_physical_file_response()]
 
 
 def _current_user(*, permissions: list[str], is_super_user: bool = False) -> CurrentUser:
@@ -216,6 +235,61 @@ def test_list_archive_locations_returns_room_locations() -> None:
     assert response.json()[0]["code"] == "R1"
     assert service.calls[0][0] == "list_locations"
     assert service.calls[0][1] == (ROOM_ID, False)
+
+
+def test_get_physical_file_by_qr_requires_archive_read() -> None:
+    service = _install_overrides(current_user=_current_user(permissions=[]))
+    try:
+        response = asyncio.run(
+            _request(
+                "GET",
+                f"/v1/physical-files/by-qr/{QR_TOKEN}",
+                headers={"Authorization": "Bearer test-token"},
+            )
+        )
+    finally:
+        app.dependency_overrides.clear()
+
+    assert response.status_code == 403
+    assert service.calls == []
+
+
+def test_get_physical_file_by_qr_returns_physical_file() -> None:
+    service = _install_overrides(current_user=_current_user(permissions=["archive.view"]))
+    try:
+        response = asyncio.run(
+            _request(
+                "GET",
+                f"/v1/physical-files/by-qr/{QR_TOKEN}",
+                headers={"Authorization": "Bearer test-token"},
+            )
+        )
+    finally:
+        app.dependency_overrides.clear()
+
+    assert response.status_code == 200
+    assert response.json()["id"] == str(PHYSICAL_FILE_ID)
+    assert service.calls[0][0] == "get_by_qr"
+    assert service.calls[0][1] == QR_TOKEN
+
+
+def test_list_project_physical_files_allows_project_member_context() -> None:
+    service = _install_overrides(current_user=_current_user(permissions=[]))
+    try:
+        response = asyncio.run(
+            _request(
+                "GET",
+                f"/v1/projects/{PROJECT_ID}/physical-files",
+                headers={"Authorization": "Bearer test-token"},
+            )
+        )
+    finally:
+        app.dependency_overrides.clear()
+
+    assert response.status_code == 200
+    assert response.json()[0]["id"] == str(PHYSICAL_FILE_ID)
+    assert service.calls[0][0] == "list_project_physical_files"
+    assert service.calls[0][1] == PROJECT_ID
 
 
 def test_checkout_physical_file_requires_checkout_permission() -> None:

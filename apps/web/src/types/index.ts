@@ -150,6 +150,7 @@ export interface UpdateProjectPayload {
   description?: string
   project_status_id?: string
   priority_level_id?: string
+  archived_at?: string | null
 }
 
 export type ProjectMemberRole = 'VIEW' | 'CONTRIBUTE' | 'MANAGE'
@@ -238,7 +239,7 @@ export interface DownloadUrlResponse {
 
 // ─── Archive exports ──────────────────────────────────────────────────────────
 
-export type ExportStatus = 'QUEUED' | 'PROCESSING' | 'READY' | 'FAILED' | 'EXPIRED'
+export type ExportStatus = 'QUEUED' | 'GENERATING' | 'READY' | 'FAILED' | 'EXPIRED' | 'CANCELLED'
 
 export interface ArchiveExport {
   id: string
@@ -255,16 +256,15 @@ export interface ArchiveExport {
 
 export interface PhysicalRoom {
   id: string
-  name: string
   code: string
+  name: string
   description: string | null
   is_active: boolean
-  created_at: string
 }
 
 export interface CreatePhysicalRoomPayload {
-  name: string
   code: string
+  name: string
   description?: string
 }
 
@@ -272,73 +272,122 @@ export type PhysicalLocationType = 'RACK' | 'SHELF' | 'CABINET' | 'BOX' | 'FILE_
 
 export interface PhysicalLocation {
   id: string
-  room_id: string
+  archive_room_id: string
   parent_location_id: string | null
-  type: PhysicalLocationType
-  label: string
-  description: string | null
+  location_type: PhysicalLocationType
+  code: string
+  label: string | null
+  qr_token: string
   is_active: boolean
 }
 
 export interface CreatePhysicalLocationPayload {
-  room_id: string
+  archive_room_id: string
   parent_location_id?: string
-  type: PhysicalLocationType
-  label: string
-  description?: string
+  location_type: PhysicalLocationType
+  code: string
+  label?: string
 }
 
-export type PhysicalFileState = 'IN_STORAGE' | 'CHECKED_OUT' | 'MISSING' | 'DISPOSED'
+export type PhysicalFileState = 'AVAILABLE' | 'CHECKED_OUT' | 'MISSING' | 'UNDER_VERIFICATION' | 'ARCHIVED'
+
+export interface PhysicalArchiveProjectSummary {
+  id: string
+  project_code: string
+  name: string
+}
+
+export interface PhysicalArchiveLocationSummary {
+  id: string
+  archive_room_id: string
+  location_type: PhysicalLocationType
+  code: string
+  label: string | null
+  qr_token: string
+}
+
+export interface PhysicalArchiveRoomSummary {
+  id: string
+  code: string
+  name: string
+}
+
+export interface PhysicalFileCheckout {
+  id: string
+  checked_out_by: string
+  checked_out_at: string
+  purpose: string
+  expected_return_at: string | null
+}
 
 export interface PhysicalFile {
   id: string
+  physical_file_code: string
   project_id: string
-  location_id: string
-  location: PhysicalLocation | null
-  file_code: string
-  description: string | null
-  state: PhysicalFileState
-  checked_out_to: string | null
-  checked_out_at: string | null
+  project: PhysicalArchiveProjectSummary | null
+  archive_location_id: string
+  archive_location: PhysicalArchiveLocationSummary | null
+  archive_room: PhysicalArchiveRoomSummary | null
+  volume_number: number
+  status: PhysicalFileState
   qr_token: string
+  archived_on: string | null
+  archived_by: string | null
+  last_verified_at: string | null
+  next_verification_at: string | null
+  notes: string | null
+  open_checkout: PhysicalFileCheckout | null
   created_at: string
   updated_at: string
 }
 
 export interface CreatePhysicalFilePayload {
-  location_id: string
-  file_code: string
-  description?: string
+  physical_file_code: string
+  archive_location_id: string
+  volume_number?: number
+  archived_on?: string
+  notes?: string
 }
 
 export interface PhysicalFileCheckoutPayload {
-  notes?: string
+  purpose: string
+  expected_return_at?: string
 }
 
 export interface PhysicalFileReturnPayload {
-  notes?: string
+  returned_to_location_id?: string
+  remarks?: string
 }
 
 export interface PhysicalFileMovePayload {
-  location_id: string
-  notes?: string
+  to_location_id: string
+  remarks?: string
 }
 
 export interface PhysicalFileVerifyPayload {
-  notes?: string
+  location_correct: boolean
+  label_readable: boolean
+  physical_file_present: boolean
+  digital_archive_present: boolean
+  documents_complete: boolean
+  remarks?: string
 }
 
 export interface PhysicalFileLabel {
-  file_code: string
-  qr_token: string
+  physical_file_id: string
+  physical_file_code: string
+  project_code: string
   project_name: string
-  location_label: string
-  description: string | null
+  location_code: string
+  archive_room: string
+  qr_token: string
+  label_text: string
 }
 
 export interface PhysicalLocationContents {
   location: PhysicalLocation
-  files: PhysicalFile[]
+  child_locations: PhysicalLocation[]
+  physical_files: PhysicalFile[]
 }
 
 // ─── Employees (used in member picker) ────────────────────────────────────────
