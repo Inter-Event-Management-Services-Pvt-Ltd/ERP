@@ -2,78 +2,89 @@
 
 ## Clients and Projects
 
-- [ ] Create client CRUD.
-- [ ] Create project CRUD.
-- [ ] Create project-member assignment.
-- [ ] Apply folder template.
-- [ ] Render folder tree.
-- [ ] Preserve existing folder hierarchy during import.
+- [x] Create client CRUD.
+- [x] Soft-delete clients through audited deactivation.
+- [x] Create project CRUD.
+- [x] Soft-delete projects with audit history.
+- [x] Create project-member assignment.
+- [x] List active project members.
+- [x] Update project-member access level.
+- [x] Soft-remove project members.
+- [x] Expose limited employee lookup for project-member assignment.
+- [x] Expose project type, status and priority reference lookups.
+- [x] Apply folder template.
+- [x] Render folder tree.
+- [x] Preserve existing folder hierarchy during archive export, including empty folders.
 
 ## Documents
 
-- [ ] Upload document.
-- [ ] Validate file name.
-- [ ] Validate MIME type.
-- [ ] Validate size.
-- [ ] Store immutable object key.
-- [ ] Create document version.
-- [ ] Generate checksum.
-- [ ] Download through signed URL.
-- [ ] Preview supported files.
-- [ ] Add duplicate warning.
+- [x] Upload document.
+- [x] Validate file name.
+- [x] Validate MIME type.
+- [x] Validate size.
+- [x] Store immutable object key.
+- [x] Create document version.
+- [x] Generate checksum.
+- [x] Download through signed URL.
+- [x] Preview supported files.
+- [x] Add duplicate warning.
 
 ## Offline Archive
 
-- [ ] Generate ZIP asynchronously.
-- [ ] Preserve folder hierarchy.
-- [ ] Record exact exported versions.
-- [ ] Generate manifest.
-- [ ] Generate document index PDF.
-- [ ] Generate QR label.
-- [ ] Add export expiration.
-- [ ] Add export notification.
+- [x] Generate ZIP asynchronously.
+- [x] Preserve folder hierarchy.
+- [x] Record exact exported versions.
+- [x] Generate manifest.
+- [x] Generate document index PDF.
+- [x] Generate QR label.
+- [x] Add export expiration.
+- [x] Add export notification.
 
 ## Physical Archive
 
-- [ ] Create rooms.
-- [ ] Create racks, shelves, cabinets, boxes and file slots.
-- [ ] Assign file location.
-- [ ] Print label.
-- [ ] Check out file.
-- [ ] Return file.
-- [ ] Record movement.
-- [ ] Prevent double checkout.
-- [ ] Add verification workflow.
+- [x] Create rooms.
+- [x] Create racks, shelves, cabinets, boxes and file slots.
+- [x] List locations by archive room for hierarchy browsing.
+- [x] Assign file location.
+- [x] List project physical files.
+- [x] Print label.
+- [x] Resolve scanned physical-file QR tokens through authenticated API.
+- [x] Check out file.
+- [x] Return file.
+- [x] Record movement.
+- [x] Prevent double checkout.
+- [x] Add verification workflow.
 
 ## Security Gate
 
-- [ ] All buckets remain private.
-- [ ] Signed URLs expire quickly.
-- [ ] Upload actions enforce ABAC.
-- [ ] Download actions enforce ABAC.
-- [ ] ZIP exports enforce ABAC.
-- [ ] Physical checkout enforces ABAC.
-- [ ] Audit events exist for upload, download, export, move, checkout and return.
-- [ ] File-type restrictions are documented.
-- [ ] Malware-scanning decision is recorded.
+- [x] All buckets remain private.
+- [x] Signed URLs expire quickly.
+- [x] Upload actions enforce ABAC.
+- [x] Download actions enforce ABAC.
+- [x] ZIP exports enforce ABAC.
+- [x] Physical checkout enforces ABAC.
+- [x] Audit events exist for upload, download, export, move, checkout and return.
+- [x] File-type restrictions are documented.
+- [x] Malware-scanning decision is recorded.
 
 ## Exit Criteria
 
-- [ ] Complete core workflow passes end-to-end.
+- [x] Backend core workflow passes end-to-end through API tests, local Supabase reset, SQL probes and Celery worker validation.
+- [ ] Full browser workflow passes end-to-end after Claude wires final backend refinements.
 
 
 ## Agent Split
 
 ### Codex backend
 
-- [ ] Implement API, storage, archive jobs, integrity rules and tests.
+- [x] Implement API, storage, archive jobs, integrity rules and tests. Backend code, Python tests, local Supabase reset and SQL probes are complete.
 
 ### Claude frontend
 
-- [ ] Implement project list.
-- [ ] Implement folder explorer.
-- [ ] Implement upload interface.
-- [ ] Implement preview drawer.
-- [ ] Implement ZIP export status UI.
-- [ ] Implement physical-file label and checkout screens.
-- [ ] Validate responsive, accessibility and reduced-motion states.
+- [x] Implement project list.
+- [x] Implement folder explorer.
+- [x] Implement upload interface.
+- [x] Implement preview drawer.
+- [x] Implement ZIP export status UI.
+- [x] Implement physical-file label and checkout screens.
+- [x] Validate responsive, accessibility and reduced-motion states.

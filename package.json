@@ -1,0 +1,11 @@
+{
+  "name": "iems-erp",
+  "private": true,
+  "scripts": {
+    "dev": "node scripts/dev.mjs",
+    "dev:archive": "docker compose -f compose.dev.yaml up -d redis worker scheduler",
+    "dev:archive:logs": "docker compose -f compose.dev.yaml logs -f worker scheduler",
+    "dev:archive:stop": "docker compose -f compose.dev.yaml stop worker scheduler redis",
+    "dev:check": "node --check scripts/dev.mjs && node scripts/dev.mjs --dry-run"
+  }
+}

@@ -60,6 +60,25 @@
   }
 }
 
+/* Print — show only the physical file label, hide all app chrome */
+@media print {
+  body * {
+    visibility: hidden;
+  }
+
+  .print-label,
+  .print-label * {
+    visibility: visible;
+  }
+
+  .print-label {
+    position: absolute;
+    inset: 0;
+    margin: 2cm auto;
+    padding: 0;
+  }
+}
+
 /* Honour prefers-reduced-motion — collapse all transitions and shimmer */
 @media (prefers-reduced-motion: reduce) {
   *,

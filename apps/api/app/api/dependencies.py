@@ -10,6 +10,11 @@ from app.core.current_user import CurrentUserError, SupabaseCurrentUserResolver
 from app.core.rbac import AuthorizationError, RBACService
 from app.core.super_user import SuperUserOverrideService
 from app.schemas.current_user import CurrentUser
+from app.services.clients_projects import ClientsProjectsService
+from app.services.documents_archive import DocumentsArchiveService
+from app.services.employees import EmployeesService
+from app.services.physical_archive import PhysicalArchiveService
+from app.workers.archive_exports import enqueue_archive_export
 
 
 async def get_current_user(
@@ -47,6 +52,102 @@ def require_permission(permission_code: str) -> object:
             ) from exc
 
     return dependency
+
+
+def require_any_permission(permission_codes: set[str]) -> object:
+    async def dependency(
+        current_user: Annotated[CurrentUser, Depends(get_current_user)],
+    ) -> CurrentUser:
+        rbac = RBACService()
+        if any(
+            rbac.has_permission(current_user, permission_code)
+            for permission_code in permission_codes
+        ):
+            return current_user
+        raise HTTPException(
+            status_code=403,
+            detail={
+                "code": "PERMISSION_DENIED",
+                "message": "Permission denied",
+            },
+        )
+
+    return dependency
+
+
+def get_clients_projects_service() -> ClientsProjectsService:
+    settings = get_settings()
+    if settings.supabase_url is None or settings.supabase_service_role_key is None:
+        raise HTTPException(
+            status_code=503,
+            detail={
+                "code": "DATA_SERVICE_NOT_CONFIGURED",
+                "message": "Supabase data service is not configured",
+            },
+        )
+    return ClientsProjectsService(
+        supabase_url=settings.supabase_url,
+        service_role_key=settings.supabase_service_role_key,
+        timeout_seconds=settings.supabase_request_timeout_seconds,
+    )
+
+
+def get_employees_service() -> EmployeesService:
+    settings = get_settings()
+    if settings.supabase_url is None or settings.supabase_service_role_key is None:
+        raise HTTPException(
+            status_code=503,
+            detail={
+                "code": "DATA_SERVICE_NOT_CONFIGURED",
+                "message": "Supabase data service is not configured",
+            },
+        )
+    return EmployeesService(
+        supabase_url=settings.supabase_url,
+        service_role_key=settings.supabase_service_role_key,
+        timeout_seconds=settings.supabase_request_timeout_seconds,
+    )
+
+
+def get_documents_archive_service() -> DocumentsArchiveService:
+    settings = get_settings()
+    if settings.supabase_url is None or settings.supabase_service_role_key is None:
+        raise HTTPException(
+            status_code=503,
+            detail={
+                "code": "DATA_SERVICE_NOT_CONFIGURED",
+                "message": "Supabase data service is not configured",
+            },
+        )
+    return DocumentsArchiveService(
+        supabase_url=settings.supabase_url,
+        service_role_key=settings.supabase_service_role_key,
+        timeout_seconds=settings.supabase_request_timeout_seconds,
+        signed_url_ttl_seconds=settings.signed_url_ttl_seconds,
+        archive_export_ttl_hours=settings.archive_export_ttl_hours,
+        max_upload_bytes=settings.max_upload_bytes,
+        allowed_upload_mime_types=settings.allowed_upload_mime_type_set,
+        project_documents_bucket=settings.project_documents_bucket,
+        generated_archives_bucket=settings.generated_archives_bucket,
+        enqueue_archive_export=enqueue_archive_export,
+    )
+
+
+def get_physical_archive_service() -> PhysicalArchiveService:
+    settings = get_settings()
+    if settings.supabase_url is None or settings.supabase_service_role_key is None:
+        raise HTTPException(
+            status_code=503,
+            detail={
+                "code": "DATA_SERVICE_NOT_CONFIGURED",
+                "message": "Supabase data service is not configured",
+            },
+        )
+    return PhysicalArchiveService(
+        supabase_url=settings.supabase_url,
+        service_role_key=settings.supabase_service_role_key,
+        timeout_seconds=settings.supabase_request_timeout_seconds,
+    )
 
 
 def get_audit_writer() -> SupabaseAuditWriter:

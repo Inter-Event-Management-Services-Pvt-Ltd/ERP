@@ -80,6 +80,17 @@ supabase db reset
 
 The migration files are applied in timestamp order. Seed files are configured in `supabase/config.toml`.
 
+## Local App Development
+
+Start the FastAPI backend and Next.js frontend together:
+
+```bash
+npm run dev
+```
+
+This runs the API on `http://localhost:8000` and the web app on
+`http://localhost:3000`. Local Supabase should already be running.
+
 ## Director Account
 
 The seed creates an employee record for:

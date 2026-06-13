@@ -4,6 +4,7 @@ node_modules/
 # Next.js
 .next/
 out/
+*.tsbuildinfo
 
 # Python / uv
 .venv/
@@ -18,6 +19,8 @@ __pycache__/
 coverage.xml
 htmlcov/
 .uv-cache/
+celerybeat-schedule
+celerybeat.pid
 
 # build output
 dist/
@@ -26,6 +29,7 @@ build/
 
 # env files
 .env
+.env.development
 .env.local
 .env.*.local
 supabase/.env

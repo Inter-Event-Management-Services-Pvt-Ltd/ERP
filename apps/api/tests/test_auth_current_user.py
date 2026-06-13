@@ -9,6 +9,7 @@ from httpx import ASGITransport, AsyncClient, Response
 
 from app.api.dependencies import get_current_user
 from app.core.auth import AuthError, SupabaseJwtVerifier, TokenClaims
+from app.core.config import Settings
 from app.core.current_user import CurrentUserError, SupabaseCurrentUserResolver
 from app.main import app
 from app.schemas.current_user import CurrentUser, EmployeeProfile, UserAccount
@@ -141,6 +142,32 @@ def test_jwt_verifier_rejects_disallowed_email_domain() -> None:
 
     assert exc_info.value.status_code == 403
     assert exc_info.value.code == "EMAIL_DOMAIN_NOT_ALLOWED"
+
+
+def test_jwt_verifier_accepts_configured_secondary_email_domain() -> None:
+    verifier = SupabaseJwtVerifier(
+        jwt_secret=SECRET,
+        issuer=ISSUER,
+        audience=AUDIENCE,
+        allowed_email_domains=("iemsnewdelhi.com", "gmail.com"),
+    )
+
+    claims = verifier.verify(_token("local.dev@gmail.com"))
+
+    assert claims.email == "local.dev@gmail.com"
+
+
+def test_settings_parses_email_domain_and_cors_allowlists() -> None:
+    settings = Settings(
+        ALLOWED_EMAIL_DOMAINS="iemsnewdelhi.com, gmail.com",
+        CORS_ALLOWED_ORIGINS="http://localhost:3000, https://erp.example.com",
+    )
+
+    assert settings.allowed_email_domain_list == ("iemsnewdelhi.com", "gmail.com")
+    assert settings.cors_allowed_origin_list == (
+        "http://localhost:3000",
+        "https://erp.example.com",
+    )
 
 
 def test_current_user_resolver_returns_active_employee_context() -> None:

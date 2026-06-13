@@ -14,6 +14,14 @@ class Settings(BaseSettings):
         default="iemsnewdelhi.com",
         validation_alias="ALLOWED_EMAIL_DOMAIN",
     )
+    allowed_email_domains: str | None = Field(
+        default=None,
+        validation_alias="ALLOWED_EMAIL_DOMAINS",
+    )
+    cors_allowed_origins: str = Field(
+        default="http://localhost:3000",
+        validation_alias="CORS_ALLOWED_ORIGINS",
+    )
     director_email: str = Field(
         default="director@iemsnewdelhi.com",
         validation_alias="DIRECTOR_EMAIL",
@@ -41,6 +49,27 @@ class Settings(BaseSettings):
         default="redis://localhost:6379/1",
         validation_alias="CELERY_RESULT_BACKEND",
     )
+    signed_url_ttl_seconds: int = Field(default=900, validation_alias="SIGNED_URL_TTL_SECONDS")
+    archive_export_ttl_hours: int = Field(default=24, validation_alias="ARCHIVE_EXPORT_TTL_HOURS")
+    max_upload_bytes: int = Field(default=104_857_600, validation_alias="MAX_UPLOAD_BYTES")
+    allowed_upload_mime_types: str = Field(
+        default=(
+            "application/pdf,image/jpeg,image/png,text/plain,"
+            "application/msword,"
+            "application/vnd.openxmlformats-officedocument.wordprocessingml.document,"
+            "application/vnd.ms-excel,"
+            "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+        ),
+        validation_alias="ALLOWED_UPLOAD_MIME_TYPES",
+    )
+    project_documents_bucket: str = Field(
+        default="project-documents",
+        validation_alias="PROJECT_DOCUMENTS_BUCKET",
+    )
+    generated_archives_bucket: str = Field(
+        default="generated-archives",
+        validation_alias="GENERATED_ARCHIVES_BUCKET",
+    )
     log_level: str = Field(default="INFO", validation_alias="LOG_LEVEL")
 
     @property
@@ -54,6 +83,27 @@ class Settings(BaseSettings):
         if self.supabase_auth_issuer is None:
             return None
         return f"{self.supabase_auth_issuer}/.well-known/jwks.json"
+
+    @property
+    def allowed_email_domain_list(self) -> tuple[str, ...]:
+        configured_domains = _csv_values(self.allowed_email_domains)
+        fallback_domains = _csv_values(self.allowed_email_domain)
+        domains = configured_domains or fallback_domains
+        return tuple(domain.lower().lstrip("@") for domain in domains)
+
+    @property
+    def cors_allowed_origin_list(self) -> tuple[str, ...]:
+        return _csv_values(self.cors_allowed_origins)
+
+    @property
+    def allowed_upload_mime_type_set(self) -> frozenset[str]:
+        return frozenset(_csv_values(self.allowed_upload_mime_types))
+
+
+def _csv_values(raw_value: str | None) -> tuple[str, ...]:
+    if raw_value is None:
+        return ()
+    return tuple(value.strip() for value in raw_value.split(",") if value.strip())
 
 
 @lru_cache

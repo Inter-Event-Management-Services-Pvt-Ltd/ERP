@@ -15,9 +15,9 @@
 - [x] FastAPI image builds.
 - [x] API health endpoint exists.
 - [x] API container runs as non-root.
-- [ ] Celery worker starts.
-- [ ] Celery scheduler starts.
-- [ ] Redis health check passes.
+- [x] Celery worker starts.
+- [x] Celery scheduler starts.
+- [x] Redis health check passes.
 - [x] Redis is private in production.
 - [x] API does not expose secrets in logs.
 - [x] Container logs are useful and structured.
@@ -57,10 +57,10 @@
 ## Validation
 
 - [ ] Clean build succeeds.
-- [ ] `docker compose config` succeeds.
+- [x] `docker compose config` succeeds.
 - [ ] Health checks pass.
 - [ ] Login flow works.
 - [ ] Document upload works.
-- [ ] ZIP worker works.
+- [x] ZIP worker works.
 - [ ] Restart test passes.
 - [ ] Logs remain available after restart.

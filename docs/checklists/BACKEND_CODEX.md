@@ -3,16 +3,16 @@
 ## Ownership
 
 - [x] Only backend-owned files were modified for Phase 0/Phase 1 backend work; `apps/web/**` was not modified.
-- [x] Any frontend requirement was recorded for Claude. No frontend requirement was identified.
+- [x] Any frontend requirement was recorded for Claude. Phase 2 endpoint wiring is recorded in OPEN-024.
 - [x] API contract updated where required.
 
 ## Database
 
-- [x] Migration added where needed. Pre-staging foundation migrations were hardened in place; no append-only staging migration was required.
-- [x] Migration is reversible or rollback is documented. Rollback path for Phase 0 local validation is `npx supabase db reset` from the edited migration set.
+- [x] Migration added where needed. Phase 2 audited RPC migrations cover clients/projects, documents/archive exports and physical archive writes.
+- [x] Migration is reversible or rollback is documented. Rollback path for local validation is `npx supabase db reset` from the migration set.
 - [x] Constraints preserved.
 - [x] Index impact reviewed.
-- [x] Local reset passes.
+- [x] Local reset passes for latest Phase 2 changes.
 - [x] Seed impact reviewed.
 
 ## Authorization
@@ -28,16 +28,16 @@
 ## Storage
 
 - [x] Bucket remains private.
-- [ ] Signed URL expiry appropriate.
-- [ ] File type validated.
-- [ ] File size validated.
-- [ ] Immutable storage key used.
-- [ ] Object-storage error path handled.
+- [x] Signed URL expiry appropriate.
+- [x] File type validated.
+- [x] File size validated.
+- [x] Immutable storage key used.
+- [x] Object-storage error path handled.
 
 ## Workflows
 
-- [ ] Transaction boundaries reviewed.
-- [ ] Race conditions reviewed.
+- [x] Transaction boundaries reviewed.
+- [x] Race conditions reviewed.
 - [x] Invalid-state tests added.
 - [x] Unauthorized tests added.
 - [x] Success tests added.
@@ -47,5 +47,5 @@
 - [x] Ruff passes.
 - [x] MyPy passes.
 - [x] Pytest passes.
-- [x] Migration reset passes.
+- [x] Migration reset passes for latest Phase 2 changes.
 - [x] Backend security implications documented.

@@ -1,3 +1,4 @@
+from collections.abc import Iterable
 from dataclasses import dataclass
 from datetime import UTC, datetime
 from typing import Any, cast
@@ -45,13 +46,17 @@ class SupabaseJwtVerifier:
         jwt_secret: str | None,
         issuer: str | None,
         audience: str,
-        allowed_email_domain: str,
+        allowed_email_domain: str | None = None,
+        allowed_email_domains: Iterable[str] | None = None,
         jwks_url: str | None = None,
     ) -> None:
         self._jwt_secret = jwt_secret
         self._issuer = issuer
         self._audience = audience
-        self._allowed_email_domain = allowed_email_domain.strip().lower().lstrip("@")
+        self._allowed_email_domains = _allowed_domains(
+            allowed_email_domain=allowed_email_domain,
+            allowed_email_domains=allowed_email_domains,
+        )
         self._jwks_url = jwks_url
 
     @classmethod
@@ -60,7 +65,7 @@ class SupabaseJwtVerifier:
             jwt_secret=settings.supabase_jwt_secret,
             issuer=settings.supabase_auth_issuer,
             audience=settings.supabase_jwt_audience,
-            allowed_email_domain=settings.allowed_email_domain,
+            allowed_email_domains=settings.allowed_email_domain_list,
             jwks_url=settings.supabase_jwks_url,
         )
 
@@ -149,7 +154,7 @@ class SupabaseJwtVerifier:
 
     def _validate_email_domain(self, email: str) -> None:
         _, separator, domain = email.lower().rpartition("@")
-        if separator == "" or domain != self._allowed_email_domain:
+        if separator == "" or domain not in self._allowed_email_domains:
             raise AuthError(403, "EMAIL_DOMAIN_NOT_ALLOWED", "Email domain is not allowed")
 
 
@@ -173,3 +178,24 @@ def _uuid_claim(payload: dict[str, object], key: str) -> UUID:
         return UUID(value)
     except ValueError as exc:
         raise AuthError(401, "INVALID_TOKEN", f"Token claim `{key}` is invalid") from exc
+
+
+def _allowed_domains(
+    *,
+    allowed_email_domain: str | None,
+    allowed_email_domains: Iterable[str] | None,
+) -> frozenset[str]:
+    domains: list[str] = []
+    if allowed_email_domains is not None:
+        domains.extend(allowed_email_domains)
+    if allowed_email_domain is not None:
+        domains.append(allowed_email_domain)
+
+    normalized = {
+        domain.strip().lower().lstrip("@")
+        for domain in domains
+        if domain.strip().lstrip("@")
+    }
+    if not normalized:
+        raise AuthError(503, "AUTH_NOT_CONFIGURED", "Allowed email domains are not configured")
+    return frozenset(normalized)
