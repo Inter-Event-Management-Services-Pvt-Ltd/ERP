@@ -19,7 +19,7 @@ class Settings(BaseSettings):
         validation_alias="ALLOWED_EMAIL_DOMAINS",
     )
     cors_allowed_origins: str = Field(
-        default="http://localhost:3001",
+        default="http://localhost:3000",
         validation_alias="CORS_ALLOWED_ORIGINS",
     )
     director_email: str = Field(

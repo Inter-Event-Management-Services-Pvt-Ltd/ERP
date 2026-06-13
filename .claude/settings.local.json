@@ -49,7 +49,8 @@
       "Bash(pkill -f \"next dev\")",
       "Bash(git rm *)",
       "Bash(git fetch *)",
-      "Bash(git merge *)"
+      "Bash(git merge *)",
+      "Bash(git stash *)"
     ]
   },
   "disabledMcpjsonServers": [
