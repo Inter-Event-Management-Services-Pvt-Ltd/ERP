@@ -47,6 +47,156 @@ Question: Which managed Supabase plan and backup-retention settings are required
 Status: Open
 ```
 
+### OPEN-032 - Phase 3 attendance frontend wiring
+
+```text
+Date: 2026-06-13
+Category: Frontend Integration
+Severity: Medium
+Question or issue:
+  Codex added backend attendance endpoints:
+  - POST /v1/attendance/check-in
+  - POST /v1/attendance/check-out
+  - GET /v1/attendance/me
+  - GET /v1/attendance/team
+  - PATCH /v1/attendance/sessions/{session_id}
+Why it matters:
+  Claude needs to wire the attendance page to the documented contract without
+  inventing direct Supabase writes or alternate field names.
+Frontend follow-up:
+  Use FastAPI only. Show RESOURCE_CONFLICT when the user is already checked in,
+  INVALID_STATE when checking out without an open session, and validation errors
+  when an admin correction is missing correction_reason. Team attendance should
+  be shown only to users whose GET /v1/me permissions include attendance.view_all
+  or whose isSuperUser flag is true.
+Resolution:
+  Wired apps/web/src/app/attendance/page.tsx to the documented contract via
+  lib/api.ts and hooks/use-attendance.ts:
+  - Check-in/out card calls POST /v1/attendance/check-in and
+    /v1/attendance/check-out with optional remarks, derives current status from
+    GET /v1/attendance/me (open session = no checked_out_at).
+  - "My History" table lists GET /v1/attendance/me sessions with duration,
+    source and remarks.
+  - "Team Attendance" section (GET /v1/attendance/team, optional employee_id
+    filter via employee search) is rendered only when
+    user.isSuperUser || permissions.includes('attendance.view_all').
+  - Admin correction (PATCH /v1/attendance/sessions/{session_id}) is exposed via
+    a "Correct" action + dialog (apps/web/src/components/attendance/
+    correction-dialog.tsx) requiring correction_reason, shown only when
+    user.isSuperUser || permissions.includes('attendance.correct').
+  - GET /v1/director/attendance wired into apps/web/src/app/director/attendance/
+    page.tsx (company-wide today summary table with search), reachable only via
+    the existing DirectorGuard-protected /director/* routes.
+  - Errors surfaced via apiErrorMessage (RESOURCE_CONFLICT, INVALID_STATE,
+    INVALID_REFERENCE, ABAC_DENIED/PERMISSION_DENIED, VALIDATION_ERROR fall back
+    to the backend message).
+Verification:
+  cd apps/web && npm run type-check && npm run lint && npm run build
+Owner: Claude
+Status: Resolved
+```
+
+### OPEN-033 - Phase 3 leave, task and calendar frontend wiring
+
+```text
+Date: 2026-06-15
+Category: Frontend Integration
+Severity: Medium
+Question or issue:
+  Codex added the remaining Phase 3 backend endpoints:
+  - GET /v1/leave-types
+  - POST /v1/leave-requests
+  - GET /v1/leave-requests/me
+  - GET /v1/leave-requests/pending
+  - POST /v1/leave-requests/{request_id}/approve
+  - POST /v1/leave-requests/{request_id}/reject
+  - POST /v1/leave-requests/{request_id}/cancel
+  - GET /v1/task-statuses
+  - GET /v1/tasks
+  - POST /v1/tasks
+  - GET /v1/tasks/{task_id}
+  - PATCH /v1/tasks/{task_id}
+  - POST /v1/tasks/{task_id}/assignees
+  - POST /v1/tasks/{task_id}/comments
+  - POST /v1/tasks/{task_id}/documents
+  - GET /v1/calendar/events
+  - POST /v1/calendar/events
+  - PATCH /v1/calendar/events/{event_id}
+  - GET /v1/director/attendance
+Why it matters:
+  The Phase 3 backend is ready, but the Employee Dashboard exit criterion still
+  depends on Claude wiring the frontend screens to the documented FastAPI
+  contract without direct Supabase writes.
+Frontend follow-up:
+  Use docs/api-contract.md exactly. Show INVALID_STATE for non-pending leave
+  review/cancel, ABAC_DENIED for inaccessible project-linked task/calendar
+  actions, INVALID_REFERENCE for bad lookup IDs, and RESOURCE_CONFLICT for any
+  duplicate resource conflicts. Calendar should display source values
+  CALENDAR_EVENT, TASK_DEADLINE, LEAVE and PHYSICAL_FILE_RETURN.
+Resolution:
+  Wired all remaining Phase 3 screens to docs/api-contract.md via lib/api.ts
+  and new hooks/use-leave.ts, hooks/use-tasks.ts, hooks/use-calendar.ts:
+  - apps/web/src/app/leave/page.tsx: "My Requests" (GET /v1/leave-requests/me)
+    with cancel (POST /v1/leave-requests/{id}/cancel, PENDING only via
+    ConfirmDialog); "New Request" dialog (components/leave/
+    create-leave-dialog.tsx) using GET /v1/leave-types and POST
+    /v1/leave-requests; "Pending Review" section (GET
+    /v1/leave-requests/pending, approve/reject via POST .../approve and
+    .../reject with review_comment) shown only when
+    user.isSuperUser || permissions.includes('leave.review').
+  - apps/web/src/app/tasks/page.tsx: GET /v1/tasks list with "assigned to
+    me", status (GET /v1/task-statuses) and project filters; "New Task"
+    dialog (components/tasks/create-task-dialog.tsx) using POST /v1/tasks,
+    GET /v1/projects and GET /v1/priority-levels, gated by
+    user.isSuperUser || permissions.includes('task.manage').
+  - apps/web/src/app/tasks/[id]/page.tsx: GET /v1/tasks/{id} detail with
+    inline edit (PATCH /v1/tasks/{id}), assignees (POST
+    /v1/tasks/{id}/assignees via employee search), comments (POST
+    /v1/tasks/{id}/comments, shown session-locally since no list endpoint
+    exists - see OPEN-034) and linked documents (POST
+    /v1/tasks/{id}/documents), all edit actions gated by task.manage /
+    isSuperUser.
+  - apps/web/src/app/calendar/page.tsx: GET /v1/calendar/events for the
+    current month grouped by day, with Badge labels for source values
+    CALENDAR_EVENT, TASK_DEADLINE, LEAVE and PHYSICAL_FILE_RETURN; "New
+    Event" (POST /v1/calendar/events) and "Edit" (PATCH
+    /v1/calendar/events/{id}, CALENDAR_EVENT entries only) via
+    components/calendar/calendar-event-dialog.tsx, gated by task.manage /
+    isSuperUser.
+  - All screens surface backend errors via apiErrorMessage (INVALID_STATE,
+    ABAC_DENIED/PERMISSION_DENIED, INVALID_REFERENCE, RESOURCE_CONFLICT,
+    VALIDATION_ERROR).
+  - Recorded a follow-up item (OPEN-034) for a missing GET endpoint to list
+    task comments, needed to replace the session-local comment list.
+Verification:
+  cd apps/web && npm run type-check && npm run lint && npm run build
+Owner: Claude
+Status: Resolved
+```
+
+### OPEN-034 - Task comment list endpoint missing from API contract
+
+```text
+Date: 2026-06-15
+Category: API Contract
+Severity: Low
+Question or issue:
+  docs/api-contract.md defines POST /v1/tasks/{task_id}/comments (returns a
+  single TaskCommentResponse) but there is no GET endpoint to list comments
+  for a task, and TaskResponse does not include a comments array.
+Why it matters:
+  apps/web/src/app/tasks/[id]/page.tsx can only show comments posted during
+  the current browser session (held in local state). Comments posted by other
+  users, or in previous sessions, are not visible after a page reload.
+Recommended next action:
+  Codex to add GET /v1/tasks/{task_id}/comments (list, newest first) to
+  docs/api-contract.md and the FastAPI backend. Once available, Claude will
+  replace the session-local comment list in apps/web/src/app/tasks/[id]/
+  page.tsx with a query against this endpoint.
+Owner: Codex (contract + backend), Claude (frontend follow-up)
+Status: Open
+```
+
 ### OPEN-003 — Pilot employee list
 
 ```text

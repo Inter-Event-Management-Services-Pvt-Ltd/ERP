@@ -30,6 +30,24 @@ import type {
   PhysicalFileVerifyPayload,
   PhysicalFileLabel,
   EmployeeSummary,
+  AttendanceSession,
+  CheckInPayload,
+  CheckOutPayload,
+  AttendanceCorrectionPayload,
+  DirectorAttendanceSummary,
+  LeaveRequest,
+  CreateLeaveRequestPayload,
+  ReviewLeaveRequestPayload,
+  Task,
+  CreateTaskPayload,
+  UpdateTaskPayload,
+  AddTaskAssigneesPayload,
+  AddTaskCommentPayload,
+  TaskComment,
+  LinkTaskDocumentPayload,
+  CalendarEvent,
+  CreateCalendarEventPayload,
+  UpdateCalendarEventPayload,
 } from '@/types'
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:8000'
@@ -420,4 +438,237 @@ export async function fetchEmployees(params?: {
   if (params?.search) qs.set('search', params.search)
   const q = qs.toString()
   return apiFetch<EmployeeSummary[]>(`/v1/employees${q ? `?${q}` : ''}`)
+}
+
+// ─── Attendance ───────────────────────────────────────────────────────────────
+
+export async function checkIn(payload: CheckInPayload): Promise<AttendanceSession> {
+  return apiFetch<AttendanceSession>('/v1/attendance/check-in', {
+    method: 'POST',
+    body: JSON.stringify(payload),
+  })
+}
+
+export async function checkOut(payload: CheckOutPayload): Promise<AttendanceSession> {
+  return apiFetch<AttendanceSession>('/v1/attendance/check-out', {
+    method: 'POST',
+    body: JSON.stringify(payload),
+  })
+}
+
+export async function fetchMyAttendance(params?: {
+  from_date?: string
+  to_date?: string
+  limit?: number
+  offset?: number
+}): Promise<AttendanceSession[]> {
+  const qs = new URLSearchParams()
+  if (params?.from_date) qs.set('from_date', params.from_date)
+  if (params?.to_date) qs.set('to_date', params.to_date)
+  if (params?.limit) qs.set('limit', String(params.limit))
+  if (params?.offset) qs.set('offset', String(params.offset))
+  const q = qs.toString()
+  return apiFetch<AttendanceSession[]>(`/v1/attendance/me${q ? `?${q}` : ''}`)
+}
+
+export async function fetchTeamAttendance(params?: {
+  employee_id?: string
+  from_date?: string
+  to_date?: string
+  limit?: number
+  offset?: number
+}): Promise<AttendanceSession[]> {
+  const qs = new URLSearchParams()
+  if (params?.employee_id) qs.set('employee_id', params.employee_id)
+  if (params?.from_date) qs.set('from_date', params.from_date)
+  if (params?.to_date) qs.set('to_date', params.to_date)
+  if (params?.limit) qs.set('limit', String(params.limit))
+  if (params?.offset) qs.set('offset', String(params.offset))
+  const q = qs.toString()
+  return apiFetch<AttendanceSession[]>(`/v1/attendance/team${q ? `?${q}` : ''}`)
+}
+
+export async function correctAttendanceSession(
+  sessionId: string,
+  payload: AttendanceCorrectionPayload
+): Promise<AttendanceSession> {
+  return apiFetch<AttendanceSession>(`/v1/attendance/sessions/${sessionId}`, {
+    method: 'PATCH',
+    body: JSON.stringify(payload),
+  })
+}
+
+export async function fetchDirectorAttendance(): Promise<DirectorAttendanceSummary[]> {
+  return apiFetch<DirectorAttendanceSummary[]>('/v1/director/attendance')
+}
+
+// ─── Leave ────────────────────────────────────────────────────────────────────
+
+export async function fetchLeaveTypes(): Promise<ReferenceLookup[]> {
+  return apiFetch<ReferenceLookup[]>('/v1/leave-types')
+}
+
+export async function createLeaveRequest(
+  payload: CreateLeaveRequestPayload
+): Promise<LeaveRequest> {
+  return apiFetch<LeaveRequest>('/v1/leave-requests', {
+    method: 'POST',
+    body: JSON.stringify(payload),
+  })
+}
+
+export async function fetchMyLeaveRequests(params?: {
+  status?: string
+  limit?: number
+  offset?: number
+}): Promise<LeaveRequest[]> {
+  const qs = new URLSearchParams()
+  if (params?.status) qs.set('status', params.status)
+  if (params?.limit) qs.set('limit', String(params.limit))
+  if (params?.offset) qs.set('offset', String(params.offset))
+  const q = qs.toString()
+  return apiFetch<LeaveRequest[]>(`/v1/leave-requests/me${q ? `?${q}` : ''}`)
+}
+
+export async function fetchPendingLeaveRequests(params?: {
+  limit?: number
+  offset?: number
+}): Promise<LeaveRequest[]> {
+  const qs = new URLSearchParams()
+  if (params?.limit) qs.set('limit', String(params.limit))
+  if (params?.offset) qs.set('offset', String(params.offset))
+  const q = qs.toString()
+  return apiFetch<LeaveRequest[]>(`/v1/leave-requests/pending${q ? `?${q}` : ''}`)
+}
+
+export async function approveLeaveRequest(
+  requestId: string,
+  payload: ReviewLeaveRequestPayload
+): Promise<LeaveRequest> {
+  return apiFetch<LeaveRequest>(`/v1/leave-requests/${requestId}/approve`, {
+    method: 'POST',
+    body: JSON.stringify(payload),
+  })
+}
+
+export async function rejectLeaveRequest(
+  requestId: string,
+  payload: ReviewLeaveRequestPayload
+): Promise<LeaveRequest> {
+  return apiFetch<LeaveRequest>(`/v1/leave-requests/${requestId}/reject`, {
+    method: 'POST',
+    body: JSON.stringify(payload),
+  })
+}
+
+export async function cancelLeaveRequest(requestId: string): Promise<LeaveRequest> {
+  return apiFetch<LeaveRequest>(`/v1/leave-requests/${requestId}/cancel`, {
+    method: 'POST',
+    body: JSON.stringify({}),
+  })
+}
+
+// ─── Tasks ────────────────────────────────────────────────────────────────────
+
+export async function fetchTaskStatuses(): Promise<ReferenceLookup[]> {
+  return apiFetch<ReferenceLookup[]>('/v1/task-statuses')
+}
+
+export async function fetchTasks(params?: {
+  project_id?: string
+  assigned_to_me?: boolean
+  status_code?: string
+  limit?: number
+  offset?: number
+}): Promise<Task[]> {
+  const qs = new URLSearchParams()
+  if (params?.project_id) qs.set('project_id', params.project_id)
+  if (params?.assigned_to_me) qs.set('assigned_to_me', 'true')
+  if (params?.status_code) qs.set('status_code', params.status_code)
+  if (params?.limit) qs.set('limit', String(params.limit))
+  if (params?.offset) qs.set('offset', String(params.offset))
+  const q = qs.toString()
+  return apiFetch<Task[]>(`/v1/tasks${q ? `?${q}` : ''}`)
+}
+
+export async function createTask(payload: CreateTaskPayload): Promise<Task> {
+  return apiFetch<Task>('/v1/tasks', {
+    method: 'POST',
+    body: JSON.stringify(payload),
+  })
+}
+
+export async function getTask(taskId: string): Promise<Task> {
+  return apiFetch<Task>(`/v1/tasks/${taskId}`)
+}
+
+export async function updateTask(taskId: string, payload: UpdateTaskPayload): Promise<Task> {
+  return apiFetch<Task>(`/v1/tasks/${taskId}`, {
+    method: 'PATCH',
+    body: JSON.stringify(payload),
+  })
+}
+
+export async function addTaskAssignees(
+  taskId: string,
+  payload: AddTaskAssigneesPayload
+): Promise<Task> {
+  return apiFetch<Task>(`/v1/tasks/${taskId}/assignees`, {
+    method: 'POST',
+    body: JSON.stringify(payload),
+  })
+}
+
+export async function addTaskComment(
+  taskId: string,
+  payload: AddTaskCommentPayload
+): Promise<TaskComment> {
+  return apiFetch<TaskComment>(`/v1/tasks/${taskId}/comments`, {
+    method: 'POST',
+    body: JSON.stringify(payload),
+  })
+}
+
+export async function linkTaskDocument(
+  taskId: string,
+  payload: LinkTaskDocumentPayload
+): Promise<Task> {
+  return apiFetch<Task>(`/v1/tasks/${taskId}/documents`, {
+    method: 'POST',
+    body: JSON.stringify(payload),
+  })
+}
+
+// ─── Calendar ─────────────────────────────────────────────────────────────────
+
+export async function fetchCalendarEvents(params?: {
+  from_date?: string
+  to_date?: string
+  project_id?: string
+}): Promise<CalendarEvent[]> {
+  const qs = new URLSearchParams()
+  if (params?.from_date) qs.set('from_date', params.from_date)
+  if (params?.to_date) qs.set('to_date', params.to_date)
+  if (params?.project_id) qs.set('project_id', params.project_id)
+  const q = qs.toString()
+  return apiFetch<CalendarEvent[]>(`/v1/calendar/events${q ? `?${q}` : ''}`)
+}
+
+export async function createCalendarEvent(
+  payload: CreateCalendarEventPayload
+): Promise<CalendarEvent> {
+  return apiFetch<CalendarEvent>('/v1/calendar/events', {
+    method: 'POST',
+    body: JSON.stringify(payload),
+  })
+}
+
+export async function updateCalendarEvent(
+  eventId: string,
+  payload: UpdateCalendarEventPayload
+): Promise<CalendarEvent> {
+  return apiFetch<CalendarEvent>(`/v1/calendar/events/${eventId}`, {
+    method: 'PATCH',
+    body: JSON.stringify(payload),
+  })
 }

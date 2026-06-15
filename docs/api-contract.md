@@ -215,12 +215,170 @@ POST   /v1/attendance/check-out
 GET    /v1/attendance/me
 GET    /v1/attendance/team
 PATCH  /v1/attendance/sessions/{session_id}
+GET    /v1/leave-types
 POST   /v1/leave-requests
 GET    /v1/leave-requests/me
 GET    /v1/leave-requests/pending
 POST   /v1/leave-requests/{request_id}/approve
 POST   /v1/leave-requests/{request_id}/reject
+POST   /v1/leave-requests/{request_id}/cancel
 ```
+
+Attendance check-in/check-out routes require only an authenticated, active
+employee account. The backend always records `source="WEB"` for these endpoints;
+future QR, mobile, biometric or import sources must use dedicated server-side
+flows. A second check-in while a session is open returns `RESOURCE_CONFLICT`.
+Check-out without an open session returns `INVALID_STATE`.
+
+`POST /v1/attendance/check-in` accepts:
+
+```json
+{
+  "remarks": "Front desk"
+}
+```
+
+`POST /v1/attendance/check-out` accepts:
+
+```json
+{
+  "remarks": "Leaving office"
+}
+```
+
+Both return:
+
+```json
+{
+  "id": "44444444-4444-4444-8444-444444444444",
+  "employee_id": "22222222-2222-4222-8222-222222222222",
+  "employee": {
+    "id": "22222222-2222-4222-8222-222222222222",
+    "employee_code": "IEMS-001",
+    "full_name": "Example Employee"
+  },
+  "checked_in_at": "2026-06-13T09:00:00Z",
+  "checked_out_at": null,
+  "source": "WEB",
+  "remarks": "Front desk",
+  "created_by": "22222222-2222-4222-8222-222222222222",
+  "corrected_by": null,
+  "correction_reason": null,
+  "created_at": "2026-06-13T09:00:00Z",
+  "updated_at": "2026-06-13T09:00:00Z",
+  "total_minutes": null
+}
+```
+
+Closed sessions return `checked_out_at` and `total_minutes`.
+
+`GET /v1/attendance/me` returns the current employee's sessions only. It does
+not require `attendance.view_all`.
+
+Query parameters:
+
+```text
+from_date=YYYY-MM-DD   optional, checked_in_at on or after start of day UTC
+to_date=YYYY-MM-DD     optional, checked_in_at before the next UTC day
+limit=1..100           default 50
+offset=0..n            default 0
+```
+
+`GET /v1/attendance/team` requires `attendance.view_all` or Super User. It
+returns the same response shape and supports the same date/limit/offset filters
+plus:
+
+```text
+employee_id=<uuid>     optional employee filter
+```
+
+`PATCH /v1/attendance/sessions/{session_id}` requires `attendance.correct` or
+Super User. It records `attendance.corrected` with old and new values in the
+audit log. `correction_reason` is mandatory and must be meaningful.
+
+Request:
+
+```json
+{
+  "checked_in_at": "2026-06-13T09:00:00Z",
+  "checked_out_at": "2026-06-13T17:30:00Z",
+  "remarks": "Adjusted by admin",
+  "correction_reason": "Missed front desk scan"
+}
+```
+
+`GET /v1/leave-types` returns reference rows:
+
+```json
+[
+  {
+    "id": "77777777-7777-4777-8777-777777777777",
+    "code": "CASUAL",
+    "name": "Casual Leave"
+  }
+]
+```
+
+`POST /v1/leave-requests` creates a `PENDING` request for the current employee.
+
+Request:
+
+```json
+{
+  "leave_type_id": "77777777-7777-4777-8777-777777777777",
+  "start_date": "2026-07-01",
+  "end_date": "2026-07-02",
+  "reason": "Family commitment"
+}
+```
+
+Leave request responses:
+
+```json
+{
+  "id": "88888888-8888-4888-8888-888888888888",
+  "employee_id": "22222222-2222-4222-8222-222222222222",
+  "employee": {
+    "id": "22222222-2222-4222-8222-222222222222",
+    "employee_code": "IEMS-001",
+    "full_name": "Example Employee"
+  },
+  "leave_type_id": "77777777-7777-4777-8777-777777777777",
+  "leave_type": {
+    "id": "77777777-7777-4777-8777-777777777777",
+    "code": "CASUAL",
+    "name": "Casual Leave"
+  },
+  "start_date": "2026-07-01",
+  "end_date": "2026-07-02",
+  "reason": "Family commitment",
+  "status": "PENDING",
+  "requested_at": "2026-06-15T09:00:00Z",
+  "reviewed_by": null,
+  "reviewed_at": null,
+  "review_comment": null
+}
+```
+
+`GET /v1/leave-requests/me` returns the current employee's requests. It accepts
+optional `status`, `limit` and `offset`.
+
+`GET /v1/leave-requests/pending`, approve and reject require `leave.review` or
+Super User. Approve writes a `LEAVE` calendar event and attendee row for
+calendar visibility. Approve, reject and cancel write notifications and immutable
+audit events. Reviewing or cancelling a non-pending request returns
+`INVALID_STATE`.
+
+Review request:
+
+```json
+{
+  "review_comment": "Approved"
+}
+```
+
+`POST /v1/leave-requests/{request_id}/cancel` is available only to the employee
+who created the request and only while the request is `PENDING`.
 
 ## Clients and Projects
 
@@ -572,17 +730,165 @@ authorization secret.
 ## Tasks and Calendar
 
 ```text
+GET    /v1/task-statuses
 GET    /v1/tasks
 POST   /v1/tasks
 GET    /v1/tasks/{task_id}
 PATCH  /v1/tasks/{task_id}
 POST   /v1/tasks/{task_id}/assignees
 POST   /v1/tasks/{task_id}/comments
+POST   /v1/tasks/{task_id}/documents
 
 GET    /v1/calendar/events
 POST   /v1/calendar/events
 PATCH  /v1/calendar/events/{event_id}
 ```
+
+`GET /v1/task-statuses` returns reference rows for `TODO`, `IN_PROGRESS`,
+`BLOCKED`, `COMPLETED` and `CANCELLED`.
+
+Task reads require authentication. Employees see tasks assigned to them and tasks
+inside projects they can access. Users with `task.manage` or Super User can
+create and update tasks, add assignees and link documents. Project-scoped task
+writes also require `MANAGE` project membership unless the actor is Super User.
+
+`GET /v1/tasks` accepts:
+
+```text
+project_id=<uuid>       optional project filter
+assigned_to_me=true     optional current-employee assignment filter
+status_code=TODO        optional task status code filter
+limit=1..100            default 50
+offset=0..n             default 0
+```
+
+`POST /v1/tasks` accepts:
+
+```json
+{
+  "project_id": "44444444-4444-4444-8444-444444444444",
+  "related_folder_id": "55555555-5555-4555-8555-555555555555",
+  "title": "Prepare production checklist",
+  "description": "Coordinate production readiness",
+  "task_status_id": null,
+  "priority_level_id": "bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb",
+  "due_at": "2026-06-20T12:00:00Z",
+  "assignee_ids": [
+    "22222222-2222-4222-8222-222222222222",
+    "33333333-3333-4333-8333-333333333333"
+  ],
+  "document_ids": [
+    "66666666-6666-4666-8666-666666666666"
+  ]
+}
+```
+
+If `task_status_id` is omitted or `null`, the backend uses `TODO`. Moving a task
+to a terminal status such as `COMPLETED` sets `completed_at`; moving it back to a
+non-terminal status clears `completed_at`.
+
+Task responses:
+
+```json
+{
+  "id": "99999999-9999-4999-8999-999999999999",
+  "project_id": "44444444-4444-4444-8444-444444444444",
+  "project": {
+    "id": "44444444-4444-4444-8444-444444444444",
+    "project_code": "IEMS-2026-DEMO-001",
+    "name": "Demo Project"
+  },
+  "related_folder_id": "55555555-5555-4555-8555-555555555555",
+  "title": "Prepare production checklist",
+  "description": "Coordinate production readiness",
+  "task_status_id": "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa",
+  "task_status": {
+    "id": "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa",
+    "code": "TODO",
+    "name": "To Do"
+  },
+  "priority_level_id": "bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb",
+  "priority_level": {
+    "id": "bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb",
+    "code": "HIGH",
+    "name": "High"
+  },
+  "created_by": "22222222-2222-4222-8222-222222222222",
+  "due_at": "2026-06-20T12:00:00Z",
+  "completed_at": null,
+  "created_at": "2026-06-15T09:00:00Z",
+  "updated_at": "2026-06-15T09:00:00Z",
+  "assignees": [
+    {
+      "id": "22222222-2222-4222-8222-222222222222",
+      "employee_code": "IEMS-001",
+      "full_name": "Example Employee"
+    }
+  ],
+  "document_ids": [
+    "66666666-6666-4666-8666-666666666666"
+  ]
+}
+```
+
+`PATCH /v1/tasks/{task_id}` accepts any subset of the editable create fields
+except `assignee_ids` and `document_ids`.
+
+`POST /v1/tasks/{task_id}/assignees` accepts:
+
+```json
+{
+  "employee_ids": [
+    "22222222-2222-4222-8222-222222222222"
+  ]
+}
+```
+
+`POST /v1/tasks/{task_id}/comments` is available to users who can see the task.
+It accepts:
+
+```json
+{
+  "comment_text": "Confirmed with vendor."
+}
+```
+
+`POST /v1/tasks/{task_id}/documents` accepts:
+
+```json
+{
+  "document_id": "66666666-6666-4666-8666-666666666666"
+}
+```
+
+`GET /v1/calendar/events` returns stored calendar events plus synthetic entries
+for task deadlines, approved leave and physical-file return deadlines. It
+accepts `from_date`, `to_date` and `project_id`. Calendar data is scoped by
+project access, task assignment and physical archive permissions.
+
+Calendar event create/update requires `task.manage`; project-linked events also
+require `MANAGE` project membership unless the actor is Super User.
+
+`POST /v1/calendar/events` accepts:
+
+```json
+{
+  "project_id": "44444444-4444-4444-8444-444444444444",
+  "related_task_id": null,
+  "event_type": "MEETING",
+  "title": "Project kickoff",
+  "description": "Kickoff meeting",
+  "starts_at": "2026-06-18T10:00:00Z",
+  "ends_at": "2026-06-18T11:00:00Z",
+  "location": "Conference Room",
+  "attendee_ids": [
+    "22222222-2222-4222-8222-222222222222"
+  ]
+}
+```
+
+Calendar responses include `source`: `CALENDAR_EVENT`, `TASK_DEADLINE`, `LEAVE`
+or `PHYSICAL_FILE_RETURN`.
 
 ## Approvals
 
@@ -605,6 +911,24 @@ GET    /v1/director/approvals
 GET    /v1/director/overdue-tasks
 GET    /v1/director/physical-files
 GET    /v1/director/audit-events
+```
+
+`GET /v1/director/attendance` requires `attendance.view_all` or Super User. It
+returns today's active-employee attendance summary from
+`director_attendance_today_v`:
+
+```json
+[
+  {
+    "employee_id": "22222222-2222-4222-8222-222222222222",
+    "employee_code": "IEMS-001",
+    "full_name": "Example Employee",
+    "first_check_in": "2026-06-15T09:00:00Z",
+    "last_check_out": "2026-06-15T17:30:00Z",
+    "total_minutes": 510,
+    "attendance_state": "CHECKED_OUT"
+  }
+]
 ```
 
 ## Super User Override Header

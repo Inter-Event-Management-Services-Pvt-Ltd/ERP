@@ -55,6 +55,7 @@ CODEX-PHASE2-001 Build clients and projects API — DONE
 CODEX-PHASE2-002 Build folders and documents API — DONE
 CODEX-PHASE2-003 Build archive ZIP worker — DONE
 CODEX-PHASE2-004 Build physical archive API — DONE
+CODEX-PHASE3-001 Build attendance, leave, task and calendar backend APIs — DONE
 ```
 
 ## Claude Following Tasks
@@ -77,7 +78,7 @@ CLAUDE-PHASE2-003 Build archive and physical-file screens — DONE
   - /archive/rooms/[id]: room detail + add location + location content browser
   - /archive/files/[id]: file detail with state, actions, QR label
   - /archive/files/[id]/checkout|return|move|verify: action forms with error handling
-CLAUDE-PHASE3-001 Build attendance, leave, task and calendar screens — BACKLOG
+CLAUDE-PHASE3-001 Build attendance, leave, task and calendar screens — READY
 CLAUDE-PHASE4-001 Build Director Dashboard — BACKLOG
 CLAUDE-PHASE4-002 Build admin and approval screens — BACKLOG
 ```

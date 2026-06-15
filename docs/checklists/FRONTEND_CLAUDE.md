@@ -1,5 +1,57 @@
 # Claude Frontend Checklist
 
+## Phase 3 — Employee Operations
+
+### Ownership
+
+- [x] Only frontend-owned files were modified (attendance, leave, tasks, calendar pages/components/hooks under `apps/web/**`).
+- [x] Any backend requirement was recorded for Codex (OPEN-034 — task comment list endpoint).
+- [x] API contract was followed exactly per docs/api-contract.md (no invented fields or alternate routes).
+
+### Design Workflow
+
+- [x] Screen purpose documented (Attendance, Leave, Tasks list/detail, Calendar, Director Attendance).
+- [x] User role documented (`attendance.view_all`, `attendance.correct`, `leave.review`, `task.manage`, `isSuperUser`).
+- [x] Shared components reused (AppShell, PageHeader, ContentArea, SkeletonScreen, EmptyState, ErrorState, Badge, ConfirmDialog, FormField).
+- [x] Responsive states implemented (tables scroll horizontally on small screens, dialogs constrained to viewport).
+- [x] Empty state implemented (no attendance sessions, no leave requests, no tasks, no calendar events this month).
+- [x] Loading state implemented (SkeletonScreen, Loader2 spinners on mutations).
+- [x] Error state implemented (role="alert" inline errors, apiErrorMessage mapping for RESOURCE_CONFLICT, INVALID_STATE, INVALID_REFERENCE, ABAC_DENIED/PERMISSION_DENIED, VALIDATION_ERROR).
+- [x] Permission-denied state implemented (Team Attendance, Pending Review, Correct/New Task/New Event actions hidden by permission, not just disabled).
+
+### Security
+
+- [x] No secrets exposed; no Supabase service-role key referenced.
+- [x] All Phase 3 reads/writes go through FastAPI (`lib/api.ts`), no direct Supabase calls.
+- [x] No unsafe HTML rendering (no dangerouslySetInnerHTML).
+- [x] Server-side permissions remain authoritative; frontend checks (`attendance.view_all`, `attendance.correct`, `leave.review`, `task.manage`, `isSuperUser`) are presentation-only gating.
+- [x] Document linking on the task detail page accepts a document ID and calls the documented `POST /v1/tasks/{id}/documents` endpoint only — no storage-path guessing.
+
+### Accessibility
+
+- [x] Semantic structure (tables with `scope="col"` headers, `role="alert"` on form errors, breadcrumb `nav aria-label`).
+- [x] Keyboard navigation (all actions are `<button type="button">` or form submit; dialogs trap focus on open and close on Escape).
+- [x] Visible focus (`focus-visible:ring-2 focus-visible:ring-accent-saffron` on interactive elements).
+- [x] Accessible labels (icon-only buttons such as month navigation have `aria-label`).
+- [x] Accessible form errors (`role="alert"`, associated via FormField).
+- [x] No color-only critical state (Badge components pair color with text, e.g. leave/task status, calendar source labels).
+- [x] No hover-only critical action (Correct, Approve/Reject, Edit, Cancel are all keyboard-reachable buttons/links).
+
+### Motion
+
+- [x] Motion is purposeful (dialog `animate-scale-in`, no decorative animation added).
+- [x] Motion does not block workflow (dialogs open/close instantly on click; no animation gates submission).
+- [x] Reduced-motion supported via the existing global `prefers-reduced-motion` rule in `globals.css` (no new motion primitives introduced).
+- [x] No excessive parallax; no animation on every row/card.
+- [x] Opacity/transform preferred (`animate-scale-in` on dialogs only).
+
+### Validation
+
+- [x] Lint passes (`npm run lint`).
+- [x] Type check passes (`npm run type-check`).
+- [x] Production build passes (`npm run build`).
+- [ ] Responsive QA completed for attendance, leave, tasks, calendar and director-attendance pages.
+
 ## Ownership
 
 - [x] Only frontend-owned files were modified.

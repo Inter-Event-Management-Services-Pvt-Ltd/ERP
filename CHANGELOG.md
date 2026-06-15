@@ -21,6 +21,7 @@
 - Added Phase 2 clients/projects API routes, typed schemas, RBAC/ABAC checks, audited transactional Supabase RPCs, folder-template application, folder-tree reads, and backend tests.
 - Hardened custom Supabase trigger functions by revoking direct execution from `anon` and `authenticated` and adding trigger security validation.
 - Added deterministic local demo seed data for Phase 2 client/project testing, including demo employees, clients, contacts, projects, memberships, and folder trees.
+- Added Deepak (`deepak@iemsnewdelhi.com`, `IEMS-OPS-006`) to the deterministic local employee seed so the local Supabase reset path recreates the account.
 - Resolved Phase 2 frontend integration blockers by adding configured CORS, project reference lookup endpoints, project-member listing, and a server-side email-domain allowlist for local/staging auth.
 - Fixed project visibility for assigned managers by ensuring project create/update RPCs grant active `MANAGE` project membership to the selected `project_manager_id` and backfill existing projects.
 - Added a limited `GET /v1/employees` directory lookup for project-member assignment and employee-directory consumers, with manager access restricted to assignable employee statuses.
@@ -41,6 +42,8 @@
 - Added `GET /v1/physical-files/by-qr/{qr_token}` so scanned physical archive labels resolve to authenticated physical-file records.
 - Added `GET /v1/projects/{project_id}/physical-files` so project detail screens can list archived physical files with server-side project membership or archive-read authorization.
 - Fixed local Supabase service-role table grants so FastAPI's server-side REST clients can load projects, archive rooms and current-user data after a clean database reset.
+- Added Phase 3 attendance backend endpoints for check-in, check-out, own history, privileged team history and audited admin corrections, backed by service-role-only Supabase RPCs.
+- Completed Phase 3 employee-operations backend APIs for leave requests, task management, calendar events, synthetic deadlines/leave/physical-return calendar feeds, Director attendance summaries, notifications and audited service-role-only Supabase RPCs.
 
 - Wired Phase 2 folder CRUD to live backend: inline create, rename, and delete in FolderTreePanel with INVALID_STATE protection and canManage gating.
 - Added DocumentListPanel with per-folder document list, multipart upload dialog (INVALID_FILE_NAME, INVALID_MIME_TYPE, INVALID_FILE_SIZE error display), version upload, and signed download URLs fetched on-demand.
@@ -69,6 +72,12 @@
 - Added a document preview drawer (`apps/web/src/components/projects/document-preview-drawer.tsx`), opened via a new Eye action on each document row, that fetches a signed preview URL on demand for images, PDFs and text files (`preview_supported` MIME types), shows an "unsupported preview" state for other types, and keeps Download as a separate explicit action that fetches its own short-lived signed URL.
 - Fixed a keyboard-accessibility gap in the folder tree: per-folder Add/Rename/Delete buttons were only revealed on `:hover`, making them unreachable for keyboard-only users; they now also appear on `:focus-within`.
 - Validated responsive, accessibility and reduced-motion behaviour across the project detail, document list/upload/preview, folder tree, archive export panel, archive rooms, physical file detail/checkout/return/move/verify, and QR scan screens — confirmed icon buttons have `aria-label`s, forms use associated labels and `role="alert"` errors, layouts collapse to single columns on small screens, and motion relies on the global `prefers-reduced-motion` rule in `globals.css`.
+
+- Wired the Attendance page (`/attendance`) to `GET/POST /v1/attendance/me`, check-in/check-out, and "My History"; added a "Team Attendance" section (`GET /v1/attendance/team`, employee search) and an admin correction dialog (`PATCH /v1/attendance/sessions/{session_id}`) gated by `attendance.view_all` / `attendance.correct`; added a Director "Attendance" page (`/director/attendance`) backed by `GET /v1/director/attendance` (resolves OPEN-032).
+- Wired the Leave page (`/leave`) to leave-request endpoints: "My Requests" (`GET /v1/leave-requests/me`) with cancel (`POST /v1/leave-requests/{id}/cancel`), a "New Request" dialog (`GET /v1/leave-types`, `POST /v1/leave-requests`), and a "Pending Review" section (`GET /v1/leave-requests/pending`, approve/reject) gated by `leave.review`.
+- Wired the Tasks list (`/tasks`) and detail (`/tasks/[id]`) pages to `GET/POST /v1/tasks`, `GET /v1/tasks/{id}`, `PATCH /v1/tasks/{id}`, assignee management (`POST /v1/tasks/{id}/assignees`), comments (`POST /v1/tasks/{id}/comments`) and document linking (`POST /v1/tasks/{id}/documents`), with status/priority/project filters and a "New Task" dialog, create/edit actions gated by `task.manage`.
+- Wired the Calendar page (`/calendar`) to `GET /v1/calendar/events` with a month view grouped by day, source badges for `CALENDAR_EVENT`, `TASK_DEADLINE`, `LEAVE` and `PHYSICAL_FILE_RETURN`, and create/edit (`POST`/`PATCH /v1/calendar/events`) for user-created events gated by `task.manage` (resolves OPEN-033).
+- Added OPEN-034 (missing `GET /v1/tasks/{task_id}/comments` list endpoint; task detail page currently shows only session-local comments).
 
 - Assigned Claude as frontend-only owner using either Claude Design or Google Stitch for reviewed UI ideation.
 - Assigned Codex as backend-only owner.

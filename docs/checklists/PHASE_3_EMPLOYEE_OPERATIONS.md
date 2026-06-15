@@ -2,53 +2,56 @@
 
 ## Attendance
 
-- [ ] Check in.
-- [ ] Check out.
-- [ ] Show attendance history.
-- [ ] Support multiple sessions per day.
-- [ ] Prevent duplicate open session.
-- [ ] Add admin correction with reason.
-- [ ] Add Director summary.
+- [x] Check in.
+- [x] Check out.
+- [x] Show attendance history.
+- [x] Support multiple sessions per day.
+- [x] Prevent duplicate open session.
+- [x] Add admin correction with reason.
+- [x] Add Director summary.
 
 ## Leave
 
-- [ ] Create leave request.
-- [ ] Approve.
-- [ ] Reject.
-- [ ] Cancel.
-- [ ] Add notification.
-- [ ] Add calendar visibility.
+- [x] Create leave request.
+- [x] Approve.
+- [x] Reject.
+- [x] Cancel.
+- [x] Add notification.
+- [x] Add calendar visibility.
 
 ## Tasks
 
-- [ ] Create task.
-- [ ] Assign multiple employees.
-- [ ] Set priority.
-- [ ] Set deadline.
-- [ ] Add comments.
-- [ ] Link project.
-- [ ] Link folder.
-- [ ] Link document.
-- [ ] Mark complete.
+- [x] Create task.
+- [x] Assign multiple employees.
+- [x] Set priority.
+- [x] Set deadline.
+- [x] Add comments.
+- [x] Link project.
+- [x] Link folder.
+- [x] Link document.
+- [x] Mark complete.
 
 ## Calendar
 
-- [ ] Add meeting.
-- [ ] Add site visit.
-- [ ] Add event.
-- [ ] Add deadlines.
-- [ ] Show leave.
-- [ ] Show physical-file return deadlines.
-- [ ] Add project links.
+- [x] Add meeting.
+- [x] Add site visit.
+- [x] Add event.
+- [x] Add deadlines.
+- [x] Show leave.
+- [x] Show physical-file return deadlines.
+- [x] Add project links.
 
 ## Security Gate
 
-- [ ] Employee sees only own attendance unless privileged.
-- [ ] Correction requires permission and reason.
-- [ ] Employee sees assigned tasks and accessible project tasks only.
-- [ ] Calendar data respects project access.
-- [ ] Audit events exist for corrections and leave review.
+- [x] Employee sees only own attendance unless privileged.
+- [x] Correction requires permission and reason.
+- [x] Employee sees assigned tasks and accessible project tasks only.
+- [x] Calendar data respects project access.
+- [x] Audit events exist for corrections and leave review.
 
 ## Exit Criteria
 
-- [ ] Employee Dashboard supports daily use.
+- [x] Employee Dashboard supports daily use. Backend APIs are complete and the
+  frontend is wired (attendance, leave, tasks, calendar, Director attendance);
+  see OPEN-032 and OPEN-033 (resolved) and OPEN-034 (follow-up: task comment
+  list endpoint).

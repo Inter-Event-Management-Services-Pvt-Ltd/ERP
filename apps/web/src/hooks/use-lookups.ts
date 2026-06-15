@@ -5,6 +5,8 @@ import {
   fetchPriorityLevels,
   fetchConfidentialityLevels,
   fetchDocumentTypes,
+  fetchLeaveTypes,
+  fetchTaskStatuses,
 } from '@/lib/api'
 
 export function useProjectTypes() {
@@ -43,6 +45,22 @@ export function useDocumentTypes() {
   return useQuery({
     queryKey: ['document-types'],
     queryFn: fetchDocumentTypes,
+    staleTime: 10 * 60 * 1000,
+  })
+}
+
+export function useLeaveTypes() {
+  return useQuery({
+    queryKey: ['leave-types'],
+    queryFn: fetchLeaveTypes,
+    staleTime: 10 * 60 * 1000,
+  })
+}
+
+export function useTaskStatuses() {
+  return useQuery({
+    queryKey: ['task-statuses'],
+    queryFn: fetchTaskStatuses,
     staleTime: 10 * 60 * 1000,
   })
 }
