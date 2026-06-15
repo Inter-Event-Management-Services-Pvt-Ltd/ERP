@@ -47,6 +47,73 @@ Question: Which managed Supabase plan and backup-retention settings are required
 Status: Open
 ```
 
+### OPEN-032 - Phase 3 attendance frontend wiring
+
+```text
+Date: 2026-06-13
+Category: Frontend Integration
+Severity: Medium
+Question or issue:
+  Codex added backend attendance endpoints:
+  - POST /v1/attendance/check-in
+  - POST /v1/attendance/check-out
+  - GET /v1/attendance/me
+  - GET /v1/attendance/team
+  - PATCH /v1/attendance/sessions/{session_id}
+Why it matters:
+  Claude needs to wire the attendance page to the documented contract without
+  inventing direct Supabase writes or alternate field names.
+Frontend follow-up:
+  Use FastAPI only. Show RESOURCE_CONFLICT when the user is already checked in,
+  INVALID_STATE when checking out without an open session, and validation errors
+  when an admin correction is missing correction_reason. Team attendance should
+  be shown only to users whose GET /v1/me permissions include attendance.view_all
+  or whose isSuperUser flag is true.
+Owner: Claude
+Status: Open
+```
+
+### OPEN-033 - Phase 3 leave, task and calendar frontend wiring
+
+```text
+Date: 2026-06-15
+Category: Frontend Integration
+Severity: Medium
+Question or issue:
+  Codex added the remaining Phase 3 backend endpoints:
+  - GET /v1/leave-types
+  - POST /v1/leave-requests
+  - GET /v1/leave-requests/me
+  - GET /v1/leave-requests/pending
+  - POST /v1/leave-requests/{request_id}/approve
+  - POST /v1/leave-requests/{request_id}/reject
+  - POST /v1/leave-requests/{request_id}/cancel
+  - GET /v1/task-statuses
+  - GET /v1/tasks
+  - POST /v1/tasks
+  - GET /v1/tasks/{task_id}
+  - PATCH /v1/tasks/{task_id}
+  - POST /v1/tasks/{task_id}/assignees
+  - POST /v1/tasks/{task_id}/comments
+  - POST /v1/tasks/{task_id}/documents
+  - GET /v1/calendar/events
+  - POST /v1/calendar/events
+  - PATCH /v1/calendar/events/{event_id}
+  - GET /v1/director/attendance
+Why it matters:
+  The Phase 3 backend is ready, but the Employee Dashboard exit criterion still
+  depends on Claude wiring the frontend screens to the documented FastAPI
+  contract without direct Supabase writes.
+Frontend follow-up:
+  Use docs/api-contract.md exactly. Show INVALID_STATE for non-pending leave
+  review/cancel, ABAC_DENIED for inaccessible project-linked task/calendar
+  actions, INVALID_REFERENCE for bad lookup IDs, and RESOURCE_CONFLICT for any
+  duplicate resource conflicts. Calendar should display source values
+  CALENDAR_EVENT, TASK_DEADLINE, LEAVE and PHYSICAL_FILE_RETURN.
+Owner: Claude
+Status: Open
+```
+
 ### OPEN-003 — Pilot employee list
 
 ```text

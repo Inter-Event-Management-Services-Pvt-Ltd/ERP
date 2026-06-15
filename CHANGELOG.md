@@ -41,6 +41,8 @@
 - Added `GET /v1/physical-files/by-qr/{qr_token}` so scanned physical archive labels resolve to authenticated physical-file records.
 - Added `GET /v1/projects/{project_id}/physical-files` so project detail screens can list archived physical files with server-side project membership or archive-read authorization.
 - Fixed local Supabase service-role table grants so FastAPI's server-side REST clients can load projects, archive rooms and current-user data after a clean database reset.
+- Added Phase 3 attendance backend endpoints for check-in, check-out, own history, privileged team history and audited admin corrections, backed by service-role-only Supabase RPCs.
+- Completed Phase 3 employee-operations backend APIs for leave requests, task management, calendar events, synthetic deadlines/leave/physical-return calendar feeds, Director attendance summaries, notifications and audited service-role-only Supabase RPCs.
 
 - Wired Phase 2 folder CRUD to live backend: inline create, rename, and delete in FolderTreePanel with INVALID_STATE protection and canManage gating.
 - Added DocumentListPanel with per-folder document list, multipart upload dialog (INVALID_FILE_NAME, INVALID_MIME_TYPE, INVALID_FILE_SIZE error display), version upload, and signed download URLs fetched on-demand.

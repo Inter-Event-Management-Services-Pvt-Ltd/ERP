@@ -3,8 +3,10 @@ from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
 from starlette.exceptions import HTTPException as StarletteHTTPException
 
+from app.api.v1.attendance import router as attendance_router
 from app.api.v1.clients_projects import router as clients_projects_router
 from app.api.v1.documents_archive import router as documents_archive_router
+from app.api.v1.employee_operations import router as employee_operations_router
 from app.api.v1.employees import router as employees_router
 from app.api.v1.me import router as me_router
 from app.api.v1.physical_archive import router as physical_archive_router
@@ -32,8 +34,10 @@ app.middleware("http")(request_id_middleware)
 app.middleware("http")(structured_access_log_middleware)
 app.add_exception_handler(StarletteHTTPException, http_exception_handler)
 app.add_exception_handler(RequestValidationError, validation_exception_handler)
+app.include_router(attendance_router)
 app.include_router(clients_projects_router)
 app.include_router(documents_archive_router)
+app.include_router(employee_operations_router)
 app.include_router(employees_router)
 app.include_router(me_router)
 app.include_router(physical_archive_router)
