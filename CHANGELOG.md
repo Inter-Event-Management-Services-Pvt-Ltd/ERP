@@ -21,6 +21,7 @@
 - Added Phase 2 clients/projects API routes, typed schemas, RBAC/ABAC checks, audited transactional Supabase RPCs, folder-template application, folder-tree reads, and backend tests.
 - Hardened custom Supabase trigger functions by revoking direct execution from `anon` and `authenticated` and adding trigger security validation.
 - Added deterministic local demo seed data for Phase 2 client/project testing, including demo employees, clients, contacts, projects, memberships, and folder trees.
+- Added Deepak (`deepak@iemsnewdelhi.com`, `IEMS-OPS-006`) to the deterministic local employee seed so the local Supabase reset path recreates the account.
 - Resolved Phase 2 frontend integration blockers by adding configured CORS, project reference lookup endpoints, project-member listing, and a server-side email-domain allowlist for local/staging auth.
 - Fixed project visibility for assigned managers by ensuring project create/update RPCs grant active `MANAGE` project membership to the selected `project_manager_id` and backfill existing projects.
 - Added a limited `GET /v1/employees` directory lookup for project-member assignment and employee-directory consumers, with manager access restricted to assignable employee statuses.

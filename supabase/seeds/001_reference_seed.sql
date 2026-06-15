@@ -130,7 +130,8 @@ insert into public.employees(id, employee_code, full_name, official_email, desig
 values
 ('10000000-0000-4000-8000-000000000001','IEMS-DEV-001','IEMS Dev User','dev.user@iemsnewdelhi.com','Local Dev','ACTIVE'),
 ('10000000-0000-4000-8000-000000000002','IEMS-MGR-001','Aarav Mehta','project.manager@iemsnewdelhi.com','Project Manager','ACTIVE'),
-('10000000-0000-4000-8000-000000000003','IEMS-OPS-001','Nisha Rao','ops.coordinator@iemsnewdelhi.com','Operations Coordinator','ACTIVE')
+('10000000-0000-4000-8000-000000000003','IEMS-OPS-001','Nisha Rao','ops.coordinator@iemsnewdelhi.com','Operations Coordinator','ACTIVE'),
+('10000000-0000-4000-8000-000000000004','IEMS-OPS-006','Deepak','deepak@iemsnewdelhi.com','Local Dev','ACTIVE')
 on conflict (official_email) do update
   set employee_code = excluded.employee_code,
       full_name = excluded.full_name,
