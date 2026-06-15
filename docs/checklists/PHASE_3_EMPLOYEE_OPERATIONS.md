@@ -51,5 +51,7 @@
 
 ## Exit Criteria
 
-- [ ] Employee Dashboard supports daily use. Backend APIs are complete; frontend
-  wiring is tracked in OPEN-032 and OPEN-033.
+- [x] Employee Dashboard supports daily use. Backend APIs are complete and the
+  frontend is wired (attendance, leave, tasks, calendar, Director attendance);
+  see OPEN-032 and OPEN-033 (resolved) and OPEN-034 (follow-up: task comment
+  list endpoint).

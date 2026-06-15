@@ -400,3 +400,209 @@ export interface EmployeeSummary {
   designation: string
   employment_status: string
 }
+
+// ─── Attendance ───────────────────────────────────────────────────────────────
+
+export type AttendanceSource = 'WEB' | 'MOBILE' | 'ADMIN' | 'QR' | 'BIOMETRIC' | 'IMPORT'
+
+export interface AttendanceEmployeeSummary {
+  id: string
+  employee_code: string
+  full_name: string
+}
+
+export interface AttendanceSession {
+  id: string
+  employee_id: string
+  employee: AttendanceEmployeeSummary | null
+  checked_in_at: string
+  checked_out_at: string | null
+  source: AttendanceSource
+  remarks: string | null
+  created_by: string
+  corrected_by: string | null
+  correction_reason: string | null
+  created_at: string
+  updated_at: string
+  total_minutes: number | null
+}
+
+export interface CheckInPayload {
+  remarks?: string
+}
+
+export interface CheckOutPayload {
+  remarks?: string
+}
+
+export interface AttendanceCorrectionPayload {
+  checked_in_at?: string
+  checked_out_at?: string
+  remarks?: string
+  correction_reason: string
+}
+
+export interface DirectorAttendanceSummary {
+  employee_id: string
+  employee_code: string
+  full_name: string
+  first_check_in: string | null
+  last_check_out: string | null
+  total_minutes: number | null
+  attendance_state: string
+}
+
+// ─── Leave ────────────────────────────────────────────────────────────────────
+
+export type LeaveStatus = 'PENDING' | 'APPROVED' | 'REJECTED' | 'CANCELLED'
+
+export interface LeaveRequest {
+  id: string
+  employee_id: string
+  employee: AttendanceEmployeeSummary | null
+  leave_type_id: string
+  leave_type: ReferenceLookup | null
+  start_date: string
+  end_date: string
+  reason: string
+  status: LeaveStatus
+  requested_at: string
+  reviewed_by: string | null
+  reviewed_at: string | null
+  review_comment: string | null
+}
+
+export interface CreateLeaveRequestPayload {
+  leave_type_id: string
+  start_date: string
+  end_date: string
+  reason: string
+}
+
+export interface ReviewLeaveRequestPayload {
+  review_comment?: string
+}
+
+// ─── Tasks ────────────────────────────────────────────────────────────────────
+
+export type TaskStatusCode = 'TODO' | 'IN_PROGRESS' | 'BLOCKED' | 'COMPLETED' | 'CANCELLED'
+
+export interface TaskProjectSummary {
+  id: string
+  project_code: string
+  name: string
+}
+
+export interface Task {
+  id: string
+  project_id: string | null
+  project: TaskProjectSummary | null
+  related_folder_id: string | null
+  title: string
+  description: string | null
+  task_status_id: string
+  task_status: ReferenceLookup | null
+  priority_level_id: string
+  priority_level: ReferenceLookup | null
+  created_by: string
+  due_at: string | null
+  completed_at: string | null
+  created_at: string
+  updated_at: string
+  assignees: EmployeeSummary[]
+  document_ids: string[]
+}
+
+export interface CreateTaskPayload {
+  project_id?: string | null
+  related_folder_id?: string | null
+  title: string
+  description?: string
+  task_status_id?: string | null
+  priority_level_id: string
+  due_at?: string | null
+  assignee_ids?: string[]
+  document_ids?: string[]
+}
+
+export interface UpdateTaskPayload {
+  project_id?: string | null
+  related_folder_id?: string | null
+  title?: string
+  description?: string
+  task_status_id?: string | null
+  priority_level_id?: string
+  due_at?: string | null
+}
+
+export interface AddTaskAssigneesPayload {
+  employee_ids: string[]
+}
+
+export interface AddTaskCommentPayload {
+  comment_text: string
+}
+
+export interface TaskComment {
+  id: string
+  task_id: string
+  employee_id: string
+  employee: EmployeeSummary | null
+  comment_text: string
+  created_at: string
+  edited_at: string | null
+}
+
+export interface LinkTaskDocumentPayload {
+  document_id: string
+}
+
+// ─── Calendar ─────────────────────────────────────────────────────────────────
+
+export type CalendarEventType =
+  | 'MEETING'
+  | 'SITE_VISIT'
+  | 'EVENT'
+  | 'DEADLINE'
+  | 'LEAVE'
+  | 'ARCHIVE_VERIFICATION'
+  | 'PHYSICAL_FILE_RETURN'
+  | 'REMINDER'
+
+export type CalendarEventSource = 'CALENDAR_EVENT' | 'TASK_DEADLINE' | 'LEAVE' | 'PHYSICAL_FILE_RETURN'
+
+export interface CalendarEvent {
+  id: string
+  event_type: CalendarEventType
+  title: string
+  description: string | null
+  starts_at: string
+  ends_at: string | null
+  location: string | null
+  project_id: string | null
+  related_task_id: string | null
+  created_by: string | null
+  created_at: string | null
+  updated_at: string | null
+  source: CalendarEventSource
+}
+
+export interface CreateCalendarEventPayload {
+  project_id?: string | null
+  related_task_id?: string | null
+  event_type: CalendarEventType
+  title: string
+  description?: string
+  starts_at: string
+  ends_at?: string
+  location?: string
+  attendee_ids?: string[]
+}
+
+export interface UpdateCalendarEventPayload {
+  title?: string
+  description?: string
+  starts_at?: string
+  ends_at?: string
+  location?: string
+}
