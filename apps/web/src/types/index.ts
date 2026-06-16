@@ -647,6 +647,63 @@ export interface DirectorCheckedOutFile {
   is_return_overdue: boolean
 }
 
+// ─── Approvals ────────────────────────────────────────────────────────────────
+
+export type ApprovalStatus =
+  | 'PENDING'
+  | 'APPROVED'
+  | 'REJECTED'
+  | 'REVISION_REQUESTED'
+  | 'CANCELLED'
+
+export interface ApprovalEmployeeSummary {
+  id: string
+  employee_code: string
+  full_name: string
+}
+
+export interface ApprovalActionRecord {
+  id: string
+  approval_request_id: string
+  action: string
+  performed_by: string
+  performed_by_employee: ApprovalEmployeeSummary | null
+  comment: string | null
+  created_at: string
+}
+
+export interface Approval {
+  id: string
+  approval_type_id: string
+  approval_type: { id: string; code: string; name: string } | null
+  project_id: string | null
+  document_version_id: string | null
+  archive_export_id: string | null
+  leave_request_id: string | null
+  requested_by: string
+  requested_by_employee: ApprovalEmployeeSummary | null
+  assigned_to: string | null
+  assigned_to_employee: ApprovalEmployeeSummary | null
+  status: ApprovalStatus
+  requested_at: string
+  completed_at: string | null
+  actions: ApprovalActionRecord[]
+}
+
+export interface CreateApprovalPayload {
+  approval_type_id: string
+  project_id?: string | null
+  document_version_id?: string | null
+  archive_export_id?: string | null
+  leave_request_id?: string | null
+  assigned_to?: string | null
+  comment?: string
+}
+
+export interface ReviewApprovalPayload {
+  comment?: string
+}
+
 // ─── Calendar ─────────────────────────────────────────────────────────────────
 
 export type CalendarEventType =

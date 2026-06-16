@@ -54,6 +54,9 @@ import type {
   DirectorOverdueTask,
   DirectorCheckedOutFile,
   DirectorAuditEvent,
+  Approval,
+  CreateApprovalPayload,
+  ReviewApprovalPayload,
 } from '@/types'
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:8000'
@@ -742,4 +745,64 @@ export async function fetchDirectorAuditEvents(params?: {
   if (params?.offset) qs.set('offset', String(params.offset))
   const q = qs.toString()
   return apiFetch<DirectorAuditEvent[]>(`/v1/director/audit-events${q ? `?${q}` : ''}`)
+}
+
+// ─── Approvals ────────────────────────────────────────────────────────────────
+
+export async function fetchApprovalTypes(): Promise<ReferenceLookup[]> {
+  return apiFetch<ReferenceLookup[]>('/v1/approval-types')
+}
+
+export async function fetchApprovals(params?: {
+  status?: string
+  limit?: number
+  offset?: number
+}): Promise<Approval[]> {
+  const qs = new URLSearchParams()
+  if (params?.status) qs.set('status', params.status)
+  if (params?.limit) qs.set('limit', String(params.limit))
+  if (params?.offset) qs.set('offset', String(params.offset))
+  const q = qs.toString()
+  return apiFetch<Approval[]>(`/v1/approvals${q ? `?${q}` : ''}`)
+}
+
+export async function createApproval(payload: CreateApprovalPayload): Promise<Approval> {
+  return apiFetch<Approval>('/v1/approvals', {
+    method: 'POST',
+    body: JSON.stringify(payload),
+  })
+}
+
+export async function fetchApproval(approvalId: string): Promise<Approval> {
+  return apiFetch<Approval>(`/v1/approvals/${approvalId}`)
+}
+
+export async function approveApproval(
+  approvalId: string,
+  payload: ReviewApprovalPayload
+): Promise<Approval> {
+  return apiFetch<Approval>(`/v1/approvals/${approvalId}/approve`, {
+    method: 'POST',
+    body: JSON.stringify(payload),
+  })
+}
+
+export async function rejectApproval(
+  approvalId: string,
+  payload: ReviewApprovalPayload
+): Promise<Approval> {
+  return apiFetch<Approval>(`/v1/approvals/${approvalId}/reject`, {
+    method: 'POST',
+    body: JSON.stringify(payload),
+  })
+}
+
+export async function requestApprovalRevision(
+  approvalId: string,
+  payload: ReviewApprovalPayload
+): Promise<Approval> {
+  return apiFetch<Approval>(`/v1/approvals/${approvalId}/request-revision`, {
+    method: 'POST',
+    body: JSON.stringify(payload),
+  })
 }
