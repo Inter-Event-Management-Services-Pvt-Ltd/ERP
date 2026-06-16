@@ -82,6 +82,10 @@
 - Wired the Calendar page (`/calendar`) to `GET /v1/calendar/events` with a month view grouped by day, source badges for `CALENDAR_EVENT`, `TASK_DEADLINE`, `LEAVE` and `PHYSICAL_FILE_RETURN`, and create/edit (`POST`/`PATCH /v1/calendar/events`) for user-created events gated by `task.manage` (resolves OPEN-033).
 - Added OPEN-034 (missing `GET /v1/tasks/{task_id}/comments` list endpoint; task detail page currently shows only session-local comments).
 
+- Wired approval queue page (`/approvals`) to `GET /v1/approvals` with status filter tabs, table showing type, target, requester, assignee and status badge, and a "New Approval" button.
+- Wired approval detail page (`/approvals/[id]`) to `GET /v1/approvals/{approval_id}` with full metadata, chronological action history timeline, and inline Approve / Reject / Request Revision forms gated on `approval.approve` or Super User, PENDING-only, revision requires non-empty comment.
+- Added create-approval dialog (`POST /v1/approvals`) with approval-type select backed by `GET /v1/approval-types`, target-type picker (Project / Document Version / Archive Export / Leave Request), optional assignee, optional comment, client-side single-target validation; resolves OPEN-037.
+
 - Wired Director Dashboard overview page (`/director`) to `GET /v1/director/overview`: attendance metrics (checked-in / total, checked-out, absent, total work time), project status counts, pending approvals count, overdue task count, physical archive summary (checked-out, overdue returns, verification due, missing), and recent audit events feed; resolves OPEN-035.
 - Wired Director Projects page (`/director/projects`) to `GET /v1/director/projects` with status and priority badges (resolves OPEN-035).
 - Wired Director Approvals page (`/director/approvals`) to `GET /v1/director/approvals` as a read-only pending queue; approval actions noted as backend-pending (resolves OPEN-035).

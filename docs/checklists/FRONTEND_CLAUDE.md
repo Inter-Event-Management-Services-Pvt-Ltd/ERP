@@ -1,5 +1,52 @@
 # Claude Frontend Checklist
 
+## Phase 4 — Approval Workflows (Slice 2)
+
+### Ownership
+
+- [x] Only frontend-owned files modified: `apps/web/src/app/approvals/**`, `apps/web/src/components/approvals/create-approval-dialog.tsx`, `apps/web/src/hooks/use-approvals.ts`, `apps/web/src/lib/api.ts`, `apps/web/src/types/index.ts`.
+- [x] Backend requirement noted: none for this slice; all seven endpoints were already available.
+- [x] API contract followed exactly per `docs/api-contract.md`; no invented fields or endpoints.
+
+### Design Workflow
+
+- [x] Screen purpose documented (Approval queue with status filter, approval detail with history, create dialog, review actions).
+- [x] User role documented: create open to any authenticated user; approve/reject/request-revision gated on `approval.approve` permission OR `isSuperUser`.
+- [x] Shared components reused (AppShell, PageHeader, ContentArea, SkeletonScreen, EmptyState, ErrorState, Badge).
+- [x] Responsive states implemented (table scrolls horizontally; detail card collapses to single column on small screens).
+- [x] Empty state implemented (no approvals for selected status).
+- [x] Loading state implemented (SkeletonScreen while data is fetching).
+- [x] Error state implemented (all mutations surface error via apiErrorMessage inline under form).
+- [x] Permission-denied state implemented (approve/reject/revision buttons hidden for users without `approval.approve` and not Super User).
+
+### Security
+
+- [x] No secrets exposed; no Supabase service-role key referenced.
+- [x] All reads/writes go through FastAPI via `lib/api.ts`; no direct Supabase calls.
+- [x] No unsafe HTML rendering (no dangerouslySetInnerHTML).
+- [x] Approval action history is read-only; the UI does not fake edits or allow re-submission of completed approvals.
+- [x] Review actions (approve/reject/revision) disabled client-side for non-PENDING approvals; server-side remains authoritative.
+
+### Accessibility
+
+- [x] Semantic structure (table with `scope="col"` headers, `role="dialog"` and `aria-modal` on create dialog, `role="group"` on target-type and status-filter button groups).
+- [x] Keyboard navigation (all action buttons and form fields keyboard-reachable; dialog closeable via backdrop click).
+- [x] Accessible labels (`aria-label` on target-type and status-filter button groups; `aria-pressed` on status filter tabs; `aria-label` on UUID input fields).
+- [x] Accessible form errors (`role="alert"` on validation and mutation error messages).
+- [x] No color-only critical state (badges show text labels alongside color; action buttons include icon + text).
+
+### Motion
+
+- [x] Motion is purposeful (button `transition-colors` only; no decorative animation).
+- [x] Reduced-motion supported via the existing global `prefers-reduced-motion` rule in `globals.css`.
+
+### Validation
+
+- [x] Lint passes (`npm run lint`).
+- [x] Type check passes (`npm run type-check`).
+- [x] Production build passes (`npm run build`).
+- [ ] Responsive QA completed for approval list and detail pages.
+
 ## Phase 4 — Director Dashboard (Slice 1)
 
 ### Ownership

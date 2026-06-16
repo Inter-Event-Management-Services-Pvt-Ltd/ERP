@@ -310,7 +310,38 @@ Frontend follow-up:
   permissions.includes('approval.approve'). Use GET /v1/approval-types for
   selectors and display action history from the `actions` array.
 Owner: Claude
-Status: Open
+
+Resolution (2026-06-16):
+  Claude wired all seven approval endpoints and replaced both skeleton placeholders:
+  - apps/web/src/app/approvals/page.tsx: live approval queue with status filter
+    tabs (All / Pending / Approved / Rejected / Revision Requested / Cancelled),
+    table showing type, target type, requester, assignee, requested-at and status
+    badge, "New Approval" button opening CreateApprovalDialog, row links to detail.
+  - apps/web/src/app/approvals/[id]/page.tsx: full detail page showing type,
+    status badge, target type+ID, requester, assignee, timestamps, chronological
+    action history timeline (action code, actor, comment), and inline
+    Approve / Reject / Request Revision forms (gated on approval.approve or
+    isSuperUser, visible only while status is PENDING; revision requires non-empty
+    comment before submit, enforced client-side).
+  - apps/web/src/components/approvals/create-approval-dialog.tsx: new dialog with
+    approval-type select (GET /v1/approval-types), target-type picker (Project /
+    Document Version / Archive Export / Leave Request) with project dropdown for
+    project_id target and UUID input for other targets, optional assignedTo UUID,
+    optional comment, client-side validation that exactly one target is filled
+    before submit.
+  New types added: ApprovalStatus, ApprovalEmployeeSummary, ApprovalActionRecord,
+    Approval, CreateApprovalPayload, ReviewApprovalPayload.
+  New hooks: useApprovalTypes, useApprovals, useApproval, useCreateApproval,
+    useApproveApproval, useRejectApproval, useRequestRevision
+    (apps/web/src/hooks/use-approvals.ts).
+  New API functions: fetchApprovalTypes, fetchApprovals, createApproval,
+    fetchApproval, approveApproval, rejectApproval, requestApprovalRevision
+    (apps/web/src/lib/api.ts).
+  All errors surfaced via apiErrorMessage (INVALID_STATE, ABAC_DENIED,
+    PERMISSION_DENIED, INVALID_REFERENCE, RESOURCE_CONFLICT, VALIDATION_ERROR).
+Verification:
+  cd apps/web && npm run type-check && npm run lint && npm run build
+Status: Resolved
 ```
 
 ### OPEN-003 — Pilot employee list
