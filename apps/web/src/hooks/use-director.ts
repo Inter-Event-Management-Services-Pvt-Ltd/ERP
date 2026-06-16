@@ -8,6 +8,9 @@ import {
   fetchDirectorOverdueTasks,
   fetchDirectorPhysicalFiles,
   fetchDirectorAuditEvents,
+  fetchDirectorUpcomingEvents,
+  fetchDirectorMissingDocuments,
+  fetchDirectorVerificationReminders,
 } from '@/lib/api'
 
 export function useDirectorOverview() {
@@ -60,5 +63,29 @@ export function useDirectorAuditEvents(params?: {
     queryKey: ['director', 'audit-events', params],
     queryFn: () => fetchDirectorAuditEvents(params),
     staleTime: 30 * 1000,
+  })
+}
+
+export function useDirectorUpcomingEvents(params?: { limit?: number; offset?: number }) {
+  return useQuery({
+    queryKey: ['director', 'upcoming-events', params],
+    queryFn: () => fetchDirectorUpcomingEvents(params),
+    staleTime: 60 * 1000,
+  })
+}
+
+export function useDirectorMissingDocuments(params?: { limit?: number; offset?: number }) {
+  return useQuery({
+    queryKey: ['director', 'missing-documents', params],
+    queryFn: () => fetchDirectorMissingDocuments(params),
+    staleTime: 5 * 60 * 1000,
+  })
+}
+
+export function useDirectorVerificationReminders(params?: { limit?: number; offset?: number }) {
+  return useQuery({
+    queryKey: ['director', 'verification-reminders', params],
+    queryFn: () => fetchDirectorVerificationReminders(params),
+    staleTime: 5 * 60 * 1000,
   })
 }

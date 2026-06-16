@@ -399,7 +399,38 @@ Frontend follow-up:
   X-IEMS-Override-Reason. Do not expose the service-role key or write directly
   to Supabase.
 Owner: Claude
-Status: Open
+Status: Resolved
+Resolution:
+  All 22 endpoints wired in the frontend:
+  - lib/errors.ts: SELF_ELEVATION_DENIED and SUPER_USER_OVERRIDE_REASON_REQUIRED
+    error code cases added.
+  - types/index.ts: Department, RoleDetail, EmployeeDetail, EmployeeRoleAssignment,
+    Create/Update payloads, Policy, FolderTemplate, FolderTemplateItem, AuditEvent,
+    UpdatePhysicalRoom/Location, Director metrics types appended.
+  - lib/api.ts: 204 No Content fix applied; all new API functions added; sensitive
+    writes accept optional overrideReason and send X-IEMS-Override-Reason header.
+  - hooks/use-director.ts: useDirectorUpcomingEvents, useDirectorMissingDocuments,
+    useDirectorVerificationReminders added.
+  - hooks/use-employees.ts: useEmployeeList, useDepartments, useRoles,
+    useEmployeeDetail, useCreateEmployee, useUpdateEmployee, useAssignEmployeeRole,
+    useRemoveEmployeeRole, useAssignEmployeeDepartment added.
+  - hooks/use-admin.ts: usePolicies, useCreatePolicy, useUpdatePolicy,
+    useFolderTemplates, useFolderTemplate, useCreateFolderTemplate,
+    useUpdateFolderTemplate, useCreateFolderTemplateItem,
+    useUpdateFolderTemplateItem, useUpdatePhysicalRoom, useUpdatePhysicalLocation,
+    useAuditEvents added.
+  - Director pages: upcoming-events, missing-docs, verification-reminders (new);
+    director overview updated with Row 4 quick-links.
+  - Admin pages: employees list+create (replaced), employees/[id] detail (new),
+    policies list+create+edit (replaced), folder-templates list+create (replaced),
+    folder-templates/[id] items CRUD (new), archive-locations room+location edit
+    (replaced), audit explorer with filters and expandable rows (replaced),
+    departments read-only list (replaced), roles read-only list (replaced).
+  - Override reason reveal-on-error pattern applied to role assignment and policy
+    writes.
+  Type-check, lint, and production build all pass.
+Verification:
+  cd apps/web && npm run type-check && npm run lint && npm run build
 ```
 
 ### OPEN-003 — Pilot employee list

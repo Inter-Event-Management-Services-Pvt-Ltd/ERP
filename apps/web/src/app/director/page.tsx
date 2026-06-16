@@ -9,6 +9,9 @@ import {
   AlertTriangle,
   Archive,
   Activity,
+  Calendar,
+  FileX,
+  ShieldAlert,
 } from 'lucide-react'
 import { AppShell } from '@/components/layout/app-shell'
 import { PageHeader } from '@/components/layout/page-header'
@@ -223,6 +226,40 @@ export default function DirectorDashboardPage() {
                 <p className="text-xs text-text-primary/40 py-4 text-center font-sans">No recent audit events.</p>
               </SectionCard>
             )}
+
+            {/* Row 4 — Quick links to extended metrics */}
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+              <Link
+                href="/director/upcoming-events"
+                className="rounded-lg border border-surface-border bg-surface-raised p-4 flex items-center gap-3 hover:border-accent-saffron/40 transition-colors"
+              >
+                <Calendar size={14} className="text-accent-saffron flex-none" aria-hidden="true" />
+                <div>
+                  <p className="text-xs font-mono uppercase tracking-widest text-text-primary/55">Upcoming Events</p>
+                  <p className="text-xs text-text-primary/40 mt-0.5">Calendar feed</p>
+                </div>
+              </Link>
+              <Link
+                href="/director/missing-docs"
+                className="rounded-lg border border-surface-border bg-surface-raised p-4 flex items-center gap-3 hover:border-accent-critical/40 transition-colors"
+              >
+                <FileX size={14} className="text-accent-critical flex-none" aria-hidden="true" />
+                <div>
+                  <p className="text-xs font-mono uppercase tracking-widest text-text-primary/55">Missing Documents</p>
+                  <p className="text-xs text-text-primary/40 mt-0.5">Required docs not uploaded</p>
+                </div>
+              </Link>
+              <Link
+                href="/director/verification-reminders"
+                className="rounded-lg border border-surface-border bg-surface-raised p-4 flex items-center gap-3 hover:border-accent-warning/40 transition-colors"
+              >
+                <ShieldAlert size={14} className="text-accent-warning flex-none" aria-hidden="true" />
+                <div>
+                  <p className="text-xs font-mono uppercase tracking-widest text-text-primary/55">Verification Reminders</p>
+                  <p className="text-xs text-text-primary/40 mt-0.5">Physical files due for check</p>
+                </div>
+              </Link>
+            </div>
           </div>
         )}
       </ContentArea>

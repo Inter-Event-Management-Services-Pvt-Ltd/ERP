@@ -57,6 +57,28 @@ import type {
   Approval,
   CreateApprovalPayload,
   ReviewApprovalPayload,
+  Department,
+  RoleDetail,
+  EmployeeDetail,
+  EmployeeRoleAssignment,
+  CreateEmployeePayload,
+  UpdateEmployeePayload,
+  AssignRolePayload,
+  DepartmentAssignmentPayload,
+  Policy,
+  CreatePolicyPayload,
+  UpdatePolicyPayload,
+  FolderTemplate,
+  FolderTemplateItem,
+  CreateFolderTemplatePayload,
+  CreateFolderTemplateItemPayload,
+  UpdateFolderTemplateItemPayload,
+  UpdatePhysicalRoomPayload,
+  UpdatePhysicalLocationPayload,
+  AuditEvent,
+  DirectorUpcomingEvent,
+  DirectorMissingDocument,
+  DirectorVerificationReminder,
 } from '@/types'
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:8000'
@@ -87,6 +109,7 @@ async function apiFetch<T>(path: string, init?: RequestInit): Promise<T> {
     throw Object.assign(new Error(message), { code, status: res.status })
   }
 
+  if (res.status === 204) return undefined as T
   return res.json() as Promise<T>
 }
 
@@ -805,4 +828,238 @@ export async function requestApprovalRevision(
     method: 'POST',
     body: JSON.stringify(payload),
   })
+}
+
+// ─── Departments and Roles ────────────────────────────────────────────────────
+
+export async function fetchDepartments(): Promise<Department[]> {
+  return apiFetch<Department[]>('/v1/departments')
+}
+
+export async function fetchRoles(): Promise<RoleDetail[]> {
+  return apiFetch<RoleDetail[]>('/v1/roles')
+}
+
+// ─── Employee admin ───────────────────────────────────────────────────────────
+
+export async function fetchEmployeeDetail(employeeId: string): Promise<EmployeeDetail> {
+  return apiFetch<EmployeeDetail>(`/v1/employees/${employeeId}`)
+}
+
+export async function createEmployee(payload: CreateEmployeePayload): Promise<EmployeeDetail> {
+  return apiFetch<EmployeeDetail>('/v1/employees', {
+    method: 'POST',
+    body: JSON.stringify(payload),
+  })
+}
+
+export async function updateEmployee(
+  employeeId: string,
+  payload: UpdateEmployeePayload
+): Promise<EmployeeDetail> {
+  return apiFetch<EmployeeDetail>(`/v1/employees/${employeeId}`, {
+    method: 'PATCH',
+    body: JSON.stringify(payload),
+  })
+}
+
+export async function assignEmployeeRole(
+  employeeId: string,
+  payload: AssignRolePayload,
+  overrideReason?: string
+): Promise<EmployeeRoleAssignment> {
+  const extraHeaders: Record<string, string> = {}
+  if (overrideReason) extraHeaders['X-IEMS-Override-Reason'] = overrideReason
+  return apiFetch<EmployeeRoleAssignment>(`/v1/employees/${employeeId}/roles`, {
+    method: 'POST',
+    body: JSON.stringify(payload),
+    headers: extraHeaders,
+  })
+}
+
+export async function removeEmployeeRole(
+  employeeId: string,
+  roleId: string,
+  overrideReason?: string
+): Promise<void> {
+  const extraHeaders: Record<string, string> = {}
+  if (overrideReason) extraHeaders['X-IEMS-Override-Reason'] = overrideReason
+  await apiFetch<void>(`/v1/employees/${employeeId}/roles/${roleId}`, {
+    method: 'DELETE',
+    headers: extraHeaders,
+  })
+}
+
+export async function assignEmployeeDepartment(
+  employeeId: string,
+  payload: DepartmentAssignmentPayload
+): Promise<void> {
+  await apiFetch<void>(`/v1/employees/${employeeId}/department-assignments`, {
+    method: 'POST',
+    body: JSON.stringify(payload),
+  })
+}
+
+// ─── Policies ─────────────────────────────────────────────────────────────────
+
+export async function fetchPolicies(): Promise<Policy[]> {
+  return apiFetch<Policy[]>('/v1/policies')
+}
+
+export async function createPolicy(
+  payload: CreatePolicyPayload,
+  overrideReason?: string
+): Promise<Policy> {
+  const extraHeaders: Record<string, string> = {}
+  if (overrideReason) extraHeaders['X-IEMS-Override-Reason'] = overrideReason
+  return apiFetch<Policy>('/v1/policies', {
+    method: 'POST',
+    body: JSON.stringify(payload),
+    headers: extraHeaders,
+  })
+}
+
+export async function updatePolicy(
+  policyId: string,
+  payload: UpdatePolicyPayload,
+  overrideReason?: string
+): Promise<Policy> {
+  const extraHeaders: Record<string, string> = {}
+  if (overrideReason) extraHeaders['X-IEMS-Override-Reason'] = overrideReason
+  return apiFetch<Policy>(`/v1/policies/${policyId}`, {
+    method: 'PATCH',
+    body: JSON.stringify(payload),
+    headers: extraHeaders,
+  })
+}
+
+// ─── Folder templates ─────────────────────────────────────────────────────────
+
+export async function fetchFolderTemplates(): Promise<FolderTemplate[]> {
+  return apiFetch<FolderTemplate[]>('/v1/folder-templates')
+}
+
+export async function createFolderTemplate(
+  payload: CreateFolderTemplatePayload
+): Promise<FolderTemplate> {
+  return apiFetch<FolderTemplate>('/v1/folder-templates', {
+    method: 'POST',
+    body: JSON.stringify(payload),
+  })
+}
+
+export async function fetchFolderTemplate(templateId: string): Promise<FolderTemplate> {
+  return apiFetch<FolderTemplate>(`/v1/folder-templates/${templateId}`)
+}
+
+export async function updateFolderTemplate(
+  templateId: string,
+  payload: Partial<CreateFolderTemplatePayload>
+): Promise<FolderTemplate> {
+  return apiFetch<FolderTemplate>(`/v1/folder-templates/${templateId}`, {
+    method: 'PATCH',
+    body: JSON.stringify(payload),
+  })
+}
+
+export async function createFolderTemplateItem(
+  templateId: string,
+  payload: CreateFolderTemplateItemPayload
+): Promise<FolderTemplateItem> {
+  return apiFetch<FolderTemplateItem>(`/v1/folder-templates/${templateId}/items`, {
+    method: 'POST',
+    body: JSON.stringify(payload),
+  })
+}
+
+export async function updateFolderTemplateItem(
+  itemId: string,
+  payload: UpdateFolderTemplateItemPayload
+): Promise<FolderTemplateItem> {
+  return apiFetch<FolderTemplateItem>(`/v1/folder-template-items/${itemId}`, {
+    method: 'PATCH',
+    body: JSON.stringify(payload),
+  })
+}
+
+// ─── Physical archive admin writes ────────────────────────────────────────────
+
+export async function updatePhysicalRoom(
+  roomId: string,
+  payload: UpdatePhysicalRoomPayload
+): Promise<PhysicalRoom> {
+  return apiFetch<PhysicalRoom>(`/v1/archive/rooms/${roomId}`, {
+    method: 'PATCH',
+    body: JSON.stringify(payload),
+  })
+}
+
+export async function updatePhysicalLocation(
+  locationId: string,
+  payload: UpdatePhysicalLocationPayload
+): Promise<PhysicalLocation> {
+  return apiFetch<PhysicalLocation>(`/v1/archive/locations/${locationId}`, {
+    method: 'PATCH',
+    body: JSON.stringify(payload),
+  })
+}
+
+// ─── Full audit explorer ──────────────────────────────────────────────────────
+
+export async function fetchAuditEvents(params?: {
+  action_code?: string
+  resource_type?: string
+  resource_id?: string
+  actor_employee_id?: string
+  created_from?: string
+  created_to?: string
+  limit?: number
+  offset?: number
+}): Promise<AuditEvent[]> {
+  const qs = new URLSearchParams()
+  if (params?.action_code) qs.set('action_code', params.action_code)
+  if (params?.resource_type) qs.set('resource_type', params.resource_type)
+  if (params?.resource_id) qs.set('resource_id', params.resource_id)
+  if (params?.actor_employee_id) qs.set('actor_employee_id', params.actor_employee_id)
+  if (params?.created_from) qs.set('created_from', params.created_from)
+  if (params?.created_to) qs.set('created_to', params.created_to)
+  if (params?.limit) qs.set('limit', String(params.limit))
+  if (params?.offset) qs.set('offset', String(params.offset))
+  const q = qs.toString()
+  return apiFetch<AuditEvent[]>(`/v1/audit-events${q ? `?${q}` : ''}`)
+}
+
+// ─── Director extended metrics ────────────────────────────────────────────────
+
+export async function fetchDirectorUpcomingEvents(params?: {
+  limit?: number
+  offset?: number
+}): Promise<DirectorUpcomingEvent[]> {
+  const qs = new URLSearchParams()
+  if (params?.limit) qs.set('limit', String(params.limit))
+  if (params?.offset) qs.set('offset', String(params.offset))
+  const q = qs.toString()
+  return apiFetch<DirectorUpcomingEvent[]>(`/v1/director/upcoming-events${q ? `?${q}` : ''}`)
+}
+
+export async function fetchDirectorMissingDocuments(params?: {
+  limit?: number
+  offset?: number
+}): Promise<DirectorMissingDocument[]> {
+  const qs = new URLSearchParams()
+  if (params?.limit) qs.set('limit', String(params.limit))
+  if (params?.offset) qs.set('offset', String(params.offset))
+  const q = qs.toString()
+  return apiFetch<DirectorMissingDocument[]>(`/v1/director/missing-required-documents${q ? `?${q}` : ''}`)
+}
+
+export async function fetchDirectorVerificationReminders(params?: {
+  limit?: number
+  offset?: number
+}): Promise<DirectorVerificationReminder[]> {
+  const qs = new URLSearchParams()
+  if (params?.limit) qs.set('limit', String(params.limit))
+  if (params?.offset) qs.set('offset', String(params.offset))
+  const q = qs.toString()
+  return apiFetch<DirectorVerificationReminder[]>(`/v1/director/verification-reminders${q ? `?${q}` : ''}`)
 }

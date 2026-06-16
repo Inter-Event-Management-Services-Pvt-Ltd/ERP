@@ -1,5 +1,51 @@
 # Claude Frontend Checklist
 
+## Phase 4 — Admin, Policy, Audit and Director Extended Metrics (Slice 3)
+
+### Ownership
+
+- [x] Only frontend-owned files modified: `apps/web/src/app/admin/**`, `apps/web/src/app/director/upcoming-events`, `apps/web/src/app/director/missing-docs`, `apps/web/src/app/director/verification-reminders`, `apps/web/src/hooks/use-admin.ts`, `apps/web/src/hooks/use-employees.ts`, `apps/web/src/hooks/use-director.ts`, `apps/web/src/lib/api.ts`, `apps/web/src/lib/errors.ts`, `apps/web/src/types/index.ts`.
+- [x] No backend files modified (apps/api/**, supabase/**, migrations untouched).
+- [x] API contract followed exactly per `docs/api-contract.md`; no invented fields or endpoints.
+
+### Design Workflow
+
+- [x] Screen purpose documented: Director metrics (upcoming events, missing required docs, verification reminders); Employee admin (list+create, detail with identity/department/role sections); Policy admin (list+create+edit with conditions JSON); Folder template admin (list+create, detail with items CRUD); Archive location admin (room+location inline edit); Audit explorer (filterable, paginated, expandable rows showing old/new/metadata); Departments and Roles read-only reference pages.
+- [x] User roles documented: Director pages gated on DirectorGuard; admin writes gated on specific permissions OR isSuperUser; read-only department/role pages accessible to any authenticated user.
+- [x] Shared components reused (AppShell, PageHeader, ContentArea, SkeletonScreen, EmptyState, ErrorState, Badge).
+- [x] Responsive states implemented (grids collapse; tables scroll horizontally).
+- [x] Empty, loading, and error states implemented for every new page.
+- [x] Permission-denied state implemented (write actions hidden for unpermitted users; audit page renders permission message inline).
+
+### Security
+
+- [x] No secrets exposed; no Supabase service-role key referenced.
+- [x] All reads/writes go through FastAPI via `lib/api.ts`; no direct Supabase calls.
+- [x] No unsafe HTML rendering (no dangerouslySetInnerHTML).
+- [x] X-IEMS-Override-Reason header sent only when the backend returns SUPER_USER_OVERRIDE_REASON_REQUIRED; override field revealed via catch-then-show pattern to avoid exposing the concept to non-super-users.
+- [x] SELF_ELEVATION_DENIED surfaced via apiErrorMessage.
+- [x] Audit old_values/new_values/metadata rendered read-only in a sandboxed pre block; no execution.
+- [x] Archive location edit only updates code/label/active fields; room_id and structural keys are not editable.
+
+### Accessibility
+
+- [x] Semantic structure (tables with `scope="col"` headers; `role="group"` on filter button groups; `role="alert"` on all error messages; `aria-label` on icon buttons; `aria-expanded` on collapsible rows).
+- [x] Keyboard navigation (all forms, tables, and action buttons keyboard-reachable).
+- [x] No color-only status (badges always include text; overdue rows include "Overdue" badge text).
+- [x] Form labels associated via `htmlFor`/`id`; all required fields marked.
+
+### Motion
+
+- [x] Motion is purposeful (button `transition-colors` only; expandable rows use no animation).
+- [x] Reduced-motion supported via the existing global `prefers-reduced-motion` rule in `globals.css`.
+
+### Validation
+
+- [x] Lint passes (`npm run lint`).
+- [x] Type check passes (`npm run type-check`).
+- [x] Production build passes (`npm run build`).
+- [ ] Responsive QA completed.
+
 ## Phase 4 — Approval Workflows (Slice 2)
 
 ### Ownership
