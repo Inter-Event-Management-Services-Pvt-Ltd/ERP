@@ -557,6 +557,96 @@ export interface LinkTaskDocumentPayload {
   document_id: string
 }
 
+// ─── Director Dashboard ───────────────────────────────────────────────────────
+
+export interface DirectorAuditEvent {
+  id: string
+  action_code: string
+  resource_type: string
+  resource_id: string
+  actor_employee_id: string
+  actor: {
+    id: string
+    employee_code: string
+    full_name: string
+  }
+  request_id: string
+  created_at: string
+}
+
+export interface DirectorOverview {
+  generated_at: string
+  attendance: {
+    active_employee_count: number
+    checked_in_count: number
+    checked_out_count: number
+    absent_or_not_checked_in_count: number
+    total_minutes_today: number
+  }
+  projects: {
+    active_count: number
+    planning_count: number
+    completed_count: number
+    archived_count: number
+  }
+  pending_approval_count: number
+  overdue_task_count: number
+  physical_archive: {
+    checked_out_count: number
+    overdue_return_count: number
+    verification_due_count: number
+    missing_count: number
+  }
+  recent_audit_events: DirectorAuditEvent[]
+}
+
+export interface DirectorProject {
+  id: string
+  project_code: string
+  name: string
+  client_name: string
+  project_status: string
+  priority_level: string
+  event_date: string
+  project_manager_name: string
+  archived_at: string | null
+}
+
+export interface DirectorApproval {
+  id: string
+  approval_type: string
+  status: string
+  requested_at: string
+  requested_by_name: string
+  assigned_to_name: string
+  project_code: string
+  project_name: string
+}
+
+export interface DirectorOverdueTask {
+  id: string
+  title: string
+  due_at: string
+  project_code: string
+  project_name: string
+  assignees: string
+}
+
+export interface DirectorCheckedOutFile {
+  id: string
+  physical_file_code: string
+  project_code: string
+  project_name: string
+  client_name: string
+  status: string
+  archive_room: string
+  archive_location_code: string
+  checked_out_at: string
+  expected_return_at: string | null
+  checked_out_by: string
+  is_return_overdue: boolean
+}
+
 // ─── Calendar ─────────────────────────────────────────────────────────────────
 
 export type CalendarEventType =

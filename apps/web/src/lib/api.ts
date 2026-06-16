@@ -48,6 +48,12 @@ import type {
   CalendarEvent,
   CreateCalendarEventPayload,
   UpdateCalendarEventPayload,
+  DirectorOverview,
+  DirectorProject,
+  DirectorApproval,
+  DirectorOverdueTask,
+  DirectorCheckedOutFile,
+  DirectorAuditEvent,
 } from '@/types'
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:8000'
@@ -671,4 +677,69 @@ export async function updateCalendarEvent(
     method: 'PATCH',
     body: JSON.stringify(payload),
   })
+}
+
+// ─── Director Dashboard ───────────────────────────────────────────────────────
+
+export async function fetchDirectorOverview(): Promise<DirectorOverview> {
+  return apiFetch<DirectorOverview>('/v1/director/overview')
+}
+
+export async function fetchDirectorProjects(params?: {
+  limit?: number
+  offset?: number
+}): Promise<DirectorProject[]> {
+  const qs = new URLSearchParams()
+  if (params?.limit) qs.set('limit', String(params.limit))
+  if (params?.offset) qs.set('offset', String(params.offset))
+  const q = qs.toString()
+  return apiFetch<DirectorProject[]>(`/v1/director/projects${q ? `?${q}` : ''}`)
+}
+
+export async function fetchDirectorApprovals(params?: {
+  limit?: number
+  offset?: number
+}): Promise<DirectorApproval[]> {
+  const qs = new URLSearchParams()
+  if (params?.limit) qs.set('limit', String(params.limit))
+  if (params?.offset) qs.set('offset', String(params.offset))
+  const q = qs.toString()
+  return apiFetch<DirectorApproval[]>(`/v1/director/approvals${q ? `?${q}` : ''}`)
+}
+
+export async function fetchDirectorOverdueTasks(params?: {
+  limit?: number
+  offset?: number
+}): Promise<DirectorOverdueTask[]> {
+  const qs = new URLSearchParams()
+  if (params?.limit) qs.set('limit', String(params.limit))
+  if (params?.offset) qs.set('offset', String(params.offset))
+  const q = qs.toString()
+  return apiFetch<DirectorOverdueTask[]>(`/v1/director/overdue-tasks${q ? `?${q}` : ''}`)
+}
+
+export async function fetchDirectorPhysicalFiles(params?: {
+  limit?: number
+  offset?: number
+}): Promise<DirectorCheckedOutFile[]> {
+  const qs = new URLSearchParams()
+  if (params?.limit) qs.set('limit', String(params.limit))
+  if (params?.offset) qs.set('offset', String(params.offset))
+  const q = qs.toString()
+  return apiFetch<DirectorCheckedOutFile[]>(`/v1/director/physical-files${q ? `?${q}` : ''}`)
+}
+
+export async function fetchDirectorAuditEvents(params?: {
+  action_code?: string
+  resource_type?: string
+  limit?: number
+  offset?: number
+}): Promise<DirectorAuditEvent[]> {
+  const qs = new URLSearchParams()
+  if (params?.action_code) qs.set('action_code', params.action_code)
+  if (params?.resource_type) qs.set('resource_type', params.resource_type)
+  if (params?.limit) qs.set('limit', String(params.limit))
+  if (params?.offset) qs.set('offset', String(params.offset))
+  const q = qs.toString()
+  return apiFetch<DirectorAuditEvent[]>(`/v1/director/audit-events${q ? `?${q}` : ''}`)
 }
