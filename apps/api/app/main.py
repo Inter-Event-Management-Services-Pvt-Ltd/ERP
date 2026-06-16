@@ -5,6 +5,7 @@ from starlette.exceptions import HTTPException as StarletteHTTPException
 
 from app.api.v1.attendance import router as attendance_router
 from app.api.v1.clients_projects import router as clients_projects_router
+from app.api.v1.director_dashboard import router as director_dashboard_router
 from app.api.v1.documents_archive import router as documents_archive_router
 from app.api.v1.employee_operations import router as employee_operations_router
 from app.api.v1.employees import router as employees_router
@@ -36,6 +37,7 @@ app.add_exception_handler(StarletteHTTPException, http_exception_handler)
 app.add_exception_handler(RequestValidationError, validation_exception_handler)
 app.include_router(attendance_router)
 app.include_router(clients_projects_router)
+app.include_router(director_dashboard_router)
 app.include_router(documents_archive_router)
 app.include_router(employee_operations_router)
 app.include_router(employees_router)

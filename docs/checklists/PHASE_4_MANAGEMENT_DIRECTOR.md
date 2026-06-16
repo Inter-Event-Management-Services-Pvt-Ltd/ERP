@@ -11,16 +11,16 @@
 
 ## Director Dashboard
 
-- [ ] Attendance metrics.
-- [ ] Active-project metrics.
+- [x] Attendance metrics.
+- [x] Active-project metrics.
 - [ ] Upcoming events.
-- [ ] Overdue tasks.
-- [ ] Pending approvals.
+- [x] Overdue tasks.
+- [x] Pending approvals.
 - [ ] Missing required documents.
-- [ ] Checked-out physical files.
-- [ ] Overdue physical returns.
+- [x] Checked-out physical files.
+- [x] Overdue physical returns.
 - [ ] Verification reminders.
-- [ ] Recent audit activity.
+- [x] Recent audit activity.
 
 ## Admin
 
@@ -34,8 +34,8 @@
 
 ## Security Gate
 
-- [ ] Director Dashboard requires Director or authorized Super User.
-- [ ] Restricted records still log sensitive access.
+- [x] Director Dashboard requires Director or authorized Super User.
+- [x] Restricted records still log sensitive access.
 - [ ] Super User overrides require reason.
 - [ ] Policy changes create audit events.
 - [ ] Approval actions create audit events.
@@ -51,6 +51,9 @@
 ### Codex backend
 
 - [ ] Implement Director metrics queries, endpoints, audit access and approval workflows.
+  - [x] Director dashboard read metrics and audit-access endpoints.
+  - [ ] Approval write workflows.
+  - [ ] Admin and policy management endpoints.
 
 ### Claude frontend
 

@@ -913,6 +913,161 @@ GET    /v1/director/physical-files
 GET    /v1/director/audit-events
 ```
 
+Director Dashboard routes require either the `DIRECTOR` role or a Super User
+account. They are not available to normal `ADMIN` or `SUPER_ADMIN` roles through
+permissions alone. `GET /v1/director/overview` and
+`GET /v1/director/audit-events` expose audit activity, so FastAPI writes
+`director.overview_viewed` or `director.audit_events_viewed` audit events for
+those reads.
+
+`GET /v1/director/overview` returns:
+
+```json
+{
+  "generated_at": "2026-06-16T09:00:00Z",
+  "attendance": {
+    "active_employee_count": 12,
+    "checked_in_count": 8,
+    "checked_out_count": 2,
+    "absent_or_not_checked_in_count": 2,
+    "total_minutes_today": 4100
+  },
+  "projects": {
+    "active_count": 7,
+    "planning_count": 3,
+    "completed_count": 1,
+    "archived_count": 0
+  },
+  "pending_approval_count": 4,
+  "overdue_task_count": 6,
+  "physical_archive": {
+    "checked_out_count": 3,
+    "overdue_return_count": 1,
+    "verification_due_count": 0,
+    "missing_count": 0
+  },
+  "recent_audit_events": [
+    {
+      "id": "77777777-7777-4777-8777-777777777777",
+      "action_code": "document.downloaded",
+      "resource_type": "document_version",
+      "resource_id": "66666666-6666-4666-8666-666666666666",
+      "actor_employee_id": "22222222-2222-4222-8222-222222222222",
+      "actor": {
+        "id": "22222222-2222-4222-8222-222222222222",
+        "employee_code": "IEMS-001",
+        "full_name": "Example Employee"
+      },
+      "request_id": "88888888-8888-4888-8888-888888888888",
+      "created_at": "2026-06-16T08:45:00Z"
+    }
+  ]
+}
+```
+
+Audit event responses intentionally omit `old_values`, `new_values` and
+`metadata` to avoid leaking sensitive before/after payloads into the Director
+dashboard.
+
+`GET /v1/director/projects` accepts:
+
+```text
+limit=1..100  default 50
+offset=0..n   default 0
+```
+
+Response:
+
+```json
+[
+  {
+    "id": "55555555-5555-4555-8555-555555555555",
+    "project_code": "IEMS-2026-001",
+    "name": "Annual Leadership Conference",
+    "client_name": "Acme Events",
+    "project_status": "ACTIVE",
+    "priority_level": "HIGH",
+    "event_date": "2026-08-12",
+    "project_manager_name": "Aarav Mehta",
+    "archived_at": null
+  }
+]
+```
+
+`GET /v1/director/approvals` reads the pending approval dashboard view. It
+accepts:
+
+```text
+status=PENDING  optional; current view is pending-only
+limit=1..100    default 50
+offset=0..n     default 0
+```
+
+Response:
+
+```json
+[
+  {
+    "id": "44444444-4444-4444-8444-444444444444",
+    "approval_type": "DOCUMENT_APPROVAL",
+    "status": "PENDING",
+    "requested_at": "2026-06-16T09:00:00Z",
+    "requested_by_name": "Nisha Rao",
+    "assigned_to_name": "IEMS Director",
+    "project_code": "IEMS-2026-001",
+    "project_name": "Annual Leadership Conference"
+  }
+]
+```
+
+`GET /v1/director/overdue-tasks` accepts `limit` and `offset` and returns:
+
+```json
+[
+  {
+    "id": "55555555-5555-4555-8555-555555555555",
+    "title": "Close vendor reconciliation",
+    "due_at": "2026-06-16T09:00:00Z",
+    "project_code": "IEMS-2026-001",
+    "project_name": "Annual Leadership Conference",
+    "assignees": "Nisha Rao"
+  }
+]
+```
+
+`GET /v1/director/physical-files` accepts `limit` and `offset` and returns:
+
+```json
+[
+  {
+    "id": "66666666-6666-4666-8666-666666666666",
+    "physical_file_code": "PF-001",
+    "project_code": "IEMS-2026-001",
+    "project_name": "Annual Leadership Conference",
+    "client_name": "Acme Events",
+    "status": "CHECKED_OUT",
+    "archive_room": "Main Archive",
+    "archive_location_code": "R1-S1-C1-B1-F1",
+    "checked_out_at": "2026-06-16T09:00:00Z",
+    "expected_return_at": "2026-06-17T09:00:00Z",
+    "checked_out_by": "Nisha Rao",
+    "is_return_overdue": false
+  }
+]
+```
+
+`GET /v1/director/audit-events` accepts:
+
+```text
+action_code=<audit action code>  optional
+resource_type=<resource type>    optional
+limit=1..100                     default 50
+offset=0..n                      default 0
+```
+
+It returns the same `recent_audit_events` item shape shown in
+`GET /v1/director/overview`.
+
 `GET /v1/director/attendance` requires `attendance.view_all` or Super User. It
 returns today's active-employee attendance summary from
 `director_attendance_today_v`:

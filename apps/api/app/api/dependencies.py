@@ -12,6 +12,7 @@ from app.core.super_user import SuperUserOverrideService
 from app.schemas.current_user import CurrentUser
 from app.services.attendance import AttendanceService
 from app.services.clients_projects import ClientsProjectsService
+from app.services.director_dashboard import DirectorDashboardService
 from app.services.documents_archive import DocumentsArchiveService
 from app.services.employee_operations import EmployeeOperationsService
 from app.services.employees import EmployeesService
@@ -180,6 +181,23 @@ def get_employee_operations_service() -> EmployeeOperationsService:
             },
         )
     return EmployeeOperationsService(
+        supabase_url=settings.supabase_url,
+        service_role_key=settings.supabase_service_role_key,
+        timeout_seconds=settings.supabase_request_timeout_seconds,
+    )
+
+
+def get_director_dashboard_service() -> DirectorDashboardService:
+    settings = get_settings()
+    if settings.supabase_url is None or settings.supabase_service_role_key is None:
+        raise HTTPException(
+            status_code=503,
+            detail={
+                "code": "DATA_SERVICE_NOT_CONFIGURED",
+                "message": "Supabase data service is not configured",
+            },
+        )
+    return DirectorDashboardService(
         supabase_url=settings.supabase_url,
         service_role_key=settings.supabase_service_role_key,
         timeout_seconds=settings.supabase_request_timeout_seconds,

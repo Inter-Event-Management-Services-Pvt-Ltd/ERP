@@ -18,6 +18,7 @@
 - Added Super User override recording with atomic Supabase audit-event insertion.
 - Added structured JSON API access logging and a minimal Celery worker scaffold.
 - Added backend CI for Ruff, MyPy and Pytest.
+- Marked `CODEX-PHASE1-004` as done after fresh backend Ruff, MyPy and Pytest validation.
 - Added Phase 2 clients/projects API routes, typed schemas, RBAC/ABAC checks, audited transactional Supabase RPCs, folder-template application, folder-tree reads, and backend tests.
 - Hardened custom Supabase trigger functions by revoking direct execution from `anon` and `authenticated` and adding trigger security validation.
 - Added deterministic local demo seed data for Phase 2 client/project testing, including demo employees, clients, contacts, projects, memberships, and folder trees.
@@ -44,6 +45,7 @@
 - Fixed local Supabase service-role table grants so FastAPI's server-side REST clients can load projects, archive rooms and current-user data after a clean database reset.
 - Added Phase 3 attendance backend endpoints for check-in, check-out, own history, privileged team history and audited admin corrections, backed by service-role-only Supabase RPCs.
 - Completed Phase 3 employee-operations backend APIs for leave requests, task management, calendar events, synthetic deadlines/leave/physical-return calendar feeds, Director attendance summaries, notifications and audited service-role-only Supabase RPCs.
+- Started Phase 4 backend by adding Director Dashboard read APIs for overview metrics, project summaries, pending approvals, overdue tasks, physical-file monitoring and audit activity, with Director/Super User authorization and sensitive audit-access logging.
 
 - Wired Phase 2 folder CRUD to live backend: inline create, rename, and delete in FolderTreePanel with INVALID_STATE protection and canManage gating.
 - Added DocumentListPanel with per-folder document list, multipart upload dialog (INVALID_FILE_NAME, INVALID_MIME_TYPE, INVALID_FILE_SIZE error display), version upload, and signed download URLs fetched on-demand.

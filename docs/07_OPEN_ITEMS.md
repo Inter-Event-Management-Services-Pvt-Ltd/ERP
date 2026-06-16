@@ -197,6 +197,60 @@ Owner: Codex (contract + backend), Claude (frontend follow-up)
 Status: Open
 ```
 
+### OPEN-035 - Phase 4 Director Dashboard frontend wiring
+
+```text
+Date: 2026-06-16
+Category: Frontend Integration
+Severity: Medium
+Question or issue:
+  Codex added the first Phase 4 backend Director Dashboard read endpoints:
+  - GET /v1/director/overview
+  - GET /v1/director/projects
+  - GET /v1/director/approvals
+  - GET /v1/director/overdue-tasks
+  - GET /v1/director/physical-files
+  - GET /v1/director/audit-events
+Why it matters:
+  Claude can now build the Director Dashboard from FastAPI-backed read models
+  without direct Supabase reads or invented response shapes.
+Frontend follow-up:
+  Use docs/api-contract.md exactly. Gate /director dashboard screens on
+  user.isSuperUser || user.roles.includes('DIRECTOR'), not on generic admin
+  permissions alone. Display audit events from the response shape only; do not
+  expect old_values, new_values or metadata because the backend intentionally
+  withholds those from dashboard responses. Treat /director/approvals as the
+  pending approval queue for now.
+Owner: Claude
+Status: Open
+```
+
+### OPEN-036 - Remaining Phase 4 backend approval and admin workflows
+
+```text
+Date: 2026-06-16
+Category: Backend Scope
+Severity: Medium
+Question or issue:
+  Phase 4 Director Dashboard read APIs are implemented, but generic approval
+  write workflows and admin/policy management APIs are still not implemented.
+Remaining backend work:
+  - Director upcoming-events feed
+  - Director missing-required-documents metric/list
+  - Director archive verification reminders backed by real verification dates
+  - POST /v1/approvals
+  - GET /v1/approvals and GET /v1/approvals/{approval_id} with comment history
+  - POST /v1/approvals/{approval_id}/approve
+  - POST /v1/approvals/{approval_id}/reject
+  - POST /v1/approvals/{approval_id}/request-revision
+  - employee management writes
+  - role assignment writes with self-elevation protection
+  - policy management with audit events
+  - audit explorer outside the Director dashboard shape
+Owner: Codex
+Status: Open
+```
+
 ### OPEN-003 — Pilot employee list
 
 ```text
