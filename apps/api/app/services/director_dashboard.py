@@ -10,11 +10,14 @@ from app.schemas.director_dashboard import (
     DirectorArchiveMetrics,
     DirectorAttendanceMetrics,
     DirectorAuditEventResponse,
+    DirectorMissingRequiredDocumentResponse,
     DirectorOverdueTaskResponse,
     DirectorOverviewResponse,
     DirectorPhysicalFileSummaryResponse,
     DirectorProjectMetrics,
     DirectorProjectSummaryResponse,
+    DirectorUpcomingEventResponse,
+    DirectorVerificationReminderResponse,
 )
 
 ATTENDANCE_SELECT = (
@@ -36,6 +39,17 @@ OVERDUE_TASK_SELECT = "id,title,due_at,project_code,project_name,assignees"
 PHYSICAL_FILE_SELECT = (
     "id,physical_file_code,project_code,project_name,client_name,status,archive_room,"
     "archive_location_code,checked_out_at,expected_return_at,checked_out_by"
+)
+UPCOMING_EVENT_SELECT = (
+    "id,title,event_type,starts_at,ends_at,project_code,project_name,location"
+)
+MISSING_REQUIRED_DOCUMENT_SELECT = (
+    "project_id,project_code,project_name,document_type_id,document_type_code,"
+    "document_type_name"
+)
+VERIFICATION_REMINDER_SELECT = (
+    "id,physical_file_code,project_code,project_name,archive_room,archive_location_code,"
+    "last_verified_at,next_verification_at"
 )
 AUDIT_EVENT_SELECT = (
     "id,action_code,resource_type,resource_id,actor_employee_id,request_id,created_at,"
@@ -85,6 +99,11 @@ class DirectorDashboardService:
             limit=500,
             offset=0,
         )
+        verification_reminders = await self.list_verification_reminders(
+            current_user=current_user,
+            limit=500,
+            offset=0,
+        )
         audit_events = await self.list_audit_events(
             current_user=current_user,
             limit=10,
@@ -98,7 +117,10 @@ class DirectorDashboardService:
             projects=_project_metrics(projects),
             pending_approval_count=len(approvals),
             overdue_task_count=len(overdue_tasks),
-            physical_archive=_archive_metrics(physical_files),
+            physical_archive=_archive_metrics(
+                physical_files,
+                verification_reminders=verification_reminders,
+            ),
             recent_audit_events=audit_events,
         )
 
@@ -179,6 +201,63 @@ class DirectorDashboardService:
             },
         )
         return [_physical_file_from_row(row) for row in rows]
+
+    async def list_upcoming_events(
+        self,
+        *,
+        current_user: CurrentUser,
+        limit: int,
+        offset: int,
+    ) -> list[DirectorUpcomingEventResponse]:
+        _ensure_director_access(current_user)
+        rows = await self._get_rows(
+            "/rest/v1/director_upcoming_events_v",
+            params={
+                "select": UPCOMING_EVENT_SELECT,
+                "order": "starts_at.asc",
+                "limit": str(limit),
+                "offset": str(offset),
+            },
+        )
+        return [_upcoming_event_from_row(row) for row in rows]
+
+    async def list_missing_required_documents(
+        self,
+        *,
+        current_user: CurrentUser,
+        limit: int,
+        offset: int,
+    ) -> list[DirectorMissingRequiredDocumentResponse]:
+        _ensure_director_access(current_user)
+        rows = await self._get_rows(
+            "/rest/v1/director_missing_required_documents_v",
+            params={
+                "select": MISSING_REQUIRED_DOCUMENT_SELECT,
+                "order": "project_code.asc,document_type_code.asc",
+                "limit": str(limit),
+                "offset": str(offset),
+            },
+        )
+        return [_missing_required_document_from_row(row) for row in rows]
+
+    async def list_verification_reminders(
+        self,
+        *,
+        current_user: CurrentUser,
+        limit: int,
+        offset: int,
+    ) -> list[DirectorVerificationReminderResponse]:
+        _ensure_director_access(current_user)
+        rows = await self._get_rows(
+            "/rest/v1/director_archive_verification_due_v",
+            params={
+                "select": VERIFICATION_REMINDER_SELECT,
+                "order": "next_verification_at.asc",
+                "limit": str(limit),
+                "offset": str(offset),
+            },
+        )
+        return [_verification_reminder_from_row(row) for row in rows]
 
     async def list_audit_events(
         self,
@@ -291,11 +370,13 @@ def _project_metrics(projects: list[DirectorProjectSummaryResponse]) -> Director
 
 def _archive_metrics(
     physical_files: list[DirectorPhysicalFileSummaryResponse],
+    *,
+    verification_reminders: list[DirectorVerificationReminderResponse],
 ) -> DirectorArchiveMetrics:
     return DirectorArchiveMetrics(
         checked_out_count=sum(1 for item in physical_files if item.status == "CHECKED_OUT"),
         overdue_return_count=sum(1 for item in physical_files if item.is_return_overdue),
-        verification_due_count=0,
+        verification_due_count=len(verification_reminders),
         missing_count=sum(1 for item in physical_files if item.status == "MISSING"),
     )
 
@@ -354,6 +435,41 @@ def _physical_file_from_row(row: dict[str, Any]) -> DirectorPhysicalFileSummaryR
             503,
             "DATA_SERVICE_INVALID_RESPONSE",
             "Physical archive dashboard data service returned invalid data",
+        ) from exc
+
+
+def _upcoming_event_from_row(row: dict[str, Any]) -> DirectorUpcomingEventResponse:
+    try:
+        return DirectorUpcomingEventResponse.model_validate(row)
+    except ValidationError as exc:
+        raise DirectorDashboardError(
+            503,
+            "DATA_SERVICE_INVALID_RESPONSE",
+            "Upcoming event dashboard data service returned invalid data",
+        ) from exc
+
+
+def _missing_required_document_from_row(
+    row: dict[str, Any],
+) -> DirectorMissingRequiredDocumentResponse:
+    try:
+        return DirectorMissingRequiredDocumentResponse.model_validate(row)
+    except ValidationError as exc:
+        raise DirectorDashboardError(
+            503,
+            "DATA_SERVICE_INVALID_RESPONSE",
+            "Missing document dashboard data service returned invalid data",
+        ) from exc
+
+
+def _verification_reminder_from_row(row: dict[str, Any]) -> DirectorVerificationReminderResponse:
+    try:
+        return DirectorVerificationReminderResponse.model_validate(row)
+    except ValidationError as exc:
+        raise DirectorDashboardError(
+            503,
+            "DATA_SERVICE_INVALID_RESPONSE",
+            "Archive verification dashboard data service returned invalid data",
         ) from exc
 
 

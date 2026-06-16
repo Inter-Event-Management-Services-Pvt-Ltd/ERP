@@ -14,19 +14,23 @@ BACKLOG
 ## Codex Immediate Task
 
 ```text
-ID: CODEX-PHASE4-002
+ID: CODEX-PHASE4-003
 Owner: Codex
 Status: DONE
-Task: Build Phase 4 approval workflows.
+Task: Build Phase 4 admin, policy and audit explorer APIs.
 Checklist:
 - docs/checklists/PHASE_4_MANAGEMENT_DIRECTOR.md
 - docs/checklists/BACKEND_CODEX.md
 Output:
-- approval type lookup route
-- approval request list, create and detail routes
-- approval approve, reject and request-revision routes
-- server-side RBAC/ABAC and audited Supabase RPCs
-- approval notifications and immutable action history
+- Director upcoming-events, missing-required-documents and verification-reminder endpoints
+- employee admin create/update/detail routes
+- role assignment and department-history routes
+- policy management routes with audit events
+- folder-template editor routes
+- archive room/location update routes
+- full audit explorer route
+- self-elevation and Super User override reason guardrails
+- service-role-only audited Supabase RPCs
 - backend and SQL validation tests
 - updated checklist
 ```
@@ -58,7 +62,7 @@ CODEX-PHASE2-004 Build physical archive API — DONE
 CODEX-PHASE3-001 Build attendance, leave, task and calendar backend APIs — DONE
 CODEX-PHASE4-001 Build Director Dashboard read APIs — DONE
 CODEX-PHASE4-002 Build approval workflows — DONE
-CODEX-PHASE4-003 Build admin, policy and audit explorer APIs — BACKLOG
+CODEX-PHASE4-003 Build admin, policy and audit explorer APIs — DONE
 ```
 
 ## Claude Following Tasks

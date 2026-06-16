@@ -277,8 +277,21 @@ Resolution update:
   - POST /v1/approvals/{approval_id}/request-revision
   Approval writes use service-role-only audited RPCs, immutable action history,
   notifications and SQL validation.
+Resolution update (2026-06-16):
+  CODEX-PHASE4-003 completed the remaining backend scope:
+  - GET /v1/director/upcoming-events
+  - GET /v1/director/missing-required-documents
+  - GET /v1/director/verification-reminders
+  - POST/GET/PATCH employee admin routes
+  - employee role assignment/removal with self-elevation protection
+  - employee department-history assignment
+  - policy create/update/list with audit events
+  - folder-template create/update/item routes
+  - archive room/location update routes
+  - GET /v1/audit-events full audit explorer
+  Writes use service-role-only audited RPCs and SQL validation.
 Owner: Codex
-Status: Open
+Status: Resolved
 ```
 
 ### OPEN-037 - Phase 4 approval frontend wiring
@@ -342,6 +355,51 @@ Resolution (2026-06-16):
 Verification:
   cd apps/web && npm run type-check && npm run lint && npm run build
 Status: Resolved
+```
+
+### OPEN-038 - Phase 4 admin, policy, audit and Director metric frontend wiring
+
+```text
+Date: 2026-06-16
+Category: Frontend Integration
+Severity: Medium
+Question or issue:
+  Codex completed the remaining Phase 4 backend endpoints:
+  - GET /v1/director/upcoming-events
+  - GET /v1/director/missing-required-documents
+  - GET /v1/director/verification-reminders
+  - GET /v1/departments
+  - GET /v1/roles
+  - POST /v1/employees
+  - GET /v1/employees/{employee_id}
+  - PATCH /v1/employees/{employee_id}
+  - POST /v1/employees/{employee_id}/roles
+  - DELETE /v1/employees/{employee_id}/roles/{role_id}
+  - POST /v1/employees/{employee_id}/department-assignments
+  - GET /v1/policies
+  - POST /v1/policies
+  - PATCH /v1/policies/{policy_id}
+  - GET /v1/folder-templates
+  - POST /v1/folder-templates
+  - GET /v1/folder-templates/{template_id}
+  - PATCH /v1/folder-templates/{template_id}
+  - POST /v1/folder-templates/{template_id}/items
+  - PATCH /v1/folder-template-items/{item_id}
+  - PATCH /v1/archive/rooms/{room_id}
+  - PATCH /v1/archive/locations/{location_id}
+  - GET /v1/audit-events
+Why it matters:
+  Claude can complete the Phase 4 Director/admin frontend without direct
+  Supabase reads or invented backend behavior.
+Frontend follow-up:
+  Use docs/api-contract.md exactly. Show SELF_ELEVATION_DENIED,
+  SUPER_USER_OVERRIDE_REASON_REQUIRED, INVALID_REFERENCE, INVALID_STATE,
+  PERMISSION_DENIED, RESOURCE_CONFLICT and VALIDATION_ERROR clearly. For Super
+  User bypasses on sensitive admin writes, collect and send
+  X-IEMS-Override-Reason. Do not expose the service-role key or write directly
+  to Supabase.
+Owner: Claude
+Status: Open
 ```
 
 ### OPEN-003 — Pilot employee list

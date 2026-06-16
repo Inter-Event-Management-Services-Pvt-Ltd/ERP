@@ -17,10 +17,13 @@ from app.schemas.current_user import CurrentUser
 from app.schemas.director_dashboard import (
     DirectorApprovalSummaryResponse,
     DirectorAuditEventResponse,
+    DirectorMissingRequiredDocumentResponse,
     DirectorOverdueTaskResponse,
     DirectorOverviewResponse,
     DirectorPhysicalFileSummaryResponse,
     DirectorProjectSummaryResponse,
+    DirectorUpcomingEventResponse,
+    DirectorVerificationReminderResponse,
 )
 from app.services.director_dashboard import DirectorDashboardError, DirectorDashboardService
 
@@ -122,6 +125,63 @@ async def list_director_physical_files(
     _ensure_director_route_access(current_user)
     try:
         return await service.list_physical_files(
+            current_user=current_user,
+            limit=limit,
+            offset=offset,
+        )
+    except DirectorDashboardError as exc:
+        raise _http_error(exc) from exc
+
+
+@router.get("/upcoming-events", response_model=list[DirectorUpcomingEventResponse])
+async def list_director_upcoming_events(
+    current_user: AuthenticatedUser,
+    service: DirectorDashboardServiceDep,
+    limit: Annotated[int, Query(ge=1, le=100)] = 50,
+    offset: Annotated[int, Query(ge=0)] = 0,
+) -> list[DirectorUpcomingEventResponse]:
+    _ensure_director_route_access(current_user)
+    try:
+        return await service.list_upcoming_events(
+            current_user=current_user,
+            limit=limit,
+            offset=offset,
+        )
+    except DirectorDashboardError as exc:
+        raise _http_error(exc) from exc
+
+
+@router.get(
+    "/missing-required-documents",
+    response_model=list[DirectorMissingRequiredDocumentResponse],
+)
+async def list_director_missing_required_documents(
+    current_user: AuthenticatedUser,
+    service: DirectorDashboardServiceDep,
+    limit: Annotated[int, Query(ge=1, le=100)] = 50,
+    offset: Annotated[int, Query(ge=0)] = 0,
+) -> list[DirectorMissingRequiredDocumentResponse]:
+    _ensure_director_route_access(current_user)
+    try:
+        return await service.list_missing_required_documents(
+            current_user=current_user,
+            limit=limit,
+            offset=offset,
+        )
+    except DirectorDashboardError as exc:
+        raise _http_error(exc) from exc
+
+
+@router.get("/verification-reminders", response_model=list[DirectorVerificationReminderResponse])
+async def list_director_verification_reminders(
+    current_user: AuthenticatedUser,
+    service: DirectorDashboardServiceDep,
+    limit: Annotated[int, Query(ge=1, le=100)] = 50,
+    offset: Annotated[int, Query(ge=0)] = 0,
+) -> list[DirectorVerificationReminderResponse]:
+    _ensure_director_route_access(current_user)
+    try:
+        return await service.list_verification_reminders(
             current_user=current_user,
             limit=limit,
             offset=offset,

@@ -10,6 +10,13 @@ class ArchiveRoomCreate(BaseModel):
     description: str | None = None
 
 
+class ArchiveRoomUpdate(BaseModel):
+    code: str | None = Field(default=None, min_length=1, max_length=30)
+    name: str | None = Field(default=None, min_length=1, max_length=120)
+    description: str | None = None
+    is_active: bool | None = None
+
+
 class ArchiveRoomResponse(BaseModel):
     id: UUID
     code: str
@@ -24,6 +31,17 @@ class ArchiveLocationCreate(BaseModel):
     location_type: str = Field(pattern="^(RACK|SHELF|CABINET|BOX|FILE_SLOT)$")
     code: str = Field(min_length=1, max_length=50)
     label: str | None = Field(default=None, max_length=120)
+
+
+class ArchiveLocationUpdate(BaseModel):
+    parent_location_id: UUID | None = None
+    location_type: str | None = Field(
+        default=None,
+        pattern="^(RACK|SHELF|CABINET|BOX|FILE_SLOT)$",
+    )
+    code: str | None = Field(default=None, min_length=1, max_length=50)
+    label: str | None = Field(default=None, max_length=120)
+    is_active: bool | None = None
 
 
 class ArchiveLocationResponse(BaseModel):
@@ -134,4 +152,3 @@ class PhysicalFileLabelResponse(BaseModel):
     archive_room: str
     qr_token: UUID
     label_text: str
-

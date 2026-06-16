@@ -13,33 +13,33 @@
 
 - [x] Attendance metrics.
 - [x] Active-project metrics.
-- [ ] Upcoming events.
+- [x] Upcoming events.
 - [x] Overdue tasks.
 - [x] Pending approvals.
-- [ ] Missing required documents.
+- [x] Missing required documents.
 - [x] Checked-out physical files.
 - [x] Overdue physical returns.
-- [ ] Verification reminders.
+- [x] Verification reminders.
 - [x] Recent audit activity.
 
 ## Admin
 
-- [ ] Employee management.
-- [ ] Role assignment.
-- [ ] Department history.
-- [ ] Folder-template editor.
-- [ ] Archive-location editor.
-- [ ] Policy management.
-- [ ] Audit explorer.
+- [x] Employee management.
+- [x] Role assignment.
+- [x] Department history.
+- [x] Folder-template editor.
+- [x] Archive-location editor.
+- [x] Policy management.
+- [x] Audit explorer.
 
 ## Security Gate
 
 - [x] Director Dashboard requires Director or authorized Super User.
 - [x] Restricted records still log sensitive access.
-- [ ] Super User overrides require reason.
-- [ ] Policy changes create audit events.
+- [x] Super User overrides require reason.
+- [x] Policy changes create audit events.
 - [x] Approval actions create audit events.
-- [ ] Admin cannot silently elevate themselves to Super User.
+- [x] Admin cannot silently elevate themselves to Super User.
 
 ## Exit Criteria
 
@@ -50,10 +50,10 @@
 
 ### Codex backend
 
-- [ ] Implement Director metrics queries, endpoints, audit access and approval workflows.
+- [x] Implement Director metrics queries, endpoints, audit access and approval workflows.
   - [x] Director dashboard read metrics and audit-access endpoints.
   - [x] Approval write workflows.
-  - [ ] Admin and policy management endpoints.
+  - [x] Admin and policy management endpoints.
 
 ### Claude frontend
 

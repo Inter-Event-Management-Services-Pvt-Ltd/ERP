@@ -17,6 +17,8 @@ TASK_ID = UUID("55555555-5555-4555-8555-555555555555")
 PHYSICAL_FILE_ID = UUID("66666666-6666-4666-8666-666666666666")
 AUDIT_EVENT_ID = UUID("77777777-7777-4777-8777-777777777777")
 REQUEST_ID = UUID("88888888-8888-4888-8888-888888888888")
+CALENDAR_EVENT_ID = UUID("99999999-9999-4999-8999-999999999999")
+DOCUMENT_TYPE_ID = UUID("aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa")
 CREATED_AT = datetime(2026, 6, 16, 9, 0, tzinfo=UTC)
 
 
@@ -68,6 +70,36 @@ class RecordingDirectorDashboardService:
     ) -> list[object]:
         self.calls.append(("list_physical_files", (limit, offset), current_user))
         return [_physical_file_response()]
+
+    async def list_upcoming_events(
+        self,
+        *,
+        current_user: CurrentUser,
+        limit: int,
+        offset: int,
+    ) -> list[object]:
+        self.calls.append(("list_upcoming_events", (limit, offset), current_user))
+        return [_upcoming_event_response()]
+
+    async def list_missing_required_documents(
+        self,
+        *,
+        current_user: CurrentUser,
+        limit: int,
+        offset: int,
+    ) -> list[object]:
+        self.calls.append(("list_missing_required_documents", (limit, offset), current_user))
+        return [_missing_required_document_response()]
+
+    async def list_verification_reminders(
+        self,
+        *,
+        current_user: CurrentUser,
+        limit: int,
+        offset: int,
+    ) -> list[object]:
+        self.calls.append(("list_verification_reminders", (limit, offset), current_user))
+        return [_verification_reminder_response()]
 
     async def list_audit_events(
         self,
@@ -121,7 +153,7 @@ def _overview_response() -> object:
         physical_archive=DirectorArchiveMetrics(
             checked_out_count=1,
             overdue_return_count=1,
-            verification_due_count=0,
+            verification_due_count=1,
             missing_count=0,
         ),
         recent_audit_events=[_audit_event_response()],
@@ -188,6 +220,49 @@ def _physical_file_response() -> object:
         expected_return_at=CREATED_AT,
         checked_out_by="Nisha Rao",
         is_return_overdue=True,
+    )
+
+
+def _upcoming_event_response() -> object:
+    from app.schemas.director_dashboard import DirectorUpcomingEventResponse
+
+    return DirectorUpcomingEventResponse(
+        id=CALENDAR_EVENT_ID,
+        title="Client walkthrough",
+        event_type="SITE_VISIT",
+        starts_at=CREATED_AT,
+        ends_at=CREATED_AT,
+        project_code="IEMS-2026-001",
+        project_name="Annual Leadership Conference",
+        location="India Habitat Centre",
+    )
+
+
+def _missing_required_document_response() -> object:
+    from app.schemas.director_dashboard import DirectorMissingRequiredDocumentResponse
+
+    return DirectorMissingRequiredDocumentResponse(
+        project_id=PROJECT_ID,
+        project_code="IEMS-2026-001",
+        project_name="Annual Leadership Conference",
+        document_type_id=DOCUMENT_TYPE_ID,
+        document_type_code="FINAL_INVOICE",
+        document_type_name="Final Invoice",
+    )
+
+
+def _verification_reminder_response() -> object:
+    from app.schemas.director_dashboard import DirectorVerificationReminderResponse
+
+    return DirectorVerificationReminderResponse(
+        id=PHYSICAL_FILE_ID,
+        physical_file_code="PF-001",
+        project_code="IEMS-2026-001",
+        project_name="Annual Leadership Conference",
+        archive_room="Main Archive",
+        archive_location_code="R1-S1-C1-B1-F1",
+        last_verified_at=CREATED_AT,
+        next_verification_at=CREATED_AT,
     )
 
 
@@ -399,6 +474,67 @@ def test_director_physical_files_returns_archive_rows() -> None:
     assert response.status_code == 200
     assert response.json()[0]["is_return_overdue"] is True
     assert service.calls[0][0] == "list_physical_files"
+
+
+def test_director_upcoming_events_returns_calendar_rows() -> None:
+    service, _audit_writer = _install_overrides(
+        current_user=_current_user(roles=["DIRECTOR"], permissions=["project.view"]),
+    )
+    try:
+        response = asyncio.run(
+            _request(
+                "GET",
+                "/v1/director/upcoming-events?limit=10&offset=2",
+                headers={"Authorization": "Bearer test-token"},
+            )
+        )
+    finally:
+        app.dependency_overrides.clear()
+
+    assert response.status_code == 200
+    assert response.json()[0]["id"] == str(CALENDAR_EVENT_ID)
+    assert service.calls[0][0] == "list_upcoming_events"
+    assert service.calls[0][1] == (10, 2)
+
+
+def test_director_missing_required_documents_returns_gap_rows() -> None:
+    service, _audit_writer = _install_overrides(
+        current_user=_current_user(roles=["DIRECTOR"], permissions=["document.view"]),
+    )
+    try:
+        response = asyncio.run(
+            _request(
+                "GET",
+                "/v1/director/missing-required-documents",
+                headers={"Authorization": "Bearer test-token"},
+            )
+        )
+    finally:
+        app.dependency_overrides.clear()
+
+    assert response.status_code == 200
+    assert response.json()[0]["document_type_code"] == "FINAL_INVOICE"
+    assert service.calls[0][0] == "list_missing_required_documents"
+
+
+def test_director_verification_reminders_returns_due_rows() -> None:
+    service, _audit_writer = _install_overrides(
+        current_user=_current_user(roles=["DIRECTOR"], permissions=["archive.view"]),
+    )
+    try:
+        response = asyncio.run(
+            _request(
+                "GET",
+                "/v1/director/verification-reminders",
+                headers={"Authorization": "Bearer test-token"},
+            )
+        )
+    finally:
+        app.dependency_overrides.clear()
+
+    assert response.status_code == 200
+    assert response.json()[0]["physical_file_code"] == "PF-001"
+    assert service.calls[0][0] == "list_verification_reminders"
 
 
 def test_director_audit_events_logs_sensitive_access() -> None:

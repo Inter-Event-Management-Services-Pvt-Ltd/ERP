@@ -8,7 +8,7 @@
 
 ## Database
 
-- [x] Migration added where needed. Phase 4 approval workflow RPC migration covers audited approval create/review writes.
+- [x] Migration added where needed. Phase 4 admin/policy/audit migration covers audited admin writes, Director metric views, policy changes and archive editor updates.
 - [x] Migration is reversible or rollback is documented. Rollback path for local validation is `npx supabase db reset` from the migration set.
 - [x] Constraints preserved.
 - [x] Index impact reviewed.

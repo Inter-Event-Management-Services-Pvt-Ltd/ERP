@@ -10,6 +10,8 @@ from httpx import Response
 from app.core.audit import AuditContext
 from app.schemas.current_user import CurrentUser, EmployeeProfile, UserAccount
 from app.schemas.physical_archive import (
+    ArchiveLocationUpdate,
+    ArchiveRoomUpdate,
     PhysicalFileCheckoutCreate,
     PhysicalFileMoveCreate,
 )
@@ -53,6 +55,29 @@ def _membership_row() -> dict[str, object]:
     }
 
 
+def _room_row(*, is_active: bool = True) -> dict[str, object]:
+    return {
+        "id": str(ROOM_ID),
+        "code": "R1",
+        "name": "Room 1",
+        "description": "Main room",
+        "is_active": is_active,
+    }
+
+
+def _location_row(*, is_active: bool = True) -> dict[str, object]:
+    return {
+        "id": str(LOCATION_ID),
+        "archive_room_id": str(ROOM_ID),
+        "parent_location_id": None,
+        "location_type": "RACK",
+        "code": "R1",
+        "label": "Rack 1",
+        "qr_token": "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa",
+        "is_active": is_active,
+    }
+
+
 def _physical_file_row(*, status: str = "AVAILABLE") -> dict[str, object]:
     return {
         "id": str(PHYSICAL_FILE_ID),
@@ -89,6 +114,99 @@ def _physical_file_row(*, status: str = "AVAILABLE") -> dict[str, object]:
         "updated_at": CREATED_AT,
         "open_checkout": None,
     }
+
+
+def test_update_archive_room_calls_audited_rpc() -> None:
+    seen_requests: list[httpx.Request] = []
+
+    def handler(request: httpx.Request) -> Response:
+        seen_requests.append(request)
+        if request.url.path == "/rest/v1/rpc/update_archive_room_audited":
+            return Response(200, json=_room_row(is_active=False))
+        return Response(500)
+
+    service = PhysicalArchiveService(
+        supabase_url="http://localhost:54321",
+        service_role_key="legacy-service-role-key",
+        transport=httpx.MockTransport(handler),
+    )
+
+    result = asyncio.run(
+        service.update_room(
+            room_id=ROOM_ID,
+            payload=ArchiveRoomUpdate(is_active=False),
+            current_user=_current_user(permissions=["archive.manage"]),
+            context=AuditContext(request_id=REQUEST_ID),
+        )
+    )
+
+    assert result.is_active is False
+    body = json.loads(seen_requests[0].content)
+    assert body["p_archive_room_id"] == str(ROOM_ID)
+    assert body["p_patch"] == {"is_active": False}
+    assert body["p_actor_employee_id"] == str(EMPLOYEE_ID)
+
+
+def test_update_archive_location_calls_audited_rpc() -> None:
+    seen_requests: list[httpx.Request] = []
+
+    def handler(request: httpx.Request) -> Response:
+        seen_requests.append(request)
+        if request.url.path == "/rest/v1/rpc/update_archive_location_audited":
+            return Response(200, json=_location_row(is_active=False))
+        return Response(500)
+
+    service = PhysicalArchiveService(
+        supabase_url="http://localhost:54321",
+        service_role_key="legacy-service-role-key",
+        transport=httpx.MockTransport(handler),
+    )
+
+    result = asyncio.run(
+        service.update_location(
+            location_id=LOCATION_ID,
+            payload=ArchiveLocationUpdate(is_active=False),
+            current_user=_current_user(permissions=["archive.manage"]),
+            context=AuditContext(request_id=REQUEST_ID),
+        )
+    )
+
+    assert result.is_active is False
+    body = json.loads(seen_requests[0].content)
+    assert body["p_archive_location_id"] == str(LOCATION_ID)
+    assert body["p_patch"] == {"is_active": False}
+
+
+def test_update_archive_location_maps_invalid_hierarchy() -> None:
+    def handler(request: httpx.Request) -> Response:
+        if request.url.path == "/rest/v1/rpc/update_archive_location_audited":
+            return Response(
+                400,
+                json={
+                    "code": "P0001",
+                    "message": "IEMS_INVALID_ARCHIVE_LOCATION_HIERARCHY",
+                },
+            )
+        return Response(500)
+
+    service = PhysicalArchiveService(
+        supabase_url="http://localhost:54321",
+        service_role_key="legacy-service-role-key",
+        transport=httpx.MockTransport(handler),
+    )
+
+    with pytest.raises(PhysicalArchiveError) as exc_info:
+        asyncio.run(
+            service.update_location(
+                location_id=LOCATION_ID,
+                payload=ArchiveLocationUpdate(location_type="FILE_SLOT"),
+                current_user=_current_user(permissions=["archive.manage"]),
+                context=AuditContext(request_id=REQUEST_ID),
+            )
+        )
+
+    assert exc_info.value.status_code == 422
+    assert exc_info.value.code == "INVALID_STATE"
 
 
 def test_checkout_physical_file_calls_audited_rpc() -> None:

@@ -16,6 +16,8 @@ TASK_ID = UUID("55555555-5555-4555-8555-555555555555")
 PHYSICAL_FILE_ID = UUID("66666666-6666-4666-8666-666666666666")
 AUDIT_EVENT_ID = UUID("77777777-7777-4777-8777-777777777777")
 REQUEST_ID = UUID("88888888-8888-4888-8888-888888888888")
+CALENDAR_EVENT_ID = UUID("99999999-9999-4999-8999-999999999999")
+DOCUMENT_TYPE_ID = UUID("aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa")
 CREATED_AT = "2026-06-16T09:00:00+00:00"
 
 
@@ -114,6 +116,38 @@ def _physical_file_row() -> dict[str, object]:
         "checked_out_at": CREATED_AT,
         "expected_return_at": "2026-06-15T09:00:00+00:00",
         "checked_out_by": "Nisha Rao",
+    }
+
+
+def _verification_due_row() -> dict[str, object]:
+    return {
+        **_physical_file_row(),
+        "next_verification_at": "2026-06-15T09:00:00+00:00",
+        "last_verified_at": "2026-03-15T09:00:00+00:00",
+    }
+
+
+def _upcoming_event_row() -> dict[str, object]:
+    return {
+        "id": str(CALENDAR_EVENT_ID),
+        "title": "Client walkthrough",
+        "event_type": "SITE_VISIT",
+        "starts_at": "2026-06-20T09:00:00+00:00",
+        "ends_at": "2026-06-20T10:00:00+00:00",
+        "project_code": "IEMS-2026-001",
+        "project_name": "Annual Leadership Conference",
+        "location": "India Habitat Centre",
+    }
+
+
+def _missing_required_document_row() -> dict[str, object]:
+    return {
+        "project_id": str(PROJECT_ID),
+        "project_code": "IEMS-2026-001",
+        "project_name": "Annual Leadership Conference",
+        "document_type_id": str(DOCUMENT_TYPE_ID),
+        "document_type_code": "FINAL_INVOICE",
+        "document_type_name": "Final Invoice",
     }
 
 
@@ -253,6 +287,8 @@ def test_service_get_overview_aggregates_existing_director_views() -> None:
             return Response(200, json=[_overdue_task_row()])
         if request.url.path == "/rest/v1/director_physical_file_status_v":
             return Response(200, json=[_physical_file_row()])
+        if request.url.path == "/rest/v1/director_archive_verification_due_v":
+            return Response(200, json=[_verification_due_row()])
         if request.url.path == "/rest/v1/audit_events":
             return Response(200, json=[_audit_event_row()])
         return Response(500)
@@ -274,6 +310,7 @@ def test_service_get_overview_aggregates_existing_director_views() -> None:
     assert result.overdue_task_count == 1
     assert result.physical_archive.checked_out_count == 1
     assert result.physical_archive.overdue_return_count == 1
+    assert result.physical_archive.verification_due_count == 1
     assert result.recent_audit_events[0].action_code == "document.downloaded"
     assert seen_paths == [
         "/rest/v1/director_attendance_today_v",
@@ -281,8 +318,90 @@ def test_service_get_overview_aggregates_existing_director_views() -> None:
         "/rest/v1/director_pending_approvals_v",
         "/rest/v1/director_overdue_tasks_v",
         "/rest/v1/director_physical_file_status_v",
+        "/rest/v1/director_archive_verification_due_v",
         "/rest/v1/audit_events",
     ]
+
+
+def test_service_lists_upcoming_events_from_director_view() -> None:
+    from app.services.director_dashboard import DirectorDashboardService
+
+    seen_requests: list[httpx.Request] = []
+
+    def handler(request: httpx.Request) -> Response:
+        seen_requests.append(request)
+        if request.url.path == "/rest/v1/director_upcoming_events_v":
+            return Response(200, json=[_upcoming_event_row()])
+        return Response(500)
+
+    service = DirectorDashboardService(
+        supabase_url="http://localhost:54321",
+        service_role_key="legacy-service-role-key",
+        transport=httpx.MockTransport(handler),
+    )
+
+    rows = asyncio.run(
+        service.list_upcoming_events(current_user=_current_user(), limit=10, offset=0)
+    )
+
+    assert rows[0].id == CALENDAR_EVENT_ID
+    assert rows[0].project_code == "IEMS-2026-001"
+    assert seen_requests[0].url.params["order"] == "starts_at.asc"
+
+
+def test_service_lists_missing_required_documents_from_director_view() -> None:
+    from app.services.director_dashboard import DirectorDashboardService
+
+    seen_requests: list[httpx.Request] = []
+
+    def handler(request: httpx.Request) -> Response:
+        seen_requests.append(request)
+        if request.url.path == "/rest/v1/director_missing_required_documents_v":
+            return Response(200, json=[_missing_required_document_row()])
+        return Response(500)
+
+    service = DirectorDashboardService(
+        supabase_url="http://localhost:54321",
+        service_role_key="legacy-service-role-key",
+        transport=httpx.MockTransport(handler),
+    )
+
+    rows = asyncio.run(
+        service.list_missing_required_documents(
+            current_user=_current_user(),
+            limit=10,
+            offset=0,
+        )
+    )
+
+    assert rows[0].document_type_code == "FINAL_INVOICE"
+    assert seen_requests[0].url.path == "/rest/v1/director_missing_required_documents_v"
+
+
+def test_service_lists_archive_verification_reminders_from_director_view() -> None:
+    from app.services.director_dashboard import DirectorDashboardService
+
+    seen_requests: list[httpx.Request] = []
+
+    def handler(request: httpx.Request) -> Response:
+        seen_requests.append(request)
+        if request.url.path == "/rest/v1/director_archive_verification_due_v":
+            return Response(200, json=[_verification_due_row()])
+        return Response(500)
+
+    service = DirectorDashboardService(
+        supabase_url="http://localhost:54321",
+        service_role_key="legacy-service-role-key",
+        transport=httpx.MockTransport(handler),
+    )
+
+    rows = asyncio.run(
+        service.list_verification_reminders(current_user=_current_user(), limit=10, offset=0)
+    )
+
+    assert rows[0].physical_file_code == "PF-001"
+    assert rows[0].next_verification_at is not None
+    assert seen_requests[0].url.params["order"] == "next_verification_at.asc"
 
 
 def test_service_maps_supabase_errors_to_data_service_error() -> None:

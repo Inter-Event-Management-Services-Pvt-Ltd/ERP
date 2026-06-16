@@ -11,8 +11,10 @@ from app.schemas.physical_archive import (
     ArchiveLocationContentsResponse,
     ArchiveLocationCreate,
     ArchiveLocationResponse,
+    ArchiveLocationUpdate,
     ArchiveRoomCreate,
     ArchiveRoomResponse,
+    ArchiveRoomUpdate,
     PhysicalFileCheckoutCreate,
     PhysicalFileCreate,
     PhysicalFileLabelResponse,
@@ -94,6 +96,32 @@ class PhysicalArchiveService:
         )
         return _room_from_row(row)
 
+    async def update_room(
+        self,
+        *,
+        room_id: UUID,
+        payload: ArchiveRoomUpdate,
+        current_user: CurrentUser,
+        context: AuditContext,
+    ) -> ArchiveRoomResponse:
+        self._require_archive_manage(current_user)
+        patch = payload.model_dump(mode="json", exclude_unset=True)
+        if not patch:
+            raise PhysicalArchiveError(
+                422,
+                "VALIDATION_ERROR",
+                "At least one field must be provided",
+            )
+        row = await self._rpc(
+            "update_archive_room_audited",
+            {
+                "p_archive_room_id": str(room_id),
+                "p_patch": patch,
+                **_actor_context_payload(current_user, context),
+            },
+        )
+        return _room_from_row(row)
+
     async def create_location(
         self,
         *,
@@ -110,6 +138,32 @@ class PhysicalArchiveService:
                 "p_location_type": payload.location_type,
                 "p_code": payload.code,
                 "p_label": payload.label,
+                **_actor_context_payload(current_user, context),
+            },
+        )
+        return _location_from_row(row)
+
+    async def update_location(
+        self,
+        *,
+        location_id: UUID,
+        payload: ArchiveLocationUpdate,
+        current_user: CurrentUser,
+        context: AuditContext,
+    ) -> ArchiveLocationResponse:
+        self._require_archive_manage(current_user)
+        patch = payload.model_dump(mode="json", exclude_unset=True)
+        if not patch:
+            raise PhysicalArchiveError(
+                422,
+                "VALIDATION_ERROR",
+                "At least one field must be provided",
+            )
+        row = await self._rpc(
+            "update_archive_location_audited",
+            {
+                "p_archive_location_id": str(location_id),
+                "p_patch": patch,
                 **_actor_context_payload(current_user, context),
             },
         )
@@ -645,6 +699,8 @@ def _raise_supabase_error(response: httpx.Response) -> None:
         )
     if message == "IEMS_INVALID_ARCHIVE_LOCATION_HIERARCHY":
         raise PhysicalArchiveError(422, "INVALID_STATE", "Archive location hierarchy is invalid")
+    if message == "IEMS_ARCHIVE_LOCATION_PARENT_INVALID":
+        raise PhysicalArchiveError(422, "INVALID_REFERENCE", "Parent location is invalid")
     if pg_code == "23505":
         raise PhysicalArchiveError(409, "RESOURCE_CONFLICT", "Resource already exists")
     if pg_code == "23503":

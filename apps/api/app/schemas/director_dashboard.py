@@ -75,6 +75,37 @@ class DirectorPhysicalFileSummaryResponse(BaseModel):
     is_return_overdue: bool
 
 
+class DirectorUpcomingEventResponse(BaseModel):
+    id: UUID
+    title: str
+    event_type: str
+    starts_at: datetime
+    ends_at: datetime | None
+    project_code: str | None
+    project_name: str | None
+    location: str | None
+
+
+class DirectorMissingRequiredDocumentResponse(BaseModel):
+    project_id: UUID
+    project_code: str
+    project_name: str
+    document_type_id: UUID
+    document_type_code: str
+    document_type_name: str
+
+
+class DirectorVerificationReminderResponse(BaseModel):
+    id: UUID
+    physical_file_code: str
+    project_code: str
+    project_name: str
+    archive_room: str
+    archive_location_code: str
+    last_verified_at: datetime | None
+    next_verification_at: datetime
+
+
 class DirectorAuditEventResponse(BaseModel):
     id: UUID
     action_code: str

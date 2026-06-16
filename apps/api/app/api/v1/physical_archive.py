@@ -15,8 +15,10 @@ from app.schemas.physical_archive import (
     ArchiveLocationContentsResponse,
     ArchiveLocationCreate,
     ArchiveLocationResponse,
+    ArchiveLocationUpdate,
     ArchiveRoomCreate,
     ArchiveRoomResponse,
+    ArchiveRoomUpdate,
     PhysicalFileCheckoutCreate,
     PhysicalFileCreate,
     PhysicalFileLabelResponse,
@@ -81,6 +83,25 @@ async def create_archive_room(
         raise _http_error(exc) from exc
 
 
+@router.patch("/archive/rooms/{room_id}", response_model=ArchiveRoomResponse)
+async def update_archive_room(
+    room_id: UUID,
+    payload: ArchiveRoomUpdate,
+    request: Request,
+    current_user: ArchiveManageUser,
+    service: PhysicalArchiveServiceDep,
+) -> ArchiveRoomResponse:
+    try:
+        return await service.update_room(
+            room_id=room_id,
+            payload=payload,
+            current_user=current_user,
+            context=audit_context_from_request(request),
+        )
+    except PhysicalArchiveError as exc:
+        raise _http_error(exc) from exc
+
+
 @router.post(
     "/archive/locations",
     response_model=ArchiveLocationResponse,
@@ -94,6 +115,25 @@ async def create_archive_location(
 ) -> ArchiveLocationResponse:
     try:
         return await service.create_location(
+            payload=payload,
+            current_user=current_user,
+            context=audit_context_from_request(request),
+        )
+    except PhysicalArchiveError as exc:
+        raise _http_error(exc) from exc
+
+
+@router.patch("/archive/locations/{location_id}", response_model=ArchiveLocationResponse)
+async def update_archive_location(
+    location_id: UUID,
+    payload: ArchiveLocationUpdate,
+    request: Request,
+    current_user: ArchiveManageUser,
+    service: PhysicalArchiveServiceDep,
+) -> ArchiveLocationResponse:
+    try:
+        return await service.update_location(
+            location_id=location_id,
             payload=payload,
             current_user=current_user,
             context=audit_context_from_request(request),
