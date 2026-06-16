@@ -10,6 +10,7 @@ from app.core.current_user import CurrentUserError, SupabaseCurrentUserResolver
 from app.core.rbac import AuthorizationError, RBACService
 from app.core.super_user import SuperUserOverrideService
 from app.schemas.current_user import CurrentUser
+from app.services.approvals import ApprovalsService
 from app.services.attendance import AttendanceService
 from app.services.clients_projects import ClientsProjectsService
 from app.services.director_dashboard import DirectorDashboardService
@@ -89,6 +90,23 @@ def get_clients_projects_service() -> ClientsProjectsService:
             },
         )
     return ClientsProjectsService(
+        supabase_url=settings.supabase_url,
+        service_role_key=settings.supabase_service_role_key,
+        timeout_seconds=settings.supabase_request_timeout_seconds,
+    )
+
+
+def get_approvals_service() -> ApprovalsService:
+    settings = get_settings()
+    if settings.supabase_url is None or settings.supabase_service_role_key is None:
+        raise HTTPException(
+            status_code=503,
+            detail={
+                "code": "DATA_SERVICE_NOT_CONFIGURED",
+                "message": "Supabase data service is not configured",
+            },
+        )
+    return ApprovalsService(
         supabase_url=settings.supabase_url,
         service_role_key=settings.supabase_service_role_key,
         timeout_seconds=settings.supabase_request_timeout_seconds,

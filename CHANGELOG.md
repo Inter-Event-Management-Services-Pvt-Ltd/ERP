@@ -46,6 +46,7 @@
 - Added Phase 3 attendance backend endpoints for check-in, check-out, own history, privileged team history and audited admin corrections, backed by service-role-only Supabase RPCs.
 - Completed Phase 3 employee-operations backend APIs for leave requests, task management, calendar events, synthetic deadlines/leave/physical-return calendar feeds, Director attendance summaries, notifications and audited service-role-only Supabase RPCs.
 - Started Phase 4 backend by adding Director Dashboard read APIs for overview metrics, project summaries, pending approvals, overdue tasks, physical-file monitoring and audit activity, with Director/Super User authorization and sensitive audit-access logging.
+- Completed Phase 4 approval workflow backend APIs with approval type lookup, approval request list/create/detail, approve/reject/request-revision actions, server-side RBAC/ABAC, service-role-only audited Supabase RPCs, notifications, immutable action history and SQL validation.
 
 - Wired Phase 2 folder CRUD to live backend: inline create, rename, and delete in FolderTreePanel with INVALID_STATE protection and canManage gating.
 - Added DocumentListPanel with per-folder document list, multipart upload dialog (INVALID_FILE_NAME, INVALID_MIME_TYPE, INVALID_FILE_SIZE error display), version upload, and signed download URLs fetched on-demand.

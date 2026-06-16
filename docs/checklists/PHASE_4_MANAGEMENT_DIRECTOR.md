@@ -2,12 +2,12 @@
 
 ## Approvals
 
-- [ ] Document approval.
-- [ ] Project closure approval.
-- [ ] Archive closure approval.
-- [ ] Leave approval.
-- [ ] Revision request.
-- [ ] Approval comment history.
+- [x] Document approval.
+- [x] Project closure approval.
+- [x] Archive closure approval.
+- [x] Leave approval.
+- [x] Revision request.
+- [x] Approval comment history.
 
 ## Director Dashboard
 
@@ -38,7 +38,7 @@
 - [x] Restricted records still log sensitive access.
 - [ ] Super User overrides require reason.
 - [ ] Policy changes create audit events.
-- [ ] Approval actions create audit events.
+- [x] Approval actions create audit events.
 - [ ] Admin cannot silently elevate themselves to Super User.
 
 ## Exit Criteria
@@ -52,7 +52,7 @@
 
 - [ ] Implement Director metrics queries, endpoints, audit access and approval workflows.
   - [x] Director dashboard read metrics and audit-access endpoints.
-  - [ ] Approval write workflows.
+  - [x] Approval write workflows.
   - [ ] Admin and policy management endpoints.
 
 ### Claude frontend

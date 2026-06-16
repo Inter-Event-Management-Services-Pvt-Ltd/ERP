@@ -893,6 +893,7 @@ or `PHYSICAL_FILE_RETURN`.
 ## Approvals
 
 ```text
+GET    /v1/approval-types
 GET    /v1/approvals
 POST   /v1/approvals
 GET    /v1/approvals/{approval_id}
@@ -900,6 +901,127 @@ POST   /v1/approvals/{approval_id}/approve
 POST   /v1/approvals/{approval_id}/reject
 POST   /v1/approvals/{approval_id}/request-revision
 ```
+
+Approval routes require an authenticated active employee. FastAPI uses the
+service-role key only after server-side authorization and ABAC checks; do not
+write approval rows directly from the frontend.
+
+`GET /v1/approval-types` returns active reference rows:
+
+```json
+[
+  {
+    "id": "55555555-5555-4555-8555-555555555555",
+    "code": "PROJECT_CLOSURE",
+    "name": "Project Closure"
+  }
+]
+```
+
+`GET /v1/approvals` accepts:
+
+```text
+status=PENDING|APPROVED|REJECTED|REVISION_REQUESTED|CANCELLED optional
+limit=1..100 default 50
+offset=0..n  default 0
+```
+
+Users with `approval.view_all` or Super User see all requests. Other users see
+only requests where they are `requested_by` or `assigned_to`.
+
+`POST /v1/approvals` accepts exactly one target id:
+
+```json
+{
+  "approval_type_id": "55555555-5555-4555-8555-555555555555",
+  "project_id": "44444444-4444-4444-8444-444444444444",
+  "document_version_id": null,
+  "archive_export_id": null,
+  "leave_request_id": null,
+  "assigned_to": "33333333-3333-4333-8333-333333333333",
+  "comment": "Please review project closure."
+}
+```
+
+Create ABAC:
+
+```text
+project_id target: requires project.manage and active MANAGE membership
+document_version_id target: requires document.upload and active CONTRIBUTE or MANAGE project membership
+archive_export_id target: requires archive.export and active MANAGE project membership
+leave_request_id target: allowed for the requester; otherwise requires leave.review
+Super User may create any approval request
+```
+
+Approval responses include comment/action history:
+
+```json
+{
+  "id": "66666666-6666-4666-8666-666666666666",
+  "approval_type_id": "55555555-5555-4555-8555-555555555555",
+  "approval_type": {
+    "id": "55555555-5555-4555-8555-555555555555",
+    "code": "PROJECT_CLOSURE",
+    "name": "Project Closure"
+  },
+  "project_id": "44444444-4444-4444-8444-444444444444",
+  "document_version_id": null,
+  "archive_export_id": null,
+  "leave_request_id": null,
+  "requested_by": "22222222-2222-4222-8222-222222222222",
+  "requested_by_employee": {
+    "id": "22222222-2222-4222-8222-222222222222",
+    "employee_code": "IEMS-001",
+    "full_name": "Example Employee"
+  },
+  "assigned_to": "33333333-3333-4333-8333-333333333333",
+  "assigned_to_employee": {
+    "id": "33333333-3333-4333-8333-333333333333",
+    "employee_code": "IEMS-002",
+    "full_name": "Approver User"
+  },
+  "status": "PENDING",
+  "requested_at": "2026-06-16T10:00:00Z",
+  "completed_at": null,
+  "actions": [
+    {
+      "id": "77777777-7777-4777-8777-777777777777",
+      "approval_request_id": "66666666-6666-4666-8666-666666666666",
+      "action": "SUBMITTED",
+      "performed_by": "22222222-2222-4222-8222-222222222222",
+      "performed_by_employee": {
+        "id": "22222222-2222-4222-8222-222222222222",
+        "employee_code": "IEMS-001",
+        "full_name": "Example Employee"
+      },
+      "comment": "Please review project closure.",
+      "created_at": "2026-06-16T10:00:00Z"
+    }
+  ]
+}
+```
+
+`POST /v1/approvals/{approval_id}/approve` and `/reject` accept:
+
+```json
+{
+  "comment": "Approved"
+}
+```
+
+`POST /v1/approvals/{approval_id}/request-revision` requires a non-empty
+comment:
+
+```json
+{
+  "comment": "Attach the signed closure note."
+}
+```
+
+Review routes require `approval.approve` or Super User. Reviews are valid only
+while the request status is `PENDING`; otherwise the backend returns
+`INVALID_STATE`. Approval create/review writes immutable action rows,
+notifications and audit events.
 
 ## Director Dashboard
 

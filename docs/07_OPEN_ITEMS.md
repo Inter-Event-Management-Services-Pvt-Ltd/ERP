@@ -248,29 +248,68 @@ Resolution (2026-06-16):
 Status: Resolved
 ```
 
-### OPEN-036 - Remaining Phase 4 backend approval and admin workflows
+### OPEN-036 - Remaining Phase 4 backend Director metric and admin workflows
 
 ```text
 Date: 2026-06-16
 Category: Backend Scope
 Severity: Medium
 Question or issue:
-  Phase 4 Director Dashboard read APIs are implemented, but generic approval
-  write workflows and admin/policy management APIs are still not implemented.
+  Phase 4 Director Dashboard read APIs and generic approval write workflows are
+  implemented, but some Director metrics and admin/policy management APIs are
+  still not implemented.
 Remaining backend work:
   - Director upcoming-events feed
   - Director missing-required-documents metric/list
   - Director archive verification reminders backed by real verification dates
-  - POST /v1/approvals
-  - GET /v1/approvals and GET /v1/approvals/{approval_id} with comment history
-  - POST /v1/approvals/{approval_id}/approve
-  - POST /v1/approvals/{approval_id}/reject
-  - POST /v1/approvals/{approval_id}/request-revision
   - employee management writes
   - role assignment writes with self-elevation protection
   - policy management with audit events
   - audit explorer outside the Director dashboard shape
+Resolution update:
+  CODEX-PHASE4-002 completed approval workflows:
+  - GET /v1/approval-types
+  - GET /v1/approvals
+  - POST /v1/approvals
+  - GET /v1/approvals/{approval_id}
+  - POST /v1/approvals/{approval_id}/approve
+  - POST /v1/approvals/{approval_id}/reject
+  - POST /v1/approvals/{approval_id}/request-revision
+  Approval writes use service-role-only audited RPCs, immutable action history,
+  notifications and SQL validation.
 Owner: Codex
+Status: Open
+```
+
+### OPEN-037 - Phase 4 approval frontend wiring
+
+```text
+Date: 2026-06-16
+Category: Frontend Integration
+Severity: Medium
+Question or issue:
+  Codex completed backend approval workflow endpoints:
+  - GET /v1/approval-types
+  - GET /v1/approvals
+  - POST /v1/approvals
+  - GET /v1/approvals/{approval_id}
+  - POST /v1/approvals/{approval_id}/approve
+  - POST /v1/approvals/{approval_id}/reject
+  - POST /v1/approvals/{approval_id}/request-revision
+Why it matters:
+  Claude can replace read-only approval placeholders with actual approval queue,
+  detail/history, create and review actions without direct Supabase writes.
+Frontend follow-up:
+  Use docs/api-contract.md exactly. Do not insert approval rows from the
+  frontend or call Supabase directly. Show INVALID_STATE for non-pending review
+  attempts, INVALID_REFERENCE for bad target/employee/type ids, ABAC_DENIED for
+  target access denial, PERMISSION_DENIED for users without approval.approve,
+  RESOURCE_CONFLICT for duplicate conflicts, and VALIDATION_ERROR when create
+  payloads do not include exactly one target or revision comments are blank.
+  Gate approve/reject/request-revision on user.isSuperUser ||
+  permissions.includes('approval.approve'). Use GET /v1/approval-types for
+  selectors and display action history from the `actions` array.
+Owner: Claude
 Status: Open
 ```
 
