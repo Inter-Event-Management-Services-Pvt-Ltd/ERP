@@ -81,6 +81,14 @@
 - Wired the Calendar page (`/calendar`) to `GET /v1/calendar/events` with a month view grouped by day, source badges for `CALENDAR_EVENT`, `TASK_DEADLINE`, `LEAVE` and `PHYSICAL_FILE_RETURN`, and create/edit (`POST`/`PATCH /v1/calendar/events`) for user-created events gated by `task.manage` (resolves OPEN-033).
 - Added OPEN-034 (missing `GET /v1/tasks/{task_id}/comments` list endpoint; task detail page currently shows only session-local comments).
 
+- Wired Director Dashboard overview page (`/director`) to `GET /v1/director/overview`: attendance metrics (checked-in / total, checked-out, absent, total work time), project status counts, pending approvals count, overdue task count, physical archive summary (checked-out, overdue returns, verification due, missing), and recent audit events feed; resolves OPEN-035.
+- Wired Director Projects page (`/director/projects`) to `GET /v1/director/projects` with status and priority badges (resolves OPEN-035).
+- Wired Director Approvals page (`/director/approvals`) to `GET /v1/director/approvals` as a read-only pending queue; approval actions noted as backend-pending (resolves OPEN-035).
+- Wired Director Overdue Tasks page (`/director/tasks`) to `GET /v1/director/overdue-tasks` (resolves OPEN-035).
+- Wired Director Archive page (`/director/archive`) to `GET /v1/director/physical-files` showing checked-out files with overdue-return badge (resolves OPEN-035).
+- Wired Director Audit page (`/director/audit`) to `GET /v1/director/audit-events` with live `action_code` / `resource_type` filter inputs (resolves OPEN-035).
+- Updated `DirectorGuard` to admit Super User accounts (`me.account.is_super_user`) in addition to the `DIRECTOR` role, matching the API access rule.
+
 - Assigned Claude as frontend-only owner using either Claude Design or Google Stitch for reviewed UI ideation.
 - Assigned Codex as backend-only owner.
 - Added frontend security, accessibility and motion guidance.

@@ -223,6 +223,29 @@ Frontend follow-up:
   pending approval queue for now.
 Owner: Claude
 Status: Open
+
+Resolution (2026-06-16):
+  Claude wired all six Director Dashboard endpoints:
+  - /director/page.tsx: stat cards for attendance, projects, pending approvals
+    count, overdue task count, physical archive summary, recent audit events feed
+    backed by GET /v1/director/overview.
+  - /director/projects/page.tsx: full project table with status and priority
+    badges backed by GET /v1/director/projects.
+  - /director/approvals/page.tsx: read-only pending queue backed by
+    GET /v1/director/approvals; approval actions labelled as backend-pending.
+  - /director/tasks/page.tsx: overdue tasks table backed by
+    GET /v1/director/overdue-tasks.
+  - /director/archive/page.tsx: checked-out physical files with overdue-return
+    badge backed by GET /v1/director/physical-files.
+  - /director/audit/page.tsx: event feed with action_code / resource_type filter
+    inputs backed by GET /v1/director/audit-events.
+  DirectorGuard updated to admit super users (me.account.is_super_user) in
+  addition to the DIRECTOR role, matching the API contract's access rule.
+  New types: DirectorOverview, DirectorProject, DirectorApproval,
+  DirectorOverdueTask, DirectorCheckedOutFile, DirectorAuditEvent.
+  New hook file: apps/web/src/hooks/use-director.ts.
+  Type-check, lint and build all pass.
+Status: Resolved
 ```
 
 ### OPEN-036 - Remaining Phase 4 backend approval and admin workflows

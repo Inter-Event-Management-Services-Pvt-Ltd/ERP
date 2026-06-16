@@ -1,5 +1,54 @@
 # Claude Frontend Checklist
 
+## Phase 4 — Director Dashboard (Slice 1)
+
+### Ownership
+
+- [x] Only frontend-owned files modified: `apps/web/src/app/director/**`, `apps/web/src/hooks/use-director.ts`, `apps/web/src/lib/api.ts`, `apps/web/src/types/index.ts`, `apps/web/src/components/layout/director-guard.tsx`.
+- [x] Backend requirement noted: OPEN-036 (approval write workflows, admin/policy management, upcoming-events feed, missing-documents metric, archive verification reminders still pending Codex).
+- [x] API contract followed exactly per `docs/api-contract.md`; no invented fields or alternate routes; audit event `old_values`/`new_values`/`metadata` intentionally omitted.
+
+### Design Workflow
+
+- [x] Screen purpose documented (Director overview, projects, approvals queue, overdue tasks, physical archive, audit feed).
+- [x] User role documented: access gated on `DIRECTOR` role OR `me.account.is_super_user`; DirectorGuard enforces both.
+- [x] Shared components reused (AppShell, PageHeader, ContentArea, SkeletonScreen, EmptyState, ErrorState, Badge).
+- [x] Responsive states implemented (grid collapses to single column; tables scroll horizontally).
+- [x] Empty state implemented (all six detail pages handle zero-row responses).
+- [x] Loading state implemented (SkeletonScreen while data is fetching).
+- [x] Error state implemented (PERMISSION_DENIED maps to "Director access required"; other errors show message + retry).
+- [x] Permission-denied state implemented (DirectorGuard renders PermissionDenied without exposing route or resource details).
+
+### Security
+
+- [x] No secrets exposed; no Supabase service-role key referenced.
+- [x] All reads go through FastAPI via `lib/api.ts`; no direct Supabase calls.
+- [x] No unsafe HTML rendering (no dangerouslySetInnerHTML).
+- [x] Audit events rendered with only the fields returned by the backend; no `old_values`/`new_values`/`metadata` expected or displayed.
+- [x] Approval action buttons not present; the approvals page is read-only, as documented in the API contract.
+- [x] Server-side authorization remains authoritative; frontend guard is presentation-only.
+
+### Accessibility
+
+- [x] Semantic structure (tables with `scope="col"` headers, section headings via `h2`, `aria-label` on icon buttons).
+- [x] Keyboard navigation (all overview cards and nav links are keyboard-reachable; filter inputs accessible via Tab).
+- [x] Accessible labels (CountCard links have visible label text alongside the count; stat rows use `<span>` pairs).
+- [x] No color-only critical state (overdue badge shows text "Overdue" not just red; critical counts show numeric value with color).
+- [x] No hover-only critical action (all actions/links keyboard-reachable).
+
+### Motion
+
+- [x] Motion is purposeful (CountCard link has `transition-colors` on border hover only; no decorative animation).
+- [x] Motion does not block workflow.
+- [x] Reduced-motion supported via the existing global `prefers-reduced-motion` rule in `globals.css`.
+
+### Validation
+
+- [x] Lint passes (`npm run lint`).
+- [x] Type check passes (`npm run type-check`).
+- [x] Production build passes (`npm run build`).
+- [ ] Responsive QA completed for director overview, projects, approvals, tasks, archive, audit pages.
+
 ## Phase 3 — Employee Operations
 
 ### Ownership
