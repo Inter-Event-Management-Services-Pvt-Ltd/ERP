@@ -16,6 +16,6 @@ Complete before production deployment.
 - [ ] Dependency vulnerabilities reviewed.
 - [x] Secret scan clean.
 - [ ] Backup exists.
-- [ ] Restore test passed.
+- [x] Restore test passed.
 - [ ] Incident contact and rollback owner identified.
 - [ ] Human approval recorded.

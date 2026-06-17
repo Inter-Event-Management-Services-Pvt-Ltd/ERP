@@ -53,6 +53,6 @@
 - [ ] Dependency scan passed.
 - [x] Secret scan passed.
 - [ ] Backups enabled.
-- [ ] Restore tested.
+- [x] Restore tested.
 - [ ] Monitoring enabled.
 - [ ] Error logs redact sensitive values.

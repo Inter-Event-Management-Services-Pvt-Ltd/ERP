@@ -10,7 +10,7 @@
 - [x] Migration-reset test.
 - [ ] ZIP export test.
 - [ ] File checkout race test.
-- [ ] Restore test.
+- [x] Restore test.
 
 ## CI/CD
 
@@ -33,7 +33,7 @@
 - [ ] Configure alerting.
 - [ ] Configure database backups.
 - [ ] Configure Storage backups.
-- [ ] Test restore.
+- [x] Test restore.
 - [ ] Write rollback steps.
 - [ ] Write incident-response notes.
 
@@ -48,7 +48,7 @@
 - [x] RLS verified enabled.
 - [ ] No debug endpoints exposed.
 - [ ] Logging excludes secrets.
-- [ ] Restore test passes.
+- [x] Restore test passes.
 
 ## Exit Criteria
 
