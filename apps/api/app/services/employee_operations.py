@@ -373,6 +373,26 @@ class EmployeeOperationsService:
         )
         return _task_comment_from_row(result)
 
+    async def list_task_comments(
+        self,
+        *,
+        task_id: UUID,
+        current_user: CurrentUser,
+        limit: int,
+        offset: int,
+    ) -> list[TaskCommentResponse]:
+        row = await self._get_task_row(task_id)
+        await self._require_task_visible(row=row, current_user=current_user)
+        params = _list_params(
+            select=TASK_COMMENT_SELECT,
+            order="created_at.desc",
+            limit=limit,
+            offset=offset,
+        )
+        params["task_id"] = f"eq.{task_id}"
+        rows = await self._get_rows("/rest/v1/task_comments", params=params)
+        return [_task_comment_from_row(comment_row) for comment_row in rows]
+
     async def link_task_document(
         self,
         *,

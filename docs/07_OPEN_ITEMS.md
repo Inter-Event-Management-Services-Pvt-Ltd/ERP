@@ -152,8 +152,8 @@ Resolution:
   - apps/web/src/app/tasks/[id]/page.tsx: GET /v1/tasks/{id} detail with
     inline edit (PATCH /v1/tasks/{id}), assignees (POST
     /v1/tasks/{id}/assignees via employee search), comments (POST
-    /v1/tasks/{id}/comments, shown session-locally since no list endpoint
-    exists - see OPEN-034) and linked documents (POST
+    /v1/tasks/{id}/comments; backend list endpoint now available through
+    OPEN-034) and linked documents (POST
     /v1/tasks/{id}/documents), all edit actions gated by task.manage /
     isSuperUser.
   - apps/web/src/app/calendar/page.tsx: GET /v1/calendar/events for the
@@ -189,12 +189,12 @@ Why it matters:
   the current browser session (held in local state). Comments posted by other
   users, or in previous sessions, are not visible after a page reload.
 Recommended next action:
-  Codex to add GET /v1/tasks/{task_id}/comments (list, newest first) to
-  docs/api-contract.md and the FastAPI backend. Once available, Claude will
-  replace the session-local comment list in apps/web/src/app/tasks/[id]/
-  page.tsx with a query against this endpoint.
-Owner: Codex (contract + backend), Claude (frontend follow-up)
-Status: Open
+  Backend resolved: Codex added GET /v1/tasks/{task_id}/comments (list,
+  newest first, limit/offset pagination) to docs/api-contract.md and
+  FastAPI. Claude still needs to replace the session-local comment list in
+  apps/web/src/app/tasks/[id]/page.tsx with a query against this endpoint.
+Owner: Claude (frontend follow-up)
+Status: Backend Resolved / Frontend Open
 ```
 
 ### OPEN-039 - Phase 5 end-to-end performance baseline and endpoint query optimization

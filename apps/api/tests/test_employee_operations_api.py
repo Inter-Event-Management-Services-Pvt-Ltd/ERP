@@ -184,6 +184,17 @@ class RecordingEmployeeOperationsService:
         self.calls.append(("add_task_comment", (task_id, comment_text), current_user, context))
         return _task_comment_response(comment_text=comment_text)
 
+    async def list_task_comments(
+        self,
+        *,
+        task_id: UUID,
+        current_user: CurrentUser,
+        limit: int,
+        offset: int,
+    ) -> list[object]:
+        self.calls.append(("list_task_comments", (task_id, limit, offset), current_user, None))
+        return [_task_comment_response(comment_text="Confirmed with vendor.")]
+
     async def link_task_document(
         self,
         *,
@@ -556,6 +567,27 @@ def test_add_task_comment_uses_visible_task_authorization_in_service() -> None:
     assert response.status_code == 201
     assert response.json()["comment_text"] == "Confirmed with vendor."
     assert service.calls[0][0] == "add_task_comment"
+
+
+def test_list_task_comments_passes_pagination_to_service() -> None:
+    service = _install_overrides(current_user=_current_user(permissions=[]))
+    try:
+        response = asyncio.run(
+            _request(
+                "GET",
+                f"/v1/tasks/{TASK_ID}/comments?limit=25&offset=50",
+                headers={"Authorization": "Bearer test-token"},
+            )
+        )
+    finally:
+        app.dependency_overrides.clear()
+
+    assert response.status_code == 200
+    assert response.json()[0]["comment_text"] == "Confirmed with vendor."
+    assert service.calls[0][0] == "list_task_comments"
+    assert service.calls[0][1] == (TASK_ID, 25, 50)
+    assert service.calls[0][2].employee.id == EMPLOYEE_ID
+    assert service.calls[0][3] is None
 
 
 def test_list_calendar_events_passes_date_and_project_filters() -> None:

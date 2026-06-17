@@ -936,6 +936,7 @@ POST   /v1/tasks
 GET    /v1/tasks/{task_id}
 PATCH  /v1/tasks/{task_id}
 POST   /v1/tasks/{task_id}/assignees
+GET    /v1/tasks/{task_id}/comments
 POST   /v1/tasks/{task_id}/comments
 POST   /v1/tasks/{task_id}/documents
 
@@ -1051,6 +1052,34 @@ It accepts:
 {
   "comment_text": "Confirmed with vendor."
 }
+```
+
+`GET /v1/tasks/{task_id}/comments` is available to users who can see the task.
+It returns comments newest first and accepts:
+
+```text
+limit=1..100            default 50
+offset=0..n             default 0
+```
+
+Response:
+
+```json
+[
+  {
+    "id": "dddddddd-dddd-4ddd-8ddd-dddddddddddd",
+    "task_id": "99999999-9999-4999-8999-999999999999",
+    "employee_id": "22222222-2222-4222-8222-222222222222",
+    "employee": {
+      "id": "22222222-2222-4222-8222-222222222222",
+      "employee_code": "IEMS-001",
+      "full_name": "Example Employee"
+    },
+    "comment_text": "Confirmed with vendor.",
+    "created_at": "2026-06-15T09:00:00Z",
+    "edited_at": null
+  }
+]
 ```
 
 `POST /v1/tasks/{task_id}/documents` accepts:

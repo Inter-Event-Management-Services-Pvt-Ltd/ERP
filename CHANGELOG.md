@@ -50,6 +50,7 @@
 - Completed Phase 4 approval workflow backend APIs with approval type lookup, approval request list/create/detail, approve/reject/request-revision actions, server-side RBAC/ABAC, service-role-only audited Supabase RPCs, notifications, immutable action history and SQL validation.
 - Completed Phase 4 admin/policy/audit backend APIs with Director upcoming-events, missing-required-documents and verification-reminder feeds; employee admin writes; role assignment with self-elevation protection; department history; policy audit events; folder-template editing; archive room/location editing; full audit explorer; service-role-only audited Supabase RPCs; and SQL validation.
 - Started Phase 5 performance hardening by replacing per-call Supabase HTTP client construction with a lifespan-managed shared `httpx.AsyncClient`, threading it through auth resolution, audit writes and all Supabase-backed services, and adding structured per-Supabase-request timing logs with request-id correlation and safe query-key metadata.
+- Added `GET /v1/tasks/{task_id}/comments` so task detail screens can load persisted comments newest-first with the same task visibility ABAC used by task reads and comment writes.
 
 - Wired Phase 2 folder CRUD to live backend: inline create, rename, and delete in FolderTreePanel with INVALID_STATE protection and canManage gating.
 - Added DocumentListPanel with per-folder document list, multipart upload dialog (INVALID_FILE_NAME, INVALID_MIME_TYPE, INVALID_FILE_SIZE error display), version upload, and signed download URLs fetched on-demand.
