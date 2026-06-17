@@ -14,25 +14,23 @@ BACKLOG
 ## Codex Immediate Task
 
 ```text
-ID: CODEX-PHASE4-003
+ID: CODEX-PHASE5-001
 Owner: Codex
-Status: DONE
-Task: Build Phase 4 admin, policy and audit explorer APIs.
+Status: IN_PROGRESS
+Task: Phase 5 hardening, performance baseline and deployment validation.
 Checklist:
-- docs/checklists/PHASE_4_MANAGEMENT_DIRECTOR.md
-- docs/checklists/BACKEND_CODEX.md
+- docs/checklists/PHASE_5_HARDEN_DEPLOY.md
+- docs/checklists/DOCKERIZATION.md
+- docs/checklists/SECURITY_GLOBAL.md
+- docs/checklists/SECURITY_RELEASE_GATE.md
 Output:
-- Director upcoming-events, missing-required-documents and verification-reminder endpoints
-- employee admin create/update/detail routes
-- role assignment and department-history routes
-- policy management routes with audit events
-- folder-template editor routes
-- archive room/location update routes
-- full audit explorer route
-- self-elevation and Super User override reason guardrails
-- service-role-only audited Supabase RPCs
-- backend and SQL validation tests
-- updated checklist
+- backend performance baseline and targeted endpoint optimization
+- OPEN-034 task comment list endpoint
+- backend/security test hardening
+- Supabase RLS and Storage validation probes
+- production Docker/Caddy/Redis/Celery validation
+- backup and restore proof
+- release gate docs and checklists
 ```
 
 ## Claude Immediate Task

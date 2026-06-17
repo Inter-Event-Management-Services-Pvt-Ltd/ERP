@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- Started Phase 5 hardening and deployment planning, covering backend performance baselines, security validation, Docker production checks, backup/restore proof, release-gate documentation, and remaining backend contract gaps.
 - Validated local Supabase Phase 0 foundation from a clean Docker-backed environment.
 - Hardened Supabase migrations by moving `citext` and `pg_trgm` into the `extensions` schema.
 - Hardened SQL helper functions with explicit `search_path` settings and RLS-friendly `auth.uid()` usage.
