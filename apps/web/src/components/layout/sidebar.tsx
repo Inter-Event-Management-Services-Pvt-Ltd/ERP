@@ -80,6 +80,8 @@ export function Sidebar() {
   const roles = user?.roles ?? []
   const [confirmSignOut, setConfirmSignOut] = useState(false)
 
+  const isSuperUser = user?.isSuperUser ?? false
+
   const isActive = (href: string) =>
     href === '/dashboard' ? pathname === href : pathname.startsWith(href)
 
@@ -110,7 +112,7 @@ export function Sidebar() {
         {NAV_GROUPS.map((group) => {
           const visible = group.items.filter(
             (item) =>
-              !item.allowedRoles || canAccess(roles, item.allowedRoles)
+              !item.allowedRoles || isSuperUser || canAccess(roles, item.allowedRoles)
           )
           if (visible.length === 0) return null
 

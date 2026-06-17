@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { useMutation, useQuery, useQueryClient, keepPreviousData } from '@tanstack/react-query'
 import {
   fetchEmployees,
   fetchDepartments,
@@ -47,6 +47,7 @@ export function useEmployeeList(params?: { status?: string; search?: string; lim
     queryKey: ['employees', 'list', params],
     queryFn: () => fetchEmployees(params),
     staleTime: 30 * 1000,
+    placeholderData: keepPreviousData,
   })
 }
 

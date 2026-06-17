@@ -1,6 +1,6 @@
 'use client'
 
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { useMutation, useQuery, useQueryClient, keepPreviousData } from '@tanstack/react-query'
 import {
   fetchPolicies,
   createPolicy,
@@ -147,7 +147,7 @@ export function useUpdatePhysicalRoom() {
     mutationFn: ({ id, payload }: { id: string; payload: UpdatePhysicalRoomPayload }) =>
       updatePhysicalRoom(id, payload),
     onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ['rooms'] })
+      qc.invalidateQueries({ queryKey: ['archive', 'rooms'] })
     },
   })
 }
@@ -158,7 +158,7 @@ export function useUpdatePhysicalLocation() {
     mutationFn: ({ id, payload }: { id: string; payload: UpdatePhysicalLocationPayload }) =>
       updatePhysicalLocation(id, payload),
     onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ['locations'] })
+      qc.invalidateQueries({ queryKey: ['archive', 'rooms'] })
     },
   })
 }
@@ -179,5 +179,7 @@ export function useAuditEvents(params?: {
     queryKey: ['audit-events', params],
     queryFn: () => fetchAuditEvents(params),
     staleTime: 30 * 1000,
+    enabled: params !== undefined,
+    placeholderData: keepPreviousData,
   })
 }

@@ -1,6 +1,6 @@
 'use client'
 
-import { useQuery } from '@tanstack/react-query'
+import { useQuery, keepPreviousData } from '@tanstack/react-query'
 import {
   fetchDirectorOverview,
   fetchDirectorProjects,
@@ -63,6 +63,7 @@ export function useDirectorAuditEvents(params?: {
     queryKey: ['director', 'audit-events', params],
     queryFn: () => fetchDirectorAuditEvents(params),
     staleTime: 30 * 1000,
+    placeholderData: keepPreviousData,
   })
 }
 

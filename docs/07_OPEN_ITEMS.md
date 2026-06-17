@@ -197,6 +197,29 @@ Owner: Codex (contract + backend), Claude (frontend follow-up)
 Status: Open
 ```
 
+### OPEN-039 - Phase 5 end-to-end performance baseline and endpoint query optimization
+
+```text
+Date: 2026-06-17
+Category: Performance / Phase 5
+Severity: Medium
+Question or issue:
+  Local API timings showed authenticated list/detail routes often taking
+  hundreds of milliseconds and Director overview taking more than one second.
+  Codex fixed the first obvious backend issue by reusing a lifespan-managed
+  shared httpx.AsyncClient for Supabase REST/RPC/Auth/Audit traffic and adding
+  structured Supabase request timing logs.
+Remaining work:
+  Build an end-to-end frontend/backend waterfall baseline after the frontend is
+  wired and the API process is restarted. Use the new iems.api.supabase logs to
+  identify slow Supabase calls by request_id. Optimize heavy endpoints, especially
+  GET /v1/director/overview, by batching independent reads or replacing serial
+  read composition with SQL/RPC-backed aggregate reads where appropriate.
+Owner: Codex for backend endpoint/query optimization; Claude for frontend request
+  waterfall review.
+Status: Open
+```
+
 ### OPEN-035 - Phase 4 Director Dashboard frontend wiring
 
 ```text

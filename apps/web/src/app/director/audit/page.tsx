@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { format } from 'date-fns'
 import { AppShell } from '@/components/layout/app-shell'
 import { PageHeader } from '@/components/layout/page-header'
@@ -41,10 +41,22 @@ function FilterInput({
 export default function DirectorAuditPage() {
   const [actionCode, setActionCode] = useState('')
   const [resourceType, setResourceType] = useState('')
+  const [debouncedActionCode, setDebouncedActionCode] = useState('')
+  const [debouncedResourceType, setDebouncedResourceType] = useState('')
+
+  useEffect(() => {
+    const t = setTimeout(() => setDebouncedActionCode(actionCode.trim()), 300)
+    return () => clearTimeout(t)
+  }, [actionCode])
+
+  useEffect(() => {
+    const t = setTimeout(() => setDebouncedResourceType(resourceType.trim()), 300)
+    return () => clearTimeout(t)
+  }, [resourceType])
 
   const params = {
-    action_code: actionCode.trim() || undefined,
-    resource_type: resourceType.trim() || undefined,
+    action_code: debouncedActionCode || undefined,
+    resource_type: debouncedResourceType || undefined,
     limit: 100,
   }
 

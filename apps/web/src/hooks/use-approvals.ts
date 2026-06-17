@@ -1,6 +1,6 @@
 'use client'
 
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { useMutation, useQuery, useQueryClient, keepPreviousData } from '@tanstack/react-query'
 import {
   fetchApprovalTypes,
   fetchApprovals,
@@ -25,6 +25,7 @@ export function useApprovals(params?: { status?: string; limit?: number; offset?
     queryKey: ['approvals', params],
     queryFn: () => fetchApprovals(params),
     staleTime: 30 * 1000,
+    placeholderData: keepPreviousData,
   })
 }
 

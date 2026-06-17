@@ -1,4 +1,4 @@
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import { useQuery, useMutation, useQueryClient, keepPreviousData } from '@tanstack/react-query'
 import {
   fetchTasks,
   getTask,
@@ -27,6 +27,7 @@ export function useTasks(params?: {
     queryKey: [...TASKS_KEY, params],
     queryFn: () => fetchTasks(params),
     staleTime: 30 * 1000,
+    placeholderData: keepPreviousData,
   })
 }
 

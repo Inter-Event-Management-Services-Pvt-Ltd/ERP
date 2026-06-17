@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { Plus, Search } from 'lucide-react'
 import { AppShell } from '@/components/layout/app-shell'
@@ -140,13 +140,19 @@ export default function AdminEmployeesPage() {
   const { data: user } = useMe()
   const [statusFilter, setStatusFilter] = useState('ACTIVE')
   const [searchInput, setSearchInput] = useState('')
+  const [debouncedSearch, setDebouncedSearch] = useState('')
   const [showCreate, setShowCreate] = useState(false)
+
+  useEffect(() => {
+    const timer = setTimeout(() => setDebouncedSearch(searchInput.trim()), 300)
+    return () => clearTimeout(timer)
+  }, [searchInput])
 
   const canManage = (user?.isSuperUser ?? false) || (user?.permissions.includes('employee.manage') ?? false)
 
   const { data: employees, isLoading, error, refetch } = useEmployeeList({
     status: statusFilter,
-    search: searchInput.trim() || undefined,
+    search: debouncedSearch || undefined,
     limit: 100,
   })
 
