@@ -34,8 +34,8 @@
 - [ ] Configure database backups.
 - [ ] Configure Storage backups.
 - [x] Test restore.
-- [ ] Write rollback steps.
-- [ ] Write incident-response notes.
+- [x] Write rollback steps.
+- [x] Write incident-response notes.
 
 ## Security Gate
 
