@@ -14,7 +14,7 @@ Complete before production deployment.
 - [ ] File upload validation verified.
 - [ ] Rate-limiting decision documented.
 - [ ] Dependency vulnerabilities reviewed.
-- [ ] Secret scan clean.
+- [x] Secret scan clean.
 - [ ] Backup exists.
 - [ ] Restore test passed.
 - [ ] Incident contact and rollback owner identified.

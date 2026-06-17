@@ -51,7 +51,7 @@
 
 - [ ] Staging tested.
 - [ ] Dependency scan passed.
-- [ ] Secret scan passed.
+- [x] Secret scan passed.
 - [ ] Backups enabled.
 - [ ] Restore tested.
 - [ ] Monitoring enabled.

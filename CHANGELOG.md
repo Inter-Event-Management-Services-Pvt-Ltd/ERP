@@ -52,6 +52,7 @@
 - Started Phase 5 performance hardening by replacing per-call Supabase HTTP client construction with a lifespan-managed shared `httpx.AsyncClient`, threading it through auth resolution, audit writes and all Supabase-backed services, and adding structured per-Supabase-request timing logs with request-id correlation and safe query-key metadata.
 - Added `GET /v1/tasks/{task_id}/comments` so task detail screens can load persisted comments newest-first with the same task visibility ABAC used by task reads and comment writes.
 - Hardened Supabase RLS helper functions by moving policy helpers behind a non-exposed `app_private` schema, revoking direct browser-role execution from the old public wrappers, and adding a Phase 5 SQL release-gate probe for RLS, private Storage buckets, audit immutability and `SECURITY DEFINER` exposure.
+- Added a Phase 5 tracked-file secret scan script and security review note, with local evidence that the repository scan passes without committed Supabase, JWT, Google client, or database URL secrets.
 
 - Wired Phase 2 folder CRUD to live backend: inline create, rename, and delete in FolderTreePanel with INVALID_STATE protection and canManage gating.
 - Added DocumentListPanel with per-folder document list, multipart upload dialog (INVALID_FILE_NAME, INVALID_MIME_TYPE, INVALID_FILE_SIZE error display), version upload, and signed download URLs fetched on-demand.

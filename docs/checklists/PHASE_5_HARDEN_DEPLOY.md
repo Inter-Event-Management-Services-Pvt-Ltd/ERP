@@ -42,7 +42,7 @@
 - [ ] Complete `SECURITY_GLOBAL.md`.
 - [ ] Complete `SECURITY_RELEASE_GATE.md`.
 - [ ] Dependency scan passes.
-- [ ] Secret scan passes.
+- [x] Secret scan passes.
 - [ ] Service-role key server-only check passes.
 - [x] Storage buckets verified private.
 - [x] RLS verified enabled.
