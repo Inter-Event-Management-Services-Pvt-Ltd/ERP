@@ -10,6 +10,7 @@ import httpx
 from pydantic import ValidationError
 
 from app.core.audit import AuditContext
+from app.core.supabase_http import request_supabase
 from app.schemas.clients_projects import ReferenceSummary
 from app.schemas.current_user import CurrentUser
 from app.schemas.documents_archive import (
@@ -68,6 +69,7 @@ class DocumentsArchiveService:
         generated_archives_bucket: str = "generated-archives",
         enqueue_archive_export: Callable[[UUID], None] | None = None,
         transport: httpx.AsyncBaseTransport | None = None,
+        http_client: httpx.AsyncClient | None = None,
     ) -> None:
         self._supabase_url = supabase_url.rstrip("/")
         self._service_role_key = service_role_key
@@ -80,6 +82,7 @@ class DocumentsArchiveService:
         self._generated_archives_bucket = generated_archives_bucket
         self._enqueue_archive_export = enqueue_archive_export
         self._transport = transport
+        self._http_client = http_client
 
     async def create_folder(
         self,
@@ -724,18 +727,31 @@ class DocumentsArchiveService:
         request_headers = self._supabase_headers()
         if headers is not None:
             request_headers.update(headers)
-        async with httpx.AsyncClient(
-            timeout=self._timeout_seconds,
-            transport=self._transport,
-        ) as client:
-            response = await client.request(
+        url = f"{self._supabase_url}{path}"
+        if self._http_client is not None:
+            response = await request_supabase(
+                self._http_client,
                 method,
-                f"{self._supabase_url}{path}",
+                url,
                 headers=request_headers,
                 params=params,
-                json=json_body,
+                json_body=json_body,
                 content=content,
             )
+        else:
+            async with httpx.AsyncClient(
+                timeout=self._timeout_seconds,
+                transport=self._transport,
+            ) as client:
+                response = await request_supabase(
+                    client,
+                    method,
+                    url,
+                    headers=request_headers,
+                    params=params,
+                    json_body=json_body,
+                    content=content,
+                )
         if response.status_code >= 300:
             _raise_supabase_error(response)
         return response

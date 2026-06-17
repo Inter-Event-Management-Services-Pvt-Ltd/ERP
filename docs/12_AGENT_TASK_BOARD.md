@@ -14,20 +14,24 @@ BACKLOG
 ## Codex Immediate Task
 
 ```text
-ID: CODEX-PHASE2-BACKEND
+ID: CODEX-PHASE4-003
 Owner: Codex
 Status: DONE
-Task: Build Phase 2 backend for clients, projects, documents, archive exports and physical archive.
+Task: Build Phase 4 admin, policy and audit explorer APIs.
 Checklist:
-- docs/checklists/PHASE_2_DOCUMENT_ARCHIVE_CORE.md
+- docs/checklists/PHASE_4_MANAGEMENT_DIRECTOR.md
 - docs/checklists/BACKEND_CODEX.md
 Output:
-- FastAPI clients/projects routes
-- FastAPI folder/document routes
-- archive export APIs and Celery ZIP worker
-- physical archive routes
-- audited transactional Supabase RPCs
-- backend tests and SQL validation results
+- Director upcoming-events, missing-required-documents and verification-reminder endpoints
+- employee admin create/update/detail routes
+- role assignment and department-history routes
+- policy management routes with audit events
+- folder-template editor routes
+- archive room/location update routes
+- full audit explorer route
+- self-elevation and Super User override reason guardrails
+- service-role-only audited Supabase RPCs
+- backend and SQL validation tests
 - updated checklist
 ```
 
@@ -50,12 +54,15 @@ CODEX-PHASE0-002 Validate constraints and RLS
 CODEX-PHASE1-001 Scaffold FastAPI — DONE
 CODEX-PHASE1-002 Configure auth verification — DONE
 CODEX-PHASE1-003 Add RBAC/ABAC middleware — DONE
-CODEX-PHASE1-004 Complete backend Phase 1 audit, logging and CI — REVIEW
+CODEX-PHASE1-004 Complete backend Phase 1 audit, logging and CI — DONE
 CODEX-PHASE2-001 Build clients and projects API — DONE
 CODEX-PHASE2-002 Build folders and documents API — DONE
 CODEX-PHASE2-003 Build archive ZIP worker — DONE
 CODEX-PHASE2-004 Build physical archive API — DONE
 CODEX-PHASE3-001 Build attendance, leave, task and calendar backend APIs — DONE
+CODEX-PHASE4-001 Build Director Dashboard read APIs — DONE
+CODEX-PHASE4-002 Build approval workflows — DONE
+CODEX-PHASE4-003 Build admin, policy and audit explorer APIs — DONE
 ```
 
 ## Claude Following Tasks

@@ -10,8 +10,10 @@ from app.main import app
 from app.schemas.current_user import CurrentUser, EmployeeProfile, UserAccount
 from app.schemas.physical_archive import (
     ArchiveLocationResponse,
+    ArchiveLocationUpdate,
     ArchiveRoomCreate,
     ArchiveRoomResponse,
+    ArchiveRoomUpdate,
     PhysicalFileCheckoutCreate,
     PhysicalFileResponse,
 )
@@ -44,6 +46,43 @@ class RecordingPhysicalArchiveService:
             name=payload.name,
             description=payload.description,
             is_active=True,
+        )
+
+    async def update_room(
+        self,
+        *,
+        room_id: UUID,
+        payload: ArchiveRoomUpdate,
+        current_user: CurrentUser,
+        context: AuditContext,
+    ) -> ArchiveRoomResponse:
+        self.calls.append(("update_room", (room_id, payload), current_user, context))
+        return ArchiveRoomResponse(
+            id=room_id,
+            code=payload.code or "R1",
+            name=payload.name or "Room 1",
+            description=payload.description,
+            is_active=payload.is_active if payload.is_active is not None else True,
+        )
+
+    async def update_location(
+        self,
+        *,
+        location_id: UUID,
+        payload: ArchiveLocationUpdate,
+        current_user: CurrentUser,
+        context: AuditContext,
+    ) -> ArchiveLocationResponse:
+        self.calls.append(("update_location", (location_id, payload), current_user, context))
+        return ArchiveLocationResponse(
+            id=location_id,
+            archive_room_id=ROOM_ID,
+            parent_location_id=payload.parent_location_id,
+            location_type=payload.location_type or "RACK",
+            code=payload.code or "R1",
+            label=payload.label,
+            qr_token=QR_TOKEN,
+            is_active=payload.is_active if payload.is_active is not None else True,
         )
 
     async def list_locations(
@@ -198,6 +237,64 @@ def test_create_archive_room_returns_created_room() -> None:
     assert response.status_code == 201
     assert response.json()["code"] == "R1"
     assert service.calls[0][0] == "create_room"
+
+
+def test_update_archive_room_requires_archive_manage() -> None:
+    service = _install_overrides(current_user=_current_user(permissions=["archive.view"]))
+    try:
+        response = asyncio.run(
+            _request(
+                "PATCH",
+                f"/v1/archive/rooms/{ROOM_ID}",
+                json={"name": "Updated Room"},
+                headers={"Authorization": "Bearer test-token"},
+            )
+        )
+    finally:
+        app.dependency_overrides.clear()
+
+    assert response.status_code == 403
+    assert service.calls == []
+
+
+def test_update_archive_room_returns_updated_room() -> None:
+    service = _install_overrides(current_user=_current_user(permissions=["archive.manage"]))
+    try:
+        response = asyncio.run(
+            _request(
+                "PATCH",
+                f"/v1/archive/rooms/{ROOM_ID}",
+                json={"name": "Updated Room", "is_active": False},
+                headers={"Authorization": "Bearer test-token"},
+            )
+        )
+    finally:
+        app.dependency_overrides.clear()
+
+    assert response.status_code == 200
+    assert response.json()["name"] == "Updated Room"
+    assert response.json()["is_active"] is False
+    assert service.calls[0][0] == "update_room"
+
+
+def test_update_archive_location_returns_updated_location() -> None:
+    service = _install_overrides(current_user=_current_user(permissions=["archive.manage"]))
+    try:
+        response = asyncio.run(
+            _request(
+                "PATCH",
+                f"/v1/archive/locations/{LOCATION_ID}",
+                json={"label": "Rack 1A", "is_active": False},
+                headers={"Authorization": "Bearer test-token"},
+            )
+        )
+    finally:
+        app.dependency_overrides.clear()
+
+    assert response.status_code == 200
+    assert response.json()["label"] == "Rack 1A"
+    assert response.json()["is_active"] is False
+    assert service.calls[0][0] == "update_location"
 
 
 def test_list_archive_locations_requires_archive_read() -> None:

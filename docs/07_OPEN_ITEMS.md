@@ -197,6 +197,265 @@ Owner: Codex (contract + backend), Claude (frontend follow-up)
 Status: Open
 ```
 
+### OPEN-039 - Phase 5 end-to-end performance baseline and endpoint query optimization
+
+```text
+Date: 2026-06-17
+Category: Performance / Phase 5
+Severity: Medium
+Question or issue:
+  Local API timings showed authenticated list/detail routes often taking
+  hundreds of milliseconds and Director overview taking more than one second.
+  Codex fixed the first obvious backend issue by reusing a lifespan-managed
+  shared httpx.AsyncClient for Supabase REST/RPC/Auth/Audit traffic and adding
+  structured Supabase request timing logs.
+Remaining work:
+  Build an end-to-end frontend/backend waterfall baseline after the frontend is
+  wired and the API process is restarted. Use the new iems.api.supabase logs to
+  identify slow Supabase calls by request_id. Optimize heavy endpoints, especially
+  GET /v1/director/overview, by batching independent reads or replacing serial
+  read composition with SQL/RPC-backed aggregate reads where appropriate.
+Owner: Codex for backend endpoint/query optimization; Claude for frontend request
+  waterfall review.
+Status: Open
+```
+
+### OPEN-035 - Phase 4 Director Dashboard frontend wiring
+
+```text
+Date: 2026-06-16
+Category: Frontend Integration
+Severity: Medium
+Question or issue:
+  Codex added the first Phase 4 backend Director Dashboard read endpoints:
+  - GET /v1/director/overview
+  - GET /v1/director/projects
+  - GET /v1/director/approvals
+  - GET /v1/director/overdue-tasks
+  - GET /v1/director/physical-files
+  - GET /v1/director/audit-events
+Why it matters:
+  Claude can now build the Director Dashboard from FastAPI-backed read models
+  without direct Supabase reads or invented response shapes.
+Frontend follow-up:
+  Use docs/api-contract.md exactly. Gate /director dashboard screens on
+  user.isSuperUser || user.roles.includes('DIRECTOR'), not on generic admin
+  permissions alone. Display audit events from the response shape only; do not
+  expect old_values, new_values or metadata because the backend intentionally
+  withholds those from dashboard responses. Treat /director/approvals as the
+  pending approval queue for now.
+Owner: Claude
+Status: Open
+
+Resolution (2026-06-16):
+  Claude wired all six Director Dashboard endpoints:
+  - /director/page.tsx: stat cards for attendance, projects, pending approvals
+    count, overdue task count, physical archive summary, recent audit events feed
+    backed by GET /v1/director/overview.
+  - /director/projects/page.tsx: full project table with status and priority
+    badges backed by GET /v1/director/projects.
+  - /director/approvals/page.tsx: read-only pending queue backed by
+    GET /v1/director/approvals; approval actions labelled as backend-pending.
+  - /director/tasks/page.tsx: overdue tasks table backed by
+    GET /v1/director/overdue-tasks.
+  - /director/archive/page.tsx: checked-out physical files with overdue-return
+    badge backed by GET /v1/director/physical-files.
+  - /director/audit/page.tsx: event feed with action_code / resource_type filter
+    inputs backed by GET /v1/director/audit-events.
+  DirectorGuard updated to admit super users (me.account.is_super_user) in
+  addition to the DIRECTOR role, matching the API contract's access rule.
+  New types: DirectorOverview, DirectorProject, DirectorApproval,
+  DirectorOverdueTask, DirectorCheckedOutFile, DirectorAuditEvent.
+  New hook file: apps/web/src/hooks/use-director.ts.
+  Type-check, lint and build all pass.
+Status: Resolved
+```
+
+### OPEN-036 - Remaining Phase 4 backend Director metric and admin workflows
+
+```text
+Date: 2026-06-16
+Category: Backend Scope
+Severity: Medium
+Question or issue:
+  Phase 4 Director Dashboard read APIs and generic approval write workflows are
+  implemented, but some Director metrics and admin/policy management APIs are
+  still not implemented.
+Remaining backend work:
+  - Director upcoming-events feed
+  - Director missing-required-documents metric/list
+  - Director archive verification reminders backed by real verification dates
+  - employee management writes
+  - role assignment writes with self-elevation protection
+  - policy management with audit events
+  - audit explorer outside the Director dashboard shape
+Resolution update:
+  CODEX-PHASE4-002 completed approval workflows:
+  - GET /v1/approval-types
+  - GET /v1/approvals
+  - POST /v1/approvals
+  - GET /v1/approvals/{approval_id}
+  - POST /v1/approvals/{approval_id}/approve
+  - POST /v1/approvals/{approval_id}/reject
+  - POST /v1/approvals/{approval_id}/request-revision
+  Approval writes use service-role-only audited RPCs, immutable action history,
+  notifications and SQL validation.
+Resolution update (2026-06-16):
+  CODEX-PHASE4-003 completed the remaining backend scope:
+  - GET /v1/director/upcoming-events
+  - GET /v1/director/missing-required-documents
+  - GET /v1/director/verification-reminders
+  - POST/GET/PATCH employee admin routes
+  - employee role assignment/removal with self-elevation protection
+  - employee department-history assignment
+  - policy create/update/list with audit events
+  - folder-template create/update/item routes
+  - archive room/location update routes
+  - GET /v1/audit-events full audit explorer
+  Writes use service-role-only audited RPCs and SQL validation.
+Owner: Codex
+Status: Resolved
+```
+
+### OPEN-037 - Phase 4 approval frontend wiring
+
+```text
+Date: 2026-06-16
+Category: Frontend Integration
+Severity: Medium
+Question or issue:
+  Codex completed backend approval workflow endpoints:
+  - GET /v1/approval-types
+  - GET /v1/approvals
+  - POST /v1/approvals
+  - GET /v1/approvals/{approval_id}
+  - POST /v1/approvals/{approval_id}/approve
+  - POST /v1/approvals/{approval_id}/reject
+  - POST /v1/approvals/{approval_id}/request-revision
+Why it matters:
+  Claude can replace read-only approval placeholders with actual approval queue,
+  detail/history, create and review actions without direct Supabase writes.
+Frontend follow-up:
+  Use docs/api-contract.md exactly. Do not insert approval rows from the
+  frontend or call Supabase directly. Show INVALID_STATE for non-pending review
+  attempts, INVALID_REFERENCE for bad target/employee/type ids, ABAC_DENIED for
+  target access denial, PERMISSION_DENIED for users without approval.approve,
+  RESOURCE_CONFLICT for duplicate conflicts, and VALIDATION_ERROR when create
+  payloads do not include exactly one target or revision comments are blank.
+  Gate approve/reject/request-revision on user.isSuperUser ||
+  permissions.includes('approval.approve'). Use GET /v1/approval-types for
+  selectors and display action history from the `actions` array.
+Owner: Claude
+
+Resolution (2026-06-16):
+  Claude wired all seven approval endpoints and replaced both skeleton placeholders:
+  - apps/web/src/app/approvals/page.tsx: live approval queue with status filter
+    tabs (All / Pending / Approved / Rejected / Revision Requested / Cancelled),
+    table showing type, target type, requester, assignee, requested-at and status
+    badge, "New Approval" button opening CreateApprovalDialog, row links to detail.
+  - apps/web/src/app/approvals/[id]/page.tsx: full detail page showing type,
+    status badge, target type+ID, requester, assignee, timestamps, chronological
+    action history timeline (action code, actor, comment), and inline
+    Approve / Reject / Request Revision forms (gated on approval.approve or
+    isSuperUser, visible only while status is PENDING; revision requires non-empty
+    comment before submit, enforced client-side).
+  - apps/web/src/components/approvals/create-approval-dialog.tsx: new dialog with
+    approval-type select (GET /v1/approval-types), target-type picker (Project /
+    Document Version / Archive Export / Leave Request) with project dropdown for
+    project_id target and UUID input for other targets, optional assignedTo UUID,
+    optional comment, client-side validation that exactly one target is filled
+    before submit.
+  New types added: ApprovalStatus, ApprovalEmployeeSummary, ApprovalActionRecord,
+    Approval, CreateApprovalPayload, ReviewApprovalPayload.
+  New hooks: useApprovalTypes, useApprovals, useApproval, useCreateApproval,
+    useApproveApproval, useRejectApproval, useRequestRevision
+    (apps/web/src/hooks/use-approvals.ts).
+  New API functions: fetchApprovalTypes, fetchApprovals, createApproval,
+    fetchApproval, approveApproval, rejectApproval, requestApprovalRevision
+    (apps/web/src/lib/api.ts).
+  All errors surfaced via apiErrorMessage (INVALID_STATE, ABAC_DENIED,
+    PERMISSION_DENIED, INVALID_REFERENCE, RESOURCE_CONFLICT, VALIDATION_ERROR).
+Verification:
+  cd apps/web && npm run type-check && npm run lint && npm run build
+Status: Resolved
+```
+
+### OPEN-038 - Phase 4 admin, policy, audit and Director metric frontend wiring
+
+```text
+Date: 2026-06-16
+Category: Frontend Integration
+Severity: Medium
+Question or issue:
+  Codex completed the remaining Phase 4 backend endpoints:
+  - GET /v1/director/upcoming-events
+  - GET /v1/director/missing-required-documents
+  - GET /v1/director/verification-reminders
+  - GET /v1/departments
+  - GET /v1/roles
+  - POST /v1/employees
+  - GET /v1/employees/{employee_id}
+  - PATCH /v1/employees/{employee_id}
+  - POST /v1/employees/{employee_id}/roles
+  - DELETE /v1/employees/{employee_id}/roles/{role_id}
+  - POST /v1/employees/{employee_id}/department-assignments
+  - GET /v1/policies
+  - POST /v1/policies
+  - PATCH /v1/policies/{policy_id}
+  - GET /v1/folder-templates
+  - POST /v1/folder-templates
+  - GET /v1/folder-templates/{template_id}
+  - PATCH /v1/folder-templates/{template_id}
+  - POST /v1/folder-templates/{template_id}/items
+  - PATCH /v1/folder-template-items/{item_id}
+  - PATCH /v1/archive/rooms/{room_id}
+  - PATCH /v1/archive/locations/{location_id}
+  - GET /v1/audit-events
+Why it matters:
+  Claude can complete the Phase 4 Director/admin frontend without direct
+  Supabase reads or invented backend behavior.
+Frontend follow-up:
+  Use docs/api-contract.md exactly. Show SELF_ELEVATION_DENIED,
+  SUPER_USER_OVERRIDE_REASON_REQUIRED, INVALID_REFERENCE, INVALID_STATE,
+  PERMISSION_DENIED, RESOURCE_CONFLICT and VALIDATION_ERROR clearly. For Super
+  User bypasses on sensitive admin writes, collect and send
+  X-IEMS-Override-Reason. Do not expose the service-role key or write directly
+  to Supabase.
+Owner: Claude
+Status: Resolved
+Resolution:
+  All 22 endpoints wired in the frontend:
+  - lib/errors.ts: SELF_ELEVATION_DENIED and SUPER_USER_OVERRIDE_REASON_REQUIRED
+    error code cases added.
+  - types/index.ts: Department, RoleDetail, EmployeeDetail, EmployeeRoleAssignment,
+    Create/Update payloads, Policy, FolderTemplate, FolderTemplateItem, AuditEvent,
+    UpdatePhysicalRoom/Location, Director metrics types appended.
+  - lib/api.ts: 204 No Content fix applied; all new API functions added; sensitive
+    writes accept optional overrideReason and send X-IEMS-Override-Reason header.
+  - hooks/use-director.ts: useDirectorUpcomingEvents, useDirectorMissingDocuments,
+    useDirectorVerificationReminders added.
+  - hooks/use-employees.ts: useEmployeeList, useDepartments, useRoles,
+    useEmployeeDetail, useCreateEmployee, useUpdateEmployee, useAssignEmployeeRole,
+    useRemoveEmployeeRole, useAssignEmployeeDepartment added.
+  - hooks/use-admin.ts: usePolicies, useCreatePolicy, useUpdatePolicy,
+    useFolderTemplates, useFolderTemplate, useCreateFolderTemplate,
+    useUpdateFolderTemplate, useCreateFolderTemplateItem,
+    useUpdateFolderTemplateItem, useUpdatePhysicalRoom, useUpdatePhysicalLocation,
+    useAuditEvents added.
+  - Director pages: upcoming-events, missing-docs, verification-reminders (new);
+    director overview updated with Row 4 quick-links.
+  - Admin pages: employees list+create (replaced), employees/[id] detail (new),
+    policies list+create+edit (replaced), folder-templates list+create (replaced),
+    folder-templates/[id] items CRUD (new), archive-locations room+location edit
+    (replaced), audit explorer with filters and expandable rows (replaced),
+    departments read-only list (replaced), roles read-only list (replaced).
+  - Override reason reveal-on-error pattern applied to role assignment and policy
+    writes.
+  Type-check, lint, and production build all pass.
+Verification:
+  cd apps/web && npm run type-check && npm run lint && npm run build
+```
+
 ### OPEN-003 — Pilot employee list
 
 ```text

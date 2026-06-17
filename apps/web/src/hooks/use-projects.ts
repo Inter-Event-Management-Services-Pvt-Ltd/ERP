@@ -1,4 +1,4 @@
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import { useQuery, useMutation, useQueryClient, keepPreviousData } from '@tanstack/react-query'
 import {
   fetchProjects,
   fetchProject,
@@ -23,6 +23,7 @@ export function useProjects(includeArchived = false) {
     queryKey: includeArchived ? [...PROJECTS_KEY, 'with-archived'] : PROJECTS_KEY,
     queryFn: () => fetchProjects({ includeArchived }),
     staleTime: 2 * 60 * 1000,
+    placeholderData: keepPreviousData,
   })
 }
 

@@ -50,7 +50,12 @@
       "Bash(git rm *)",
       "Bash(git fetch *)",
       "Bash(git merge *)",
-      "Bash(git stash *)"
+      "Bash(git reset *)",
+      "Bash(git branch *)",
+      "Bash(git tag *)",
+      "Bash(git pull *)",
+      "Bash(cat .env.local)",
+      "Bash(cat .env.example)"
     ]
   },
   "disabledMcpjsonServers": [

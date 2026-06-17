@@ -8,11 +8,11 @@
 
 ## Database
 
-- [x] Migration added where needed. Phase 2 audited RPC migrations cover clients/projects, documents/archive exports and physical archive writes.
+- [x] Migration added where needed. Phase 4 admin/policy/audit migration covers audited admin writes, Director metric views, policy changes and archive editor updates.
 - [x] Migration is reversible or rollback is documented. Rollback path for local validation is `npx supabase db reset` from the migration set.
 - [x] Constraints preserved.
 - [x] Index impact reviewed.
-- [x] Local reset passes for latest Phase 2 changes.
+- [x] Local reset passes for latest Phase 4 changes.
 - [x] Seed impact reviewed.
 
 ## Authorization
@@ -47,5 +47,5 @@
 - [x] Ruff passes.
 - [x] MyPy passes.
 - [x] Pytest passes.
-- [x] Migration reset passes for latest Phase 2 changes.
+- [x] Migration reset passes for latest Phase 4 changes.
 - [x] Backend security implications documented.

@@ -167,6 +167,8 @@ state only.
 ## Employees and Departments
 
 ```text
+GET    /v1/departments
+GET    /v1/roles
 GET    /v1/employees
 POST   /v1/employees
 GET    /v1/employees/{employee_id}
@@ -206,6 +208,196 @@ Response:
   }
 ]
 ```
+
+`GET /v1/departments` returns active/reference department rows:
+
+```json
+[
+  {
+    "id": "55555555-5555-4555-8555-555555555555",
+    "code": "OPS",
+    "name": "Operations"
+  }
+]
+```
+
+`GET /v1/roles` returns:
+
+```json
+[
+  {
+    "id": "44444444-4444-4444-8444-444444444444",
+    "code": "MANAGER",
+    "name": "Manager",
+    "description": "Team and project management access"
+  }
+]
+```
+
+Employee admin writes require `employee.manage`, role assignment writes require
+`role.manage`, and Super User permission bypasses require
+`X-IEMS-Override-Reason`. Role assignment to `SUPER_USER` additionally requires
+the actor to already be a Super User with a meaningful override reason. The
+backend rejects self-elevation with `SELF_ELEVATION_DENIED`.
+
+`POST /v1/employees` accepts:
+
+```json
+{
+  "employee_code": "IEMS-OPS-010",
+  "full_name": "New Employee",
+  "official_email": "new.employee@iemsnewdelhi.com",
+  "phone": "+91-99999-00000",
+  "designation": "Coordinator",
+  "employment_status": "ACTIVE",
+  "joined_on": "2026-06-01"
+}
+```
+
+`PATCH /v1/employees/{employee_id}` accepts any subset of:
+
+```json
+{
+  "full_name": "Updated Employee",
+  "phone": "+91-99999-00000",
+  "designation": "Senior Coordinator",
+  "employment_status": "ON_LEAVE",
+  "joined_on": "2026-06-01",
+  "left_on": null
+}
+```
+
+Employee admin detail responses include the base employee fields plus:
+
+```json
+{
+  "current_department": {
+    "id": "55555555-5555-4555-8555-555555555555",
+    "code": "OPS",
+    "name": "Operations"
+  },
+  "account": {
+    "id": "11111111-1111-4111-8111-111111111111",
+    "is_active": true,
+    "is_super_user": false
+  },
+  "roles": [
+    {
+      "employee_id": "22222222-2222-4222-8222-222222222222",
+      "user_account_id": "11111111-1111-4111-8111-111111111111",
+      "role": {
+        "id": "44444444-4444-4444-8444-444444444444",
+        "code": "MANAGER",
+        "name": "Manager",
+        "description": null
+      },
+      "assigned_at": "2026-06-16T09:00:00Z",
+      "expires_at": null
+    }
+  ]
+}
+```
+
+`POST /v1/employees/{employee_id}/roles` accepts:
+
+```json
+{
+  "role_id": "44444444-4444-4444-8444-444444444444",
+  "expires_at": null
+}
+```
+
+`DELETE /v1/employees/{employee_id}/roles/{role_id}` returns `204`.
+
+`POST /v1/employees/{employee_id}/department-assignments` accepts:
+
+```json
+{
+  "department_id": "55555555-5555-4555-8555-555555555555",
+  "valid_from": "2026-06-16"
+}
+```
+
+It closes the previous current department row and inserts a new audited
+department-history row.
+
+## Policies, Folder Templates and Audit Explorer
+
+```text
+GET    /v1/policies
+POST   /v1/policies
+PATCH  /v1/policies/{policy_id}
+
+GET    /v1/folder-templates
+POST   /v1/folder-templates
+GET    /v1/folder-templates/{template_id}
+PATCH  /v1/folder-templates/{template_id}
+POST   /v1/folder-templates/{template_id}/items
+PATCH  /v1/folder-template-items/{item_id}
+
+GET    /v1/audit-events
+```
+
+Policy writes require `policy.manage` and create immutable audit events.
+Folder-template writes require `folder_template.manage`. Super User bypasses
+for these writes require `X-IEMS-Override-Reason`.
+
+`POST /v1/policies` accepts:
+
+```json
+{
+  "name": "Project managers can upload",
+  "action_code": "document.upload",
+  "effect": "ALLOW",
+  "priority": 100,
+  "conditions": {
+    "role": "MANAGER"
+  },
+  "is_active": true
+}
+```
+
+`PATCH /v1/policies/{policy_id}` accepts any subset of those fields. Policy
+responses include `id`, `created_by`, `created_at`, and `updated_at`.
+
+`POST /v1/folder-templates` accepts:
+
+```json
+{
+  "name": "Standard Event Project",
+  "project_type_id": null
+}
+```
+
+`POST /v1/folder-templates/{template_id}/items` accepts:
+
+```json
+{
+  "parent_item_id": null,
+  "name": "01 Client Brief",
+  "sort_order": 10
+}
+```
+
+Folder template responses include `items[]` with `id`, `template_id`,
+`parent_item_id`, `name`, and `sort_order`.
+
+`GET /v1/audit-events` requires `audit.view` or Super User and accepts:
+
+```text
+action_code=<audit action code>      optional
+resource_type=<resource type>        optional
+resource_id=<uuid>                   optional
+actor_employee_id=<uuid>             optional
+created_from=<ISO datetime>          optional
+created_to=<ISO datetime>            optional
+limit=1..100                         default 50
+offset=0..n                          default 0
+```
+
+Unlike Director dashboard audit rows, audit explorer rows include `old_values`,
+`new_values`, and `metadata`. FastAPI writes `audit.explorer_viewed` for this
+sensitive read.
 
 ## Attendance and Leave
 
@@ -687,8 +879,10 @@ states return `INVALID_STATE`.
 ```text
 GET    /v1/archive/rooms
 POST   /v1/archive/rooms
+PATCH  /v1/archive/rooms/{room_id}
 GET    /v1/archive/locations?room_id={room_id}
 POST   /v1/archive/locations
+PATCH  /v1/archive/locations/{location_id}
 GET    /v1/archive/locations/{location_id}/contents
 
 GET    /v1/projects/{project_id}/physical-files
@@ -726,6 +920,12 @@ or `archive.manage` and resolves a scanned physical-file label token to the same
 `PhysicalFileResponse` shape as `GET /v1/physical-files/{physical_file_id}`. The
 QR token is an opaque inventory identifier, not a Storage URL, download token, or
 authorization secret.
+
+`PATCH /v1/archive/rooms/{room_id}` accepts any subset of `code`, `name`,
+`description`, and `is_active`. `PATCH /v1/archive/locations/{location_id}`
+accepts any subset of `parent_location_id`, `location_type`, `code`, `label`,
+and `is_active`. Both write audit events. Invalid parent relationships return
+`INVALID_REFERENCE`; hierarchy-rule violations return `INVALID_STATE`.
 
 ## Tasks and Calendar
 
@@ -893,6 +1093,7 @@ or `PHYSICAL_FILE_RETURN`.
 ## Approvals
 
 ```text
+GET    /v1/approval-types
 GET    /v1/approvals
 POST   /v1/approvals
 GET    /v1/approvals/{approval_id}
@@ -900,6 +1101,127 @@ POST   /v1/approvals/{approval_id}/approve
 POST   /v1/approvals/{approval_id}/reject
 POST   /v1/approvals/{approval_id}/request-revision
 ```
+
+Approval routes require an authenticated active employee. FastAPI uses the
+service-role key only after server-side authorization and ABAC checks; do not
+write approval rows directly from the frontend.
+
+`GET /v1/approval-types` returns active reference rows:
+
+```json
+[
+  {
+    "id": "55555555-5555-4555-8555-555555555555",
+    "code": "PROJECT_CLOSURE",
+    "name": "Project Closure"
+  }
+]
+```
+
+`GET /v1/approvals` accepts:
+
+```text
+status=PENDING|APPROVED|REJECTED|REVISION_REQUESTED|CANCELLED optional
+limit=1..100 default 50
+offset=0..n  default 0
+```
+
+Users with `approval.view_all` or Super User see all requests. Other users see
+only requests where they are `requested_by` or `assigned_to`.
+
+`POST /v1/approvals` accepts exactly one target id:
+
+```json
+{
+  "approval_type_id": "55555555-5555-4555-8555-555555555555",
+  "project_id": "44444444-4444-4444-8444-444444444444",
+  "document_version_id": null,
+  "archive_export_id": null,
+  "leave_request_id": null,
+  "assigned_to": "33333333-3333-4333-8333-333333333333",
+  "comment": "Please review project closure."
+}
+```
+
+Create ABAC:
+
+```text
+project_id target: requires project.manage and active MANAGE membership
+document_version_id target: requires document.upload and active CONTRIBUTE or MANAGE project membership
+archive_export_id target: requires archive.export and active MANAGE project membership
+leave_request_id target: allowed for the requester; otherwise requires leave.review
+Super User may create any approval request
+```
+
+Approval responses include comment/action history:
+
+```json
+{
+  "id": "66666666-6666-4666-8666-666666666666",
+  "approval_type_id": "55555555-5555-4555-8555-555555555555",
+  "approval_type": {
+    "id": "55555555-5555-4555-8555-555555555555",
+    "code": "PROJECT_CLOSURE",
+    "name": "Project Closure"
+  },
+  "project_id": "44444444-4444-4444-8444-444444444444",
+  "document_version_id": null,
+  "archive_export_id": null,
+  "leave_request_id": null,
+  "requested_by": "22222222-2222-4222-8222-222222222222",
+  "requested_by_employee": {
+    "id": "22222222-2222-4222-8222-222222222222",
+    "employee_code": "IEMS-001",
+    "full_name": "Example Employee"
+  },
+  "assigned_to": "33333333-3333-4333-8333-333333333333",
+  "assigned_to_employee": {
+    "id": "33333333-3333-4333-8333-333333333333",
+    "employee_code": "IEMS-002",
+    "full_name": "Approver User"
+  },
+  "status": "PENDING",
+  "requested_at": "2026-06-16T10:00:00Z",
+  "completed_at": null,
+  "actions": [
+    {
+      "id": "77777777-7777-4777-8777-777777777777",
+      "approval_request_id": "66666666-6666-4666-8666-666666666666",
+      "action": "SUBMITTED",
+      "performed_by": "22222222-2222-4222-8222-222222222222",
+      "performed_by_employee": {
+        "id": "22222222-2222-4222-8222-222222222222",
+        "employee_code": "IEMS-001",
+        "full_name": "Example Employee"
+      },
+      "comment": "Please review project closure.",
+      "created_at": "2026-06-16T10:00:00Z"
+    }
+  ]
+}
+```
+
+`POST /v1/approvals/{approval_id}/approve` and `/reject` accept:
+
+```json
+{
+  "comment": "Approved"
+}
+```
+
+`POST /v1/approvals/{approval_id}/request-revision` requires a non-empty
+comment:
+
+```json
+{
+  "comment": "Attach the signed closure note."
+}
+```
+
+Review routes require `approval.approve` or Super User. Reviews are valid only
+while the request status is `PENDING`; otherwise the backend returns
+`INVALID_STATE`. Approval create/review writes immutable action rows,
+notifications and audit events.
 
 ## Director Dashboard
 
@@ -910,7 +1232,217 @@ GET    /v1/director/projects
 GET    /v1/director/approvals
 GET    /v1/director/overdue-tasks
 GET    /v1/director/physical-files
+GET    /v1/director/upcoming-events
+GET    /v1/director/missing-required-documents
+GET    /v1/director/verification-reminders
 GET    /v1/director/audit-events
+```
+
+Director Dashboard routes require either the `DIRECTOR` role or a Super User
+account. They are not available to normal `ADMIN` or `SUPER_ADMIN` roles through
+permissions alone. `GET /v1/director/overview` and
+`GET /v1/director/audit-events` expose audit activity, so FastAPI writes
+`director.overview_viewed` or `director.audit_events_viewed` audit events for
+those reads.
+
+`GET /v1/director/overview` returns:
+
+```json
+{
+  "generated_at": "2026-06-16T09:00:00Z",
+  "attendance": {
+    "active_employee_count": 12,
+    "checked_in_count": 8,
+    "checked_out_count": 2,
+    "absent_or_not_checked_in_count": 2,
+    "total_minutes_today": 4100
+  },
+  "projects": {
+    "active_count": 7,
+    "planning_count": 3,
+    "completed_count": 1,
+    "archived_count": 0
+  },
+  "pending_approval_count": 4,
+  "overdue_task_count": 6,
+  "physical_archive": {
+    "checked_out_count": 3,
+    "overdue_return_count": 1,
+    "verification_due_count": 0,
+    "missing_count": 0
+  },
+  "recent_audit_events": [
+    {
+      "id": "77777777-7777-4777-8777-777777777777",
+      "action_code": "document.downloaded",
+      "resource_type": "document_version",
+      "resource_id": "66666666-6666-4666-8666-666666666666",
+      "actor_employee_id": "22222222-2222-4222-8222-222222222222",
+      "actor": {
+        "id": "22222222-2222-4222-8222-222222222222",
+        "employee_code": "IEMS-001",
+        "full_name": "Example Employee"
+      },
+      "request_id": "88888888-8888-4888-8888-888888888888",
+      "created_at": "2026-06-16T08:45:00Z"
+    }
+  ]
+}
+```
+
+Audit event responses intentionally omit `old_values`, `new_values` and
+`metadata` to avoid leaking sensitive before/after payloads into the Director
+dashboard.
+
+`GET /v1/director/projects` accepts:
+
+```text
+limit=1..100  default 50
+offset=0..n   default 0
+```
+
+Response:
+
+```json
+[
+  {
+    "id": "55555555-5555-4555-8555-555555555555",
+    "project_code": "IEMS-2026-001",
+    "name": "Annual Leadership Conference",
+    "client_name": "Acme Events",
+    "project_status": "ACTIVE",
+    "priority_level": "HIGH",
+    "event_date": "2026-08-12",
+    "project_manager_name": "Aarav Mehta",
+    "archived_at": null
+  }
+]
+```
+
+`GET /v1/director/approvals` reads the pending approval dashboard view. It
+accepts:
+
+```text
+status=PENDING  optional; current view is pending-only
+limit=1..100    default 50
+offset=0..n     default 0
+```
+
+Response:
+
+```json
+[
+  {
+    "id": "44444444-4444-4444-8444-444444444444",
+    "approval_type": "DOCUMENT_APPROVAL",
+    "status": "PENDING",
+    "requested_at": "2026-06-16T09:00:00Z",
+    "requested_by_name": "Nisha Rao",
+    "assigned_to_name": "IEMS Director",
+    "project_code": "IEMS-2026-001",
+    "project_name": "Annual Leadership Conference"
+  }
+]
+```
+
+`GET /v1/director/overdue-tasks` accepts `limit` and `offset` and returns:
+
+```json
+[
+  {
+    "id": "55555555-5555-4555-8555-555555555555",
+    "title": "Close vendor reconciliation",
+    "due_at": "2026-06-16T09:00:00Z",
+    "project_code": "IEMS-2026-001",
+    "project_name": "Annual Leadership Conference",
+    "assignees": "Nisha Rao"
+  }
+]
+```
+
+`GET /v1/director/physical-files` accepts `limit` and `offset` and returns:
+
+```json
+[
+  {
+    "id": "66666666-6666-4666-8666-666666666666",
+    "physical_file_code": "PF-001",
+    "project_code": "IEMS-2026-001",
+    "project_name": "Annual Leadership Conference",
+    "client_name": "Acme Events",
+    "status": "CHECKED_OUT",
+    "archive_room": "Main Archive",
+    "archive_location_code": "R1-S1-C1-B1-F1",
+    "checked_out_at": "2026-06-16T09:00:00Z",
+    "expected_return_at": "2026-06-17T09:00:00Z",
+    "checked_out_by": "Nisha Rao",
+    "is_return_overdue": false
+  }
+]
+```
+
+`GET /v1/director/audit-events` accepts:
+
+```text
+action_code=<audit action code>  optional
+resource_type=<resource type>    optional
+limit=1..100                     default 50
+offset=0..n                      default 0
+```
+
+It returns the same `recent_audit_events` item shape shown in
+`GET /v1/director/overview`.
+
+`GET /v1/director/upcoming-events` accepts `limit` and `offset` and returns:
+
+```json
+[
+  {
+    "id": "99999999-9999-4999-8999-999999999999",
+    "title": "Client walkthrough",
+    "event_type": "SITE_VISIT",
+    "starts_at": "2026-06-20T09:00:00Z",
+    "ends_at": "2026-06-20T10:00:00Z",
+    "project_code": "IEMS-2026-001",
+    "project_name": "Annual Leadership Conference",
+    "location": "India Habitat Centre"
+  }
+]
+```
+
+`GET /v1/director/missing-required-documents` accepts `limit` and `offset` and
+returns one row per active, unarchived project and required archive document type
+that has not been uploaded:
+
+```json
+[
+  {
+    "project_id": "55555555-5555-4555-8555-555555555555",
+    "project_code": "IEMS-2026-001",
+    "project_name": "Annual Leadership Conference",
+    "document_type_id": "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa",
+    "document_type_code": "FINAL_INVOICE",
+    "document_type_name": "Final Invoice"
+  }
+]
+```
+
+`GET /v1/director/verification-reminders` accepts `limit` and `offset` and
+returns physical files whose `next_verification_at` is due:
+
+```json
+[
+  {
+    "id": "66666666-6666-4666-8666-666666666666",
+    "physical_file_code": "PF-001",
+    "project_code": "IEMS-2026-001",
+    "project_name": "Annual Leadership Conference",
+    "archive_room": "Main Archive",
+    "archive_location_code": "R1-S1-C1-B1-F1",
+    "last_verified_at": "2026-03-15T09:00:00Z",
+    "next_verification_at": "2026-06-15T09:00:00Z"
+  }
+]
 ```
 
 `GET /v1/director/attendance` requires `attendance.view_all` or Super User. It

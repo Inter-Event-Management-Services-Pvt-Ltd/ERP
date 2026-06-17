@@ -18,6 +18,7 @@
 - Added Super User override recording with atomic Supabase audit-event insertion.
 - Added structured JSON API access logging and a minimal Celery worker scaffold.
 - Added backend CI for Ruff, MyPy and Pytest.
+- Marked `CODEX-PHASE1-004` as done after fresh backend Ruff, MyPy and Pytest validation.
 - Added Phase 2 clients/projects API routes, typed schemas, RBAC/ABAC checks, audited transactional Supabase RPCs, folder-template application, folder-tree reads, and backend tests.
 - Hardened custom Supabase trigger functions by revoking direct execution from `anon` and `authenticated` and adding trigger security validation.
 - Added deterministic local demo seed data for Phase 2 client/project testing, including demo employees, clients, contacts, projects, memberships, and folder trees.
@@ -44,6 +45,10 @@
 - Fixed local Supabase service-role table grants so FastAPI's server-side REST clients can load projects, archive rooms and current-user data after a clean database reset.
 - Added Phase 3 attendance backend endpoints for check-in, check-out, own history, privileged team history and audited admin corrections, backed by service-role-only Supabase RPCs.
 - Completed Phase 3 employee-operations backend APIs for leave requests, task management, calendar events, synthetic deadlines/leave/physical-return calendar feeds, Director attendance summaries, notifications and audited service-role-only Supabase RPCs.
+- Started Phase 4 backend by adding Director Dashboard read APIs for overview metrics, project summaries, pending approvals, overdue tasks, physical-file monitoring and audit activity, with Director/Super User authorization and sensitive audit-access logging.
+- Completed Phase 4 approval workflow backend APIs with approval type lookup, approval request list/create/detail, approve/reject/request-revision actions, server-side RBAC/ABAC, service-role-only audited Supabase RPCs, notifications, immutable action history and SQL validation.
+- Completed Phase 4 admin/policy/audit backend APIs with Director upcoming-events, missing-required-documents and verification-reminder feeds; employee admin writes; role assignment with self-elevation protection; department history; policy audit events; folder-template editing; archive room/location editing; full audit explorer; service-role-only audited Supabase RPCs; and SQL validation.
+- Started Phase 5 performance hardening by replacing per-call Supabase HTTP client construction with a lifespan-managed shared `httpx.AsyncClient`, threading it through auth resolution, audit writes and all Supabase-backed services, and adding structured per-Supabase-request timing logs with request-id correlation and safe query-key metadata.
 
 - Wired Phase 2 folder CRUD to live backend: inline create, rename, and delete in FolderTreePanel with INVALID_STATE protection and canManage gating.
 - Added DocumentListPanel with per-folder document list, multipart upload dialog (INVALID_FILE_NAME, INVALID_MIME_TYPE, INVALID_FILE_SIZE error display), version upload, and signed download URLs fetched on-demand.
@@ -78,6 +83,28 @@
 - Wired the Tasks list (`/tasks`) and detail (`/tasks/[id]`) pages to `GET/POST /v1/tasks`, `GET /v1/tasks/{id}`, `PATCH /v1/tasks/{id}`, assignee management (`POST /v1/tasks/{id}/assignees`), comments (`POST /v1/tasks/{id}/comments`) and document linking (`POST /v1/tasks/{id}/documents`), with status/priority/project filters and a "New Task" dialog, create/edit actions gated by `task.manage`.
 - Wired the Calendar page (`/calendar`) to `GET /v1/calendar/events` with a month view grouped by day, source badges for `CALENDAR_EVENT`, `TASK_DEADLINE`, `LEAVE` and `PHYSICAL_FILE_RETURN`, and create/edit (`POST`/`PATCH /v1/calendar/events`) for user-created events gated by `task.manage` (resolves OPEN-033).
 - Added OPEN-034 (missing `GET /v1/tasks/{task_id}/comments` list endpoint; task detail page currently shows only session-local comments).
+
+- Wired approval queue page (`/approvals`) to `GET /v1/approvals` with status filter tabs, table showing type, target, requester, assignee and status badge, and a "New Approval" button.
+- Wired approval detail page (`/approvals/[id]`) to `GET /v1/approvals/{approval_id}` with full metadata, chronological action history timeline, and inline Approve / Reject / Request Revision forms gated on `approval.approve` or Super User, PENDING-only, revision requires non-empty comment.
+- Added create-approval dialog (`POST /v1/approvals`) with approval-type select backed by `GET /v1/approval-types`, target-type picker (Project / Document Version / Archive Export / Leave Request), optional assignee, optional comment, client-side single-target validation; resolves OPEN-037.
+
+- Wired Director extended metrics pages: upcoming-events (`GET /v1/director/upcoming-events`), missing-docs (`GET /v1/director/missing-required-documents`), and verification-reminders (`GET /v1/director/verification-reminders`); added Row 4 quick-link cards to the Director overview; resolves OPEN-038.
+- Wired Employee admin: list+create (`GET/POST /v1/employees`, `/admin/employees`), employee detail with identity edit, department assignment and role management (`GET/PATCH /v1/employees/{id}`, `POST /v1/employees/{id}/roles`, `DELETE /v1/employees/{id}/roles/{role_id}`, `POST /v1/employees/{id}/department-assignments`, `/admin/employees/[id]`); SELF_ELEVATION_DENIED and SUPER_USER_OVERRIDE_REASON_REQUIRED surfaced via reveal-on-error pattern; resolves OPEN-038.
+- Wired Policy admin: list, create and edit with JSON conditions textarea and override-reason reveal-on-error (`GET/POST /v1/policies`, `PATCH /v1/policies/{id}`, `/admin/policies`); resolves OPEN-038.
+- Wired Folder Template admin: list+create (`/admin/folder-templates`) and detail with template rename + items CRUD (`/admin/folder-templates/[id]`), backed by `GET/POST /v1/folder-templates`, `GET/PATCH /v1/folder-templates/{id}`, `POST /v1/folder-templates/{id}/items`, `PATCH /v1/folder-template-items/{item_id}`; resolves OPEN-038.
+- Wired Archive Location admin (`/admin/archive-locations`): expandable room list with inline room and location edit forms (`PATCH /v1/archive/rooms/{id}`, `PATCH /v1/archive/locations/{id}`), gated on `archive.manage`; resolves OPEN-038.
+- Wired Audit Explorer (`/admin/audit`): filterable by action_code, resource_type, resource_id, actor, date range; paginated 50/page; expandable rows show old_values/new_values/metadata as read-only JSON; gated on `audit.view`; resolves OPEN-038.
+- Wired Departments and Roles read-only reference pages (`/admin/departments`, `/admin/roles`) to `GET /v1/departments` and `GET /v1/roles`; resolves OPEN-038.
+- Fixed `apiFetch` to return `undefined` instead of attempting `res.json()` on 204 No Content responses (affected DELETE /v1/employees/{id}/roles/{role_id} and department-assignment).
+- Added SELF_ELEVATION_DENIED and SUPER_USER_OVERRIDE_REASON_REQUIRED to `apiErrorMessage` in `lib/errors.ts`.
+
+- Wired Director Dashboard overview page (`/director`) to `GET /v1/director/overview`: attendance metrics (checked-in / total, checked-out, absent, total work time), project status counts, pending approvals count, overdue task count, physical archive summary (checked-out, overdue returns, verification due, missing), and recent audit events feed; resolves OPEN-035.
+- Wired Director Projects page (`/director/projects`) to `GET /v1/director/projects` with status and priority badges (resolves OPEN-035).
+- Wired Director Approvals page (`/director/approvals`) to `GET /v1/director/approvals` as a read-only pending queue; approval actions noted as backend-pending (resolves OPEN-035).
+- Wired Director Overdue Tasks page (`/director/tasks`) to `GET /v1/director/overdue-tasks` (resolves OPEN-035).
+- Wired Director Archive page (`/director/archive`) to `GET /v1/director/physical-files` showing checked-out files with overdue-return badge (resolves OPEN-035).
+- Wired Director Audit page (`/director/audit`) to `GET /v1/director/audit-events` with live `action_code` / `resource_type` filter inputs (resolves OPEN-035).
+- Updated `DirectorGuard` to admit Super User accounts (`me.account.is_super_user`) in addition to the `DIRECTOR` role, matching the API access rule.
 
 - Assigned Claude as frontend-only owner using either Claude Design or Google Stitch for reviewed UI ideation.
 - Assigned Codex as backend-only owner.

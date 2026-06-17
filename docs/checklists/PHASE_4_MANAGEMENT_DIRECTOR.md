@@ -2,44 +2,44 @@
 
 ## Approvals
 
-- [ ] Document approval.
-- [ ] Project closure approval.
-- [ ] Archive closure approval.
-- [ ] Leave approval.
-- [ ] Revision request.
-- [ ] Approval comment history.
+- [x] Document approval.
+- [x] Project closure approval.
+- [x] Archive closure approval.
+- [x] Leave approval.
+- [x] Revision request.
+- [x] Approval comment history.
 
 ## Director Dashboard
 
-- [ ] Attendance metrics.
-- [ ] Active-project metrics.
-- [ ] Upcoming events.
-- [ ] Overdue tasks.
-- [ ] Pending approvals.
-- [ ] Missing required documents.
-- [ ] Checked-out physical files.
-- [ ] Overdue physical returns.
-- [ ] Verification reminders.
-- [ ] Recent audit activity.
+- [x] Attendance metrics.
+- [x] Active-project metrics.
+- [x] Upcoming events.
+- [x] Overdue tasks.
+- [x] Pending approvals.
+- [x] Missing required documents.
+- [x] Checked-out physical files.
+- [x] Overdue physical returns.
+- [x] Verification reminders.
+- [x] Recent audit activity.
 
 ## Admin
 
-- [ ] Employee management.
-- [ ] Role assignment.
-- [ ] Department history.
-- [ ] Folder-template editor.
-- [ ] Archive-location editor.
-- [ ] Policy management.
-- [ ] Audit explorer.
+- [x] Employee management.
+- [x] Role assignment.
+- [x] Department history.
+- [x] Folder-template editor.
+- [x] Archive-location editor.
+- [x] Policy management.
+- [x] Audit explorer.
 
 ## Security Gate
 
-- [ ] Director Dashboard requires Director or authorized Super User.
-- [ ] Restricted records still log sensitive access.
-- [ ] Super User overrides require reason.
-- [ ] Policy changes create audit events.
-- [ ] Approval actions create audit events.
-- [ ] Admin cannot silently elevate themselves to Super User.
+- [x] Director Dashboard requires Director or authorized Super User.
+- [x] Restricted records still log sensitive access.
+- [x] Super User overrides require reason.
+- [x] Policy changes create audit events.
+- [x] Approval actions create audit events.
+- [x] Admin cannot silently elevate themselves to Super User.
 
 ## Exit Criteria
 
@@ -50,7 +50,10 @@
 
 ### Codex backend
 
-- [ ] Implement Director metrics queries, endpoints, audit access and approval workflows.
+- [x] Implement Director metrics queries, endpoints, audit access and approval workflows.
+  - [x] Director dashboard read metrics and audit-access endpoints.
+  - [x] Approval write workflows.
+  - [x] Admin and policy management endpoints.
 
 ### Claude frontend
 

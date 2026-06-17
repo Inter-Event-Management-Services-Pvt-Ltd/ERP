@@ -17,6 +17,10 @@ export function apiErrorMessage(err: unknown): string {
       return 'This physical file cannot perform that action in its current state.'
     case 'INVALID_PROJECT_MEMBER_STATE':
       return 'Project must retain at least one manager.'
+    case 'SELF_ELEVATION_DENIED':
+      return 'You cannot assign this role to yourself.'
+    case 'SUPER_USER_OVERRIDE_REASON_REQUIRED':
+      return 'A Super User override reason is required. Enter your reason and resubmit.'
     case 'PERMISSION_DENIED':
     case 'ABAC_DENIED':
       return 'You do not have permission to perform this action.'

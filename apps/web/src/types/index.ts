@@ -557,6 +557,153 @@ export interface LinkTaskDocumentPayload {
   document_id: string
 }
 
+// ─── Director Dashboard ───────────────────────────────────────────────────────
+
+export interface DirectorAuditEvent {
+  id: string
+  action_code: string
+  resource_type: string
+  resource_id: string
+  actor_employee_id: string
+  actor: {
+    id: string
+    employee_code: string
+    full_name: string
+  }
+  request_id: string
+  created_at: string
+}
+
+export interface DirectorOverview {
+  generated_at: string
+  attendance: {
+    active_employee_count: number
+    checked_in_count: number
+    checked_out_count: number
+    absent_or_not_checked_in_count: number
+    total_minutes_today: number
+  }
+  projects: {
+    active_count: number
+    planning_count: number
+    completed_count: number
+    archived_count: number
+  }
+  pending_approval_count: number
+  overdue_task_count: number
+  physical_archive: {
+    checked_out_count: number
+    overdue_return_count: number
+    verification_due_count: number
+    missing_count: number
+  }
+  recent_audit_events: DirectorAuditEvent[]
+}
+
+export interface DirectorProject {
+  id: string
+  project_code: string
+  name: string
+  client_name: string
+  project_status: string
+  priority_level: string
+  event_date: string
+  project_manager_name: string
+  archived_at: string | null
+}
+
+export interface DirectorApproval {
+  id: string
+  approval_type: string
+  status: string
+  requested_at: string
+  requested_by_name: string
+  assigned_to_name: string
+  project_code: string
+  project_name: string
+}
+
+export interface DirectorOverdueTask {
+  id: string
+  title: string
+  due_at: string
+  project_code: string
+  project_name: string
+  assignees: string
+}
+
+export interface DirectorCheckedOutFile {
+  id: string
+  physical_file_code: string
+  project_code: string
+  project_name: string
+  client_name: string
+  status: string
+  archive_room: string
+  archive_location_code: string
+  checked_out_at: string
+  expected_return_at: string | null
+  checked_out_by: string
+  is_return_overdue: boolean
+}
+
+// ─── Approvals ────────────────────────────────────────────────────────────────
+
+export type ApprovalStatus =
+  | 'PENDING'
+  | 'APPROVED'
+  | 'REJECTED'
+  | 'REVISION_REQUESTED'
+  | 'CANCELLED'
+
+export interface ApprovalEmployeeSummary {
+  id: string
+  employee_code: string
+  full_name: string
+}
+
+export interface ApprovalActionRecord {
+  id: string
+  approval_request_id: string
+  action: string
+  performed_by: string
+  performed_by_employee: ApprovalEmployeeSummary | null
+  comment: string | null
+  created_at: string
+}
+
+export interface Approval {
+  id: string
+  approval_type_id: string
+  approval_type: { id: string; code: string; name: string } | null
+  project_id: string | null
+  document_version_id: string | null
+  archive_export_id: string | null
+  leave_request_id: string | null
+  requested_by: string
+  requested_by_employee: ApprovalEmployeeSummary | null
+  assigned_to: string | null
+  assigned_to_employee: ApprovalEmployeeSummary | null
+  status: ApprovalStatus
+  requested_at: string
+  completed_at: string | null
+  actions: ApprovalActionRecord[]
+}
+
+export interface CreateApprovalPayload {
+  approval_type_id: string
+  project_id?: string | null
+  document_version_id?: string | null
+  archive_export_id?: string | null
+  leave_request_id?: string | null
+  assigned_to?: string | null
+  comment?: string
+}
+
+export interface ReviewApprovalPayload {
+  comment?: string
+}
+
 // ─── Calendar ─────────────────────────────────────────────────────────────────
 
 export type CalendarEventType =
@@ -605,4 +752,203 @@ export interface UpdateCalendarEventPayload {
   starts_at?: string
   ends_at?: string
   location?: string
+}
+
+// ─── Employees (admin detail) ─────────────────────────────────────────────────
+
+export type EmploymentStatus = 'ACTIVE' | 'ON_LEAVE' | 'INACTIVE' | 'EXITED'
+
+export interface Department {
+  id: string
+  code: string
+  name: string
+}
+
+export interface RoleDetail {
+  id: string
+  code: string
+  name: string
+  description: string | null
+}
+
+export interface EmployeeRoleAssignment {
+  employee_id: string
+  user_account_id: string
+  role: RoleDetail
+  assigned_at: string
+  expires_at: string | null
+}
+
+export interface EmployeeDetail {
+  id: string
+  employee_code: string
+  full_name: string
+  official_email: string
+  designation: string
+  employment_status: EmploymentStatus
+  current_department: Department | null
+  account: { id: string; is_active: boolean; is_super_user: boolean } | null
+  roles: EmployeeRoleAssignment[]
+}
+
+export interface CreateEmployeePayload {
+  employee_code: string
+  full_name: string
+  official_email: string
+  phone?: string
+  designation: string
+  employment_status: EmploymentStatus
+  joined_on: string
+}
+
+export interface UpdateEmployeePayload {
+  full_name?: string
+  phone?: string
+  designation?: string
+  employment_status?: EmploymentStatus
+  joined_on?: string
+  left_on?: string | null
+}
+
+export interface AssignRolePayload {
+  role_id: string
+  expires_at?: string | null
+}
+
+export interface DepartmentAssignmentPayload {
+  department_id: string
+  valid_from: string
+}
+
+// ─── Policies ─────────────────────────────────────────────────────────────────
+
+export interface Policy {
+  id: string
+  name: string
+  action_code: string
+  effect: 'ALLOW' | 'DENY'
+  priority: number
+  conditions: Record<string, unknown> | null
+  is_active: boolean
+  created_by: string
+  created_at: string
+  updated_at: string
+}
+
+export interface CreatePolicyPayload {
+  name: string
+  action_code: string
+  effect: 'ALLOW' | 'DENY'
+  priority: number
+  conditions?: Record<string, unknown>
+  is_active: boolean
+}
+
+export interface UpdatePolicyPayload {
+  name?: string
+  action_code?: string
+  effect?: 'ALLOW' | 'DENY'
+  priority?: number
+  conditions?: Record<string, unknown>
+  is_active?: boolean
+}
+
+// ─── Folder templates ─────────────────────────────────────────────────────────
+
+export interface FolderTemplateItem {
+  id: string
+  template_id: string
+  parent_item_id: string | null
+  name: string
+  sort_order: number
+}
+
+export interface FolderTemplate {
+  id: string
+  name: string
+  project_type_id: string | null
+  items: FolderTemplateItem[]
+}
+
+export interface CreateFolderTemplatePayload {
+  name: string
+  project_type_id?: string | null
+}
+
+export interface CreateFolderTemplateItemPayload {
+  parent_item_id?: string | null
+  name: string
+  sort_order: number
+}
+
+export interface UpdateFolderTemplateItemPayload {
+  parent_item_id?: string | null
+  name?: string
+  sort_order?: number
+}
+
+// ─── Full audit explorer ──────────────────────────────────────────────────────
+
+export interface AuditEvent {
+  id: string
+  action_code: string
+  resource_type: string
+  resource_id: string
+  actor_employee_id: string
+  actor: { id: string; employee_code: string; full_name: string }
+  request_id: string
+  old_values: Record<string, unknown> | null
+  new_values: Record<string, unknown> | null
+  metadata: Record<string, unknown> | null
+  created_at: string
+}
+
+// ─── Physical archive admin writes ────────────────────────────────────────────
+
+export interface UpdatePhysicalRoomPayload {
+  code?: string
+  name?: string
+  description?: string
+  is_active?: boolean
+}
+
+export interface UpdatePhysicalLocationPayload {
+  parent_location_id?: string | null
+  location_type?: PhysicalLocationType
+  code?: string
+  label?: string
+  is_active?: boolean
+}
+
+// ─── Director extended metrics ────────────────────────────────────────────────
+
+export interface DirectorUpcomingEvent {
+  id: string
+  title: string
+  event_type: string
+  starts_at: string
+  ends_at: string | null
+  project_code: string | null
+  project_name: string | null
+  location: string | null
+}
+
+export interface DirectorMissingDocument {
+  project_id: string
+  project_code: string
+  project_name: string
+  document_type_id: string
+  document_type_code: string
+  document_type_name: string
+}
+
+export interface DirectorVerificationReminder {
+  id: string
+  physical_file_code: string
+  project_code: string
+  project_name: string
+  archive_room: string
+  archive_location_code: string
+  last_verified_at: string | null
+  next_verification_at: string
 }

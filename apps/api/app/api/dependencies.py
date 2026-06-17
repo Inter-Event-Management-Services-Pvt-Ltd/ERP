@@ -8,10 +8,14 @@ from app.core.auth import AuthError, SupabaseJwtVerifier, parse_bearer_token
 from app.core.config import get_settings
 from app.core.current_user import CurrentUserError, SupabaseCurrentUserResolver
 from app.core.rbac import AuthorizationError, RBACService
+from app.core.supabase_http import get_supabase_http_client
 from app.core.super_user import SuperUserOverrideService
 from app.schemas.current_user import CurrentUser
+from app.services.admin import AdminService
+from app.services.approvals import ApprovalsService
 from app.services.attendance import AttendanceService
 from app.services.clients_projects import ClientsProjectsService
+from app.services.director_dashboard import DirectorDashboardService
 from app.services.documents_archive import DocumentsArchiveService
 from app.services.employee_operations import EmployeeOperationsService
 from app.services.employees import EmployeesService
@@ -20,13 +24,25 @@ from app.workers.archive_exports import enqueue_archive_export
 
 
 async def get_current_user(
+    request: Request,
     authorization: Annotated[str | None, Header(alias="Authorization")] = None,
 ) -> CurrentUser:
     try:
         token = parse_bearer_token(authorization)
         settings = get_settings()
         claims = SupabaseJwtVerifier.from_settings(settings).verify(token)
-        return await SupabaseCurrentUserResolver.from_settings(settings).resolve(claims)
+        if settings.supabase_url is None or settings.supabase_service_role_key is None:
+            raise CurrentUserError(
+                503,
+                "AUTH_NOT_CONFIGURED",
+                "Supabase employee resolver is not configured",
+            )
+        return await SupabaseCurrentUserResolver(
+            supabase_url=settings.supabase_url,
+            service_role_key=settings.supabase_service_role_key,
+            timeout_seconds=settings.supabase_request_timeout_seconds,
+            http_client=get_supabase_http_client(request, settings),
+        ).resolve(claims)
     except (AuthError, CurrentUserError) as exc:
         raise HTTPException(
             status_code=exc.status_code,
@@ -77,7 +93,7 @@ def require_any_permission(permission_codes: set[str]) -> object:
     return dependency
 
 
-def get_clients_projects_service() -> ClientsProjectsService:
+def get_clients_projects_service(request: Request) -> ClientsProjectsService:
     settings = get_settings()
     if settings.supabase_url is None or settings.supabase_service_role_key is None:
         raise HTTPException(
@@ -91,10 +107,47 @@ def get_clients_projects_service() -> ClientsProjectsService:
         supabase_url=settings.supabase_url,
         service_role_key=settings.supabase_service_role_key,
         timeout_seconds=settings.supabase_request_timeout_seconds,
+        http_client=get_supabase_http_client(request, settings),
     )
 
 
-def get_employees_service() -> EmployeesService:
+def get_admin_service(request: Request) -> AdminService:
+    settings = get_settings()
+    if settings.supabase_url is None or settings.supabase_service_role_key is None:
+        raise HTTPException(
+            status_code=503,
+            detail={
+                "code": "DATA_SERVICE_NOT_CONFIGURED",
+                "message": "Supabase data service is not configured",
+            },
+        )
+    return AdminService(
+        supabase_url=settings.supabase_url,
+        service_role_key=settings.supabase_service_role_key,
+        timeout_seconds=settings.supabase_request_timeout_seconds,
+        http_client=get_supabase_http_client(request, settings),
+    )
+
+
+def get_approvals_service(request: Request) -> ApprovalsService:
+    settings = get_settings()
+    if settings.supabase_url is None or settings.supabase_service_role_key is None:
+        raise HTTPException(
+            status_code=503,
+            detail={
+                "code": "DATA_SERVICE_NOT_CONFIGURED",
+                "message": "Supabase data service is not configured",
+            },
+        )
+    return ApprovalsService(
+        supabase_url=settings.supabase_url,
+        service_role_key=settings.supabase_service_role_key,
+        timeout_seconds=settings.supabase_request_timeout_seconds,
+        http_client=get_supabase_http_client(request, settings),
+    )
+
+
+def get_employees_service(request: Request) -> EmployeesService:
     settings = get_settings()
     if settings.supabase_url is None or settings.supabase_service_role_key is None:
         raise HTTPException(
@@ -108,10 +161,11 @@ def get_employees_service() -> EmployeesService:
         supabase_url=settings.supabase_url,
         service_role_key=settings.supabase_service_role_key,
         timeout_seconds=settings.supabase_request_timeout_seconds,
+        http_client=get_supabase_http_client(request, settings),
     )
 
 
-def get_documents_archive_service() -> DocumentsArchiveService:
+def get_documents_archive_service(request: Request) -> DocumentsArchiveService:
     settings = get_settings()
     if settings.supabase_url is None or settings.supabase_service_role_key is None:
         raise HTTPException(
@@ -125,6 +179,7 @@ def get_documents_archive_service() -> DocumentsArchiveService:
         supabase_url=settings.supabase_url,
         service_role_key=settings.supabase_service_role_key,
         timeout_seconds=settings.supabase_request_timeout_seconds,
+        http_client=get_supabase_http_client(request, settings),
         signed_url_ttl_seconds=settings.signed_url_ttl_seconds,
         archive_export_ttl_hours=settings.archive_export_ttl_hours,
         max_upload_bytes=settings.max_upload_bytes,
@@ -135,7 +190,7 @@ def get_documents_archive_service() -> DocumentsArchiveService:
     )
 
 
-def get_physical_archive_service() -> PhysicalArchiveService:
+def get_physical_archive_service(request: Request) -> PhysicalArchiveService:
     settings = get_settings()
     if settings.supabase_url is None or settings.supabase_service_role_key is None:
         raise HTTPException(
@@ -149,10 +204,11 @@ def get_physical_archive_service() -> PhysicalArchiveService:
         supabase_url=settings.supabase_url,
         service_role_key=settings.supabase_service_role_key,
         timeout_seconds=settings.supabase_request_timeout_seconds,
+        http_client=get_supabase_http_client(request, settings),
     )
 
 
-def get_attendance_service() -> AttendanceService:
+def get_attendance_service(request: Request) -> AttendanceService:
     settings = get_settings()
     if settings.supabase_url is None or settings.supabase_service_role_key is None:
         raise HTTPException(
@@ -166,10 +222,11 @@ def get_attendance_service() -> AttendanceService:
         supabase_url=settings.supabase_url,
         service_role_key=settings.supabase_service_role_key,
         timeout_seconds=settings.supabase_request_timeout_seconds,
+        http_client=get_supabase_http_client(request, settings),
     )
 
 
-def get_employee_operations_service() -> EmployeeOperationsService:
+def get_employee_operations_service(request: Request) -> EmployeeOperationsService:
     settings = get_settings()
     if settings.supabase_url is None or settings.supabase_service_role_key is None:
         raise HTTPException(
@@ -183,10 +240,29 @@ def get_employee_operations_service() -> EmployeeOperationsService:
         supabase_url=settings.supabase_url,
         service_role_key=settings.supabase_service_role_key,
         timeout_seconds=settings.supabase_request_timeout_seconds,
+        http_client=get_supabase_http_client(request, settings),
     )
 
 
-def get_audit_writer() -> SupabaseAuditWriter:
+def get_director_dashboard_service(request: Request) -> DirectorDashboardService:
+    settings = get_settings()
+    if settings.supabase_url is None or settings.supabase_service_role_key is None:
+        raise HTTPException(
+            status_code=503,
+            detail={
+                "code": "DATA_SERVICE_NOT_CONFIGURED",
+                "message": "Supabase data service is not configured",
+            },
+        )
+    return DirectorDashboardService(
+        supabase_url=settings.supabase_url,
+        service_role_key=settings.supabase_service_role_key,
+        timeout_seconds=settings.supabase_request_timeout_seconds,
+        http_client=get_supabase_http_client(request, settings),
+    )
+
+
+def get_audit_writer(request: Request) -> SupabaseAuditWriter:
     settings = get_settings()
     if settings.supabase_url is None or settings.supabase_service_role_key is None:
         raise HTTPException(
@@ -200,6 +276,7 @@ def get_audit_writer() -> SupabaseAuditWriter:
         supabase_url=settings.supabase_url,
         service_role_key=settings.supabase_service_role_key,
         timeout_seconds=settings.supabase_request_timeout_seconds,
+        http_client=get_supabase_http_client(request, settings),
     )
 
 
