@@ -215,6 +215,14 @@ Remaining work:
   identify slow Supabase calls by request_id. Optimize heavy endpoints, especially
   GET /v1/director/overview, by batching independent reads or replacing serial
   read composition with SQL/RPC-backed aggregate reads where appropriate.
+Baseline update:
+  Codex added apps/api/scripts/perf_probe.py and recorded a local backend
+  baseline in docs/performance/phase5-local-baseline.md. After the shared
+  Supabase HTTP client change, sampled backend routes completed locally in
+  25.83ms to 294.77ms; GET /v1/director/overview measured 84.36ms.
+  No immediate backend query-shape optimization is required from that baseline.
+  Keep this item open until Claude completes the frontend request waterfall
+  review and any slow full-page paths are mapped to request IDs.
 Owner: Codex for backend endpoint/query optimization; Claude for frontend request
   waterfall review.
 Status: Open
