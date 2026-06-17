@@ -2,11 +2,11 @@
 
 ## Tests
 
-- [ ] Unit tests.
-- [ ] Integration tests.
+- [x] Unit tests.
+- [x] Integration tests.
 - [x] RLS tests.
-- [ ] ABAC tests.
-- [ ] Unauthorized-path tests.
+- [x] ABAC tests.
+- [x] Unauthorized-path tests.
 - [x] Migration-reset test.
 - [ ] ZIP export test.
 - [ ] File checkout race test.
@@ -14,15 +14,15 @@
 
 ## CI/CD
 
-- [ ] Lint.
-- [ ] Type check.
-- [ ] Backend tests.
+- [x] Lint.
+- [x] Type check.
+- [x] Backend tests.
 - [ ] Frontend tests.
 - [ ] Build frontend.
 - [x] Build backend image.
-- [ ] Run migration validation.
+- [x] Run migration validation.
 - [ ] Deploy staging.
-- [ ] Health checks.
+- [x] Health checks.
 - [ ] Manual production promotion.
 
 ## Operations

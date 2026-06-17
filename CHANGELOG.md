@@ -56,6 +56,7 @@
 - Tightened production Compose isolation by keeping web off the backend network, preventing web from inheriting server secrets, forcing backend containers to use internal Redis URLs, moving Celery beat state to `/tmp`, and documenting backend Docker validation evidence.
 - Added local Supabase app-schema backup and restore scripts plus a runbook, with restore proof against a separate `iems_restore_test` database.
 - Added Phase 5 rollback, incident-response, and CI/CD release-gate runbooks with current local evidence and production-only gaps called out.
+- Recorded final Phase 5 backend validation evidence for Ruff, MyPy, pytest, clean Supabase reset, SQL security probes, backend Docker health, secret scan, and local restore proof.
 
 - Wired Phase 2 folder CRUD to live backend: inline create, rename, and delete in FolderTreePanel with INVALID_STATE protection and canManage gating.
 - Added DocumentListPanel with per-folder document list, multipart upload dialog (INVALID_FILE_NAME, INVALID_MIME_TYPE, INVALID_FILE_SIZE error display), version upload, and signed download URLs fetched on-demand.
