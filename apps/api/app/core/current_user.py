@@ -7,6 +7,7 @@ from pydantic import ValidationError
 
 from app.core.auth import TokenClaims
 from app.core.config import Settings
+from app.core.supabase_http import request_supabase
 from app.schemas.current_user import CurrentUser, EmployeeProfile, UserAccount
 
 
@@ -26,11 +27,13 @@ class SupabaseCurrentUserResolver:
         service_role_key: str,
         timeout_seconds: float = 5.0,
         transport: httpx.AsyncBaseTransport | None = None,
+        http_client: httpx.AsyncClient | None = None,
     ) -> None:
         self._supabase_url = supabase_url.rstrip("/")
         self._service_role_key = service_role_key
         self._timeout_seconds = timeout_seconds
         self._transport = transport
+        self._http_client = http_client
 
     @classmethod
     def from_settings(cls, settings: Settings) -> "SupabaseCurrentUserResolver":
@@ -112,15 +115,12 @@ class SupabaseCurrentUserResolver:
             "id": f"eq.{auth_user_id}",
             "limit": "1",
         }
-        async with httpx.AsyncClient(
-            timeout=self._timeout_seconds,
-            transport=self._transport,
-        ) as client:
-            response = await client.get(
-                f"{self._supabase_url}/rest/v1/user_accounts",
-                headers=headers,
-                params=params,
-            )
+        response = await self._request(
+            "GET",
+            "/rest/v1/user_accounts",
+            headers=headers,
+            params=params,
+        )
 
         if response.status_code >= 300:
             raise CurrentUserError(
@@ -129,6 +129,36 @@ class SupabaseCurrentUserResolver:
                 "Current employee lookup failed",
             )
         return response
+
+    async def _request(
+        self,
+        method: str,
+        path: str,
+        *,
+        headers: dict[str, str],
+        params: dict[str, str] | None = None,
+    ) -> httpx.Response:
+        url = f"{self._supabase_url}{path}"
+        if self._http_client is not None:
+            return await request_supabase(
+                self._http_client,
+                method,
+                url,
+                headers=headers,
+                params=params,
+            )
+
+        async with httpx.AsyncClient(
+            timeout=self._timeout_seconds,
+            transport=self._transport,
+        ) as client:
+            return await request_supabase(
+                client,
+                method,
+                url,
+                headers=headers,
+                params=params,
+            )
 
     def _supabase_headers(self) -> dict[str, str]:
         headers = {

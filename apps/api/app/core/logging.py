@@ -27,6 +27,9 @@ class JsonLogFormatter(logging.Formatter):
             "status_code",
             "duration_ms",
             "client_ip",
+            "supabase_host",
+            "query_keys",
+            "has_body",
         ):
             value = getattr(record, key, None)
             if value is not None:

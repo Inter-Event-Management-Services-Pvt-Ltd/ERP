@@ -6,6 +6,7 @@ import httpx
 from pydantic import ValidationError
 
 from app.core.audit import AuditContext
+from app.core.supabase_http import request_supabase
 from app.schemas.admin import (
     AuditEventExplorerResponse,
     DepartmentAssignmentCreate,
@@ -72,11 +73,13 @@ class AdminService:
         service_role_key: str,
         timeout_seconds: float = 5.0,
         transport: httpx.AsyncBaseTransport | None = None,
+        http_client: httpx.AsyncClient | None = None,
     ) -> None:
         self._supabase_url = supabase_url.rstrip("/")
         self._service_role_key = service_role_key
         self._timeout_seconds = timeout_seconds
         self._transport = transport
+        self._http_client = http_client
 
     async def list_departments(self, *, current_user: CurrentUser) -> list[ReferenceSummary]:
         _require_any_explicit_or_super_user(
@@ -581,17 +584,29 @@ class AdminService:
         params: dict[str, str] | None = None,
         json_body: dict[str, object] | None = None,
     ) -> httpx.Response:
-        async with httpx.AsyncClient(
-            timeout=self._timeout_seconds,
-            transport=self._transport,
-        ) as client:
-            response = await client.request(
+        url = f"{self._supabase_url}{path}"
+        if self._http_client is not None:
+            response = await request_supabase(
+                self._http_client,
                 method,
-                f"{self._supabase_url}{path}",
+                url,
                 headers=self._supabase_headers(),
                 params=params,
-                json=json_body,
+                json_body=json_body,
             )
+        else:
+            async with httpx.AsyncClient(
+                timeout=self._timeout_seconds,
+                transport=self._transport,
+            ) as client:
+                response = await request_supabase(
+                    client,
+                    method,
+                    url,
+                    headers=self._supabase_headers(),
+                    params=params,
+                    json_body=json_body,
+                )
         if response.status_code >= 300:
             _raise_supabase_error(response)
         return response

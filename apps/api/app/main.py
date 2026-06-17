@@ -1,3 +1,6 @@
+from collections.abc import AsyncIterator
+from contextlib import asynccontextmanager
+
 from fastapi import FastAPI
 from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
@@ -17,13 +20,25 @@ from app.core.config import get_settings
 from app.core.errors import http_exception_handler, validation_exception_handler
 from app.core.logging import configure_logging, structured_access_log_middleware
 from app.core.request_id import request_id_middleware
+from app.core.supabase_http import create_supabase_http_client
 
 settings = get_settings()
 configure_logging(settings.log_level)
 
+
+@asynccontextmanager
+async def lifespan(app: FastAPI) -> AsyncIterator[None]:
+    app.state.supabase_http_client = create_supabase_http_client(settings)
+    try:
+        yield
+    finally:
+        await app.state.supabase_http_client.aclose()
+
+
 app = FastAPI(
     title=settings.app_name,
     version=settings.app_version,
+    lifespan=lifespan,
 )
 
 app.add_middleware(
