@@ -15,13 +15,22 @@ COPY package*.json ./
 RUN npm ci
 
 FROM base AS builder
+# NEXT_PUBLIC_* vars are inlined into the client bundle at build time.
+# Pass them as build args so the production image has the correct values.
+ARG NEXT_PUBLIC_API_URL=/api
+ARG NEXT_PUBLIC_SUPABASE_URL
+ARG NEXT_PUBLIC_SUPABASE_ANON_KEY
+ENV NEXT_PUBLIC_API_URL=${NEXT_PUBLIC_API_URL} \
+    NEXT_PUBLIC_SUPABASE_URL=${NEXT_PUBLIC_SUPABASE_URL} \
+    NEXT_PUBLIC_SUPABASE_ANON_KEY=${NEXT_PUBLIC_SUPABASE_ANON_KEY}
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
-RUN npm run build
+RUN mkdir -p public && npm run build
 
 FROM node:24-alpine AS production
 WORKDIR /app
-ENV NODE_ENV=production
+ENV NODE_ENV=production \
+    HOSTNAME=0.0.0.0
 RUN addgroup --system --gid 10001 appgroup \
     && adduser --system --uid 10001 appuser
 COPY --from=builder /app/public ./public

@@ -91,8 +91,11 @@ async function getAccessToken(): Promise<string> {
   return token
 }
 
+const SLOW_REQUEST_MS = 2000
+
 async function apiFetch<T>(path: string, init?: RequestInit): Promise<T> {
   const token = await getAccessToken()
+  const t0 = performance.now()
   const res = await fetch(`${API_URL}${path}`, {
     ...init,
     headers: {
@@ -101,12 +104,19 @@ async function apiFetch<T>(path: string, init?: RequestInit): Promise<T> {
       ...(init?.headers ?? {}),
     },
   })
+  const elapsed = Math.round(performance.now() - t0)
+  const requestId = res.headers.get('x-request-id') ?? undefined
+
+  if (elapsed > SLOW_REQUEST_MS) {
+    console.warn(`[IEMS] slow ${init?.method ?? 'GET'} ${path} ${elapsed}ms${requestId ? ` request-id=${requestId}` : ''}`)
+  }
 
   if (!res.ok) {
     const body = await res.json().catch(() => ({}))
     const code = body?.error?.code ?? `HTTP_${res.status}`
     const message = body?.error?.message ?? res.statusText
-    throw Object.assign(new Error(message), { code, status: res.status })
+    if (requestId) console.warn(`[IEMS] api error ${path} code=${code} request-id=${requestId}`)
+    throw Object.assign(new Error(message), { code, status: res.status, requestId })
   }
 
   if (res.status === 204) return undefined as T

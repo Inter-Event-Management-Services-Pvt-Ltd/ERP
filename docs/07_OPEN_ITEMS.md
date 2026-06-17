@@ -197,6 +197,55 @@ Owner: Claude (frontend follow-up)
 Status: Backend Resolved / Frontend Open
 ```
 
+### OPEN-040 - Phase 5 Docker and reverse-proxy validation (frontend)
+
+```text
+Date: 2026-06-17
+Category: DevOps / Frontend Security
+Severity: High
+Question or issue:
+  Next.js production Docker build, standalone output, non-root runtime, client
+  bundle secret safety, and Caddy routing where /api/* reaches FastAPI.
+Resolution:
+  All frontend Docker issues identified and fixed:
+  1. Env var name mismatch: NEXT_PUBLIC_API_BASE_URL renamed to NEXT_PUBLIC_API_URL
+     everywhere (.env.example, compose.yaml). Code already used NEXT_PUBLIC_API_URL.
+  2. Build args added to Dockerfile builder stage for NEXT_PUBLIC_API_URL,
+     NEXT_PUBLIC_SUPABASE_URL, NEXT_PUBLIC_SUPABASE_ANON_KEY so the client bundle
+     is built with the correct values, not undefined/localhost fallbacks.
+     NEXT_PUBLIC_API_URL defaults to /api (correct for Caddy deployment).
+  3. HOSTNAME=0.0.0.0 added to production stage so standalone server.js listens
+     on all container interfaces (Caddy can reach web:3000).
+  4. mkdir -p public added to builder stage to prevent COPY failure when the
+     public/ directory does not exist in the source tree.
+  5. Web service health check added to compose.yaml; Caddy now waits for
+     service_healthy instead of service_started.
+  6. X-Request-ID request_header added to Caddyfile (Caddy UUID per request);
+     header exposed in responses via Access-Control-Expose-Headers so the browser
+     can read it. apiFetch now captures it, logs slow requests (>2s) and errors
+     to console.warn with the request ID so Codex can match to iems.api.supabase logs.
+  7. CSP and HSTS headers added to Caddyfile. Note: script-src uses unsafe-inline
+     for Next.js App Router SSR hydration; tighten to nonce-based CSP when
+     Next.js middleware issues nonces.
+  8. .dockerignore extended to exclude tests, Dockerfile, vitest config.
+  9. Bundle-scanned: SUPABASE_SERVICE_ROLE_KEY and SUPABASE_JWT_SECRET confirmed
+     absent from client bundle. localhost:8000 confirmed absent (replaced by /api).
+Owner: Claude (resolved)
+Status: Resolved
+Files changed:
+  apps/web/Dockerfile
+  apps/web/.dockerignore
+  apps/web/src/lib/api.ts
+  compose.yaml
+  .env.example
+  infrastructure/caddy/Caddyfile
+  docs/checklists/DOCKERIZATION.md
+Remaining manual sign-off:
+  - Full-stack docker compose up with real env values
+  - Login flow, document upload, responsive UI check in container
+  - Image scanning before production release
+```
+
 ### OPEN-039 - Phase 5 end-to-end performance baseline and endpoint query optimization
 
 ```text
