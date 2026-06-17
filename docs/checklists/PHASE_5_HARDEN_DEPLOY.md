@@ -4,10 +4,10 @@
 
 - [ ] Unit tests.
 - [ ] Integration tests.
-- [ ] RLS tests.
+- [x] RLS tests.
 - [ ] ABAC tests.
 - [ ] Unauthorized-path tests.
-- [ ] Migration-reset test.
+- [x] Migration-reset test.
 - [ ] ZIP export test.
 - [ ] File checkout race test.
 - [ ] Restore test.
@@ -44,8 +44,8 @@
 - [ ] Dependency scan passes.
 - [ ] Secret scan passes.
 - [ ] Service-role key server-only check passes.
-- [ ] Storage buckets verified private.
-- [ ] RLS verified enabled.
+- [x] Storage buckets verified private.
+- [x] RLS verified enabled.
 - [ ] No debug endpoints exposed.
 - [ ] Logging excludes secrets.
 - [ ] Restore test passes.

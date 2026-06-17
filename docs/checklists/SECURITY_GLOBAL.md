@@ -23,14 +23,14 @@
 
 - [x] Default-deny ABAC.
 - [ ] Server-side checks for writes.
-- [x] RLS enabled on exposed tables.
+- [x] RLS enabled on exposed tables. Phase 5 local SQL probe passed after clean reset on 2026-06-17.
 - [x] Super User override requires reason.
 - [x] Override logged.
 - [x] Unauthorized tests exist.
 
 ## Storage
 
-- [x] Buckets private.
+- [x] Buckets private. Phase 5 local SQL probe verified expected buckets are private on 2026-06-17.
 - [ ] Signed URLs short-lived.
 - [ ] MIME type validated.
 - [ ] File size validated.
@@ -40,7 +40,7 @@
 
 ## Audit
 
-- [x] Audit table append-only.
+- [x] Audit table append-only. Phase 5 local SQL probe verified the immutability trigger is enabled on 2026-06-17.
 - [ ] Sensitive operations logged.
 - [ ] Policy changes logged.
 - [ ] Attendance corrections logged.
