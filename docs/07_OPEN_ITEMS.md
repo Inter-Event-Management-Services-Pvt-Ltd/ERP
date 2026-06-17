@@ -228,6 +228,27 @@ Owner: Codex for backend endpoint/query optimization; Claude for frontend reques
 Status: Open
 ```
 
+### OPEN-040 - Frontend Docker and Caddy runtime validation pending
+
+```text
+Date: 2026-06-17
+Category: Dockerization / Frontend
+Severity: Medium
+Question or issue:
+  Codex validated backend-owned production Docker services (`api`, `worker`,
+  `scheduler`, `redis`) and the rendered production exposure model. Full Caddy
+  runtime validation still requires Claude to build and run the Next.js
+  production container under apps/web.
+Why it matters:
+  The production release gate requires Caddy to serve the frontend and route
+  /api/* to FastAPI while keeping frontend runtime secrets safe.
+Recommended next action:
+  Claude should validate the web production image, non-root runtime, standalone
+  Next.js output, client bundle secret safety, and Caddy reverse-proxy behavior.
+Owner: Claude
+Status: Open
+```
+
 ### OPEN-035 - Phase 4 Director Dashboard frontend wiring
 
 ```text

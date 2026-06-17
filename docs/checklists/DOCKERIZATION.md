@@ -38,7 +38,7 @@
 - [ ] `/api/*` routes reach FastAPI.
 - [ ] TLS configured for production.
 - [ ] Security headers reviewed.
-- [ ] Only ports 80 and 443 are public.
+- [x] Only ports 80 and 443 are public.
 
 ## Security Gate
 

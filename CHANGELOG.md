@@ -53,6 +53,7 @@
 - Added `GET /v1/tasks/{task_id}/comments` so task detail screens can load persisted comments newest-first with the same task visibility ABAC used by task reads and comment writes.
 - Hardened Supabase RLS helper functions by moving policy helpers behind a non-exposed `app_private` schema, revoking direct browser-role execution from the old public wrappers, and adding a Phase 5 SQL release-gate probe for RLS, private Storage buckets, audit immutability and `SECURITY DEFINER` exposure.
 - Added a Phase 5 tracked-file secret scan script and security review note, with local evidence that the repository scan passes without committed Supabase, JWT, Google client, or database URL secrets.
+- Tightened production Compose isolation by keeping web off the backend network, preventing web from inheriting server secrets, forcing backend containers to use internal Redis URLs, moving Celery beat state to `/tmp`, and documenting backend Docker validation evidence.
 
 - Wired Phase 2 folder CRUD to live backend: inline create, rename, and delete in FolderTreePanel with INVALID_STATE protection and canManage gating.
 - Added DocumentListPanel with per-folder document list, multipart upload dialog (INVALID_FILE_NAME, INVALID_MIME_TYPE, INVALID_FILE_SIZE error display), version upload, and signed download URLs fetched on-demand.

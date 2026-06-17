@@ -19,7 +19,7 @@
 - [ ] Backend tests.
 - [ ] Frontend tests.
 - [ ] Build frontend.
-- [ ] Build backend image.
+- [x] Build backend image.
 - [ ] Run migration validation.
 - [ ] Deploy staging.
 - [ ] Health checks.
@@ -58,8 +58,8 @@
 ## Docker Production Gate
 
 - [ ] Complete `docs/checklists/DOCKERIZATION.md`.
-- [ ] Production Compose config validated.
+- [x] Production Compose config validated.
 - [ ] Containers run as non-root.
 - [ ] Image scan passes.
 - [ ] Restart test passes.
-- [ ] Only reverse proxy ports are public.
+- [x] Only reverse proxy ports are public.
