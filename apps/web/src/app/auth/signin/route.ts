@@ -16,12 +16,19 @@ export async function GET(request: NextRequest) {
     new URL(request.url).host
   const origin = `${proto}://${host}`
 
-  // Use the browser-accessible URL here. data.url is redirected to by the
-  // browser, so it must resolve from the user's machine — not the container.
-  // SUPABASE_URL (the internal Docker address) is only for server-side token
-  // exchange (auth/callback → createClient()) and session validation (middleware).
+  // Use the same URL priority as server.ts / middleware.ts so the PKCE
+  // code-verifier cookie key is consistent between sign-in and callback.
+  // The cookie key is derived from the Supabase URL passed to createServerClient;
+  // if sign-in and callback use different URLs the verifier lookup fails.
+  const supabaseUrl = process.env.SUPABASE_URL ?? process.env.NEXT_PUBLIC_SUPABASE_URL!
+  // Browser-accessible URL (baked into the image at build time via NEXT_PUBLIC_).
+  // In production supabaseUrl === publicUrl (rewrite is a no-op).
+  // In local Docker, SUPABASE_URL is the container-internal address; the rewrite
+  // below replaces it in data.url so the browser can follow the OAuth redirect.
+  const publicUrl = process.env.NEXT_PUBLIC_SUPABASE_URL ?? supabaseUrl
+
   const supabase = createServerClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    supabaseUrl,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
     {
       cookies: {
@@ -55,5 +62,13 @@ export async function GET(request: NextRequest) {
     return NextResponse.redirect(`${origin}/login`)
   }
 
-  return NextResponse.redirect(data.url)
+  // Replace the internal Supabase address with the browser-accessible one.
+  // signInWithOAuth constructs data.url using supabaseUrl; if that is a
+  // Docker-internal address the browser can't reach, swap the base URL prefix.
+  const oauthUrl =
+    supabaseUrl !== publicUrl && data.url.startsWith(supabaseUrl)
+      ? publicUrl + data.url.slice(supabaseUrl.length)
+      : data.url
+
+  return NextResponse.redirect(oauthUrl)
 }
