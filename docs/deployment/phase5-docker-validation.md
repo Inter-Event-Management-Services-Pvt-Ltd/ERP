@@ -1,6 +1,6 @@
 # Phase 5 Docker Validation
 
-Date: 2026-06-17
+Date: 2026-06-18
 
 ## Commands
 
@@ -13,6 +13,10 @@ Date: 2026-06-17
 - `docker compose exec -T scheduler python -c "import os; print(os.getuid())"`
 - `docker compose exec -T redis redis-cli ping`
 - `docker compose logs --tail=40 scheduler`
+- `docker compose restart api worker scheduler redis`
+- `docker compose logs --tail=20 api`
+- `docker compose logs --tail=20 worker`
+- `docker compose logs --tail=20 scheduler`
 
 ## Results
 
@@ -30,6 +34,8 @@ Runtime validation passed for backend-owned services:
 | scheduler | running | `docker compose ps` showed scheduler `Up` |
 | scheduler user | non-root | UID `10001` |
 | redis | healthy | `redis-cli ping` returned `PONG` |
+| restart | passed | `docker compose restart api worker scheduler redis` completed; API returned `/health` 200 afterward |
+| logs after restart | passed | API, worker and scheduler logs remained readable after restart |
 
 Scheduler initially restarted because Celery beat tried to write
 `celerybeat-schedule` under `/app`, which is intentionally non-writable for the
@@ -49,6 +55,12 @@ with `. db -> /tmp/celerybeat-schedule`.
 - Web service environment: limited to `NODE_ENV` and `NEXT_PUBLIC_*`; server
   secrets are not inherited from `.env`.
 - Web service networking: frontend network only; Caddy bridges frontend/backend.
+
+## Evidence Handling Note
+
+`docker compose config` expands values from local `.env`, including local
+development secrets. Use the command to validate the rendered service model, but
+do not paste raw config output into PRs, issues, chat, or external systems.
 
 ## Deferred Frontend/Caddy Runtime Checks
 

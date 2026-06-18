@@ -89,3 +89,12 @@ def test_cors_preflight_allows_local_frontend_origin() -> None:
     assert response.status_code == 200
     assert response.headers["access-control-allow-origin"] == "http://localhost:3000"
     assert response.headers["access-control-allow-credentials"] == "true"
+
+
+def test_no_debug_or_token_helper_routes_are_registered() -> None:
+    registered_paths = {route.path for route in app.routes}
+
+    assert "/debug" not in registered_paths
+    assert "/v1/debug" not in registered_paths
+    assert "/v1/local-access-token" not in registered_paths
+    assert "/v1/test-token" not in registered_paths

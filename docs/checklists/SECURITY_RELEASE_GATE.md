@@ -5,15 +5,15 @@ Complete before production deployment.
 - [ ] Threat review completed.
 - [ ] Auth allowlist tested with approved and rejected accounts.
 - [x] RLS tests pass.
-- [ ] ABAC tests pass.
-- [ ] Super User override tests pass.
+- [x] ABAC tests pass.
+- [x] Super User override tests pass.
 - [x] Storage bucket privacy verified.
-- [ ] Signed URL expiry verified.
+- [x] Signed URL expiry verified.
 - [x] Audit immutability verified.
-- [ ] Audit coverage verified.
-- [ ] File upload validation verified.
+- [x] Audit coverage verified.
+- [x] File upload validation verified.
 - [ ] Rate-limiting decision documented.
-- [ ] Dependency vulnerabilities reviewed.
+- [x] Dependency vulnerabilities reviewed.
 - [x] Secret scan clean.
 - [ ] Backup exists.
 - [x] Restore test passed.
