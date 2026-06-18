@@ -129,6 +129,11 @@ services:
     build:
       context: ./infrastructure/caddy
       dockerfile: Dockerfile
+    environment:
+      # Injected into the Caddyfile CSP connect-src so the browser Supabase
+      # client can reach Supabase. Local Docker: http://127.0.0.1:54321.
+      # Production: https://xxx.supabase.co (already covered by *.supabase.co).
+      NEXT_PUBLIC_SUPABASE_URL: ${NEXT_PUBLIC_SUPABASE_URL}
     depends_on:
       web:
         condition: service_healthy

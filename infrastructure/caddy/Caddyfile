@@ -21,7 +21,7 @@
     Strict-Transport-Security "max-age=63072000; includeSubDomains"
     # Next.js App Router requires unsafe-inline for SSR hydration scripts.
     # Tighten to nonce-based CSP once Next.js middleware issues nonces.
-    Content-Security-Policy "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self' data:; connect-src 'self' *.supabase.co wss://*.supabase.co; frame-ancestors 'none'; base-uri 'self'; form-action 'self';"
+    Content-Security-Policy "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self' data:; connect-src 'self' {$NEXT_PUBLIC_SUPABASE_URL} *.supabase.co wss://*.supabase.co; frame-ancestors 'none'; base-uri 'self'; form-action 'self';"
     # Expose the request ID so the browser can capture it from the response.
     Access-Control-Expose-Headers "X-Request-ID"
     X-Request-ID {http.request.uuid}
