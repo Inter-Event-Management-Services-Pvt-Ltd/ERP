@@ -12,6 +12,10 @@ services:
         NEXT_PUBLIC_SUPABASE_ANON_KEY: ${NEXT_PUBLIC_SUPABASE_ANON_KEY}
     environment:
       NODE_ENV: production
+      # Runtime override so server-side Next.js (middleware, auth routes) can
+      # reach Supabase from inside the container. In local Docker set this to
+      # http://host.docker.internal:54321; in production use the managed URL.
+      SUPABASE_URL: ${SUPABASE_URL}
     healthcheck:
       test: ["CMD", "node", "-e", "require('http').get('http://localhost:3000/', r => process.exit(r.statusCode < 500 ? 0 : 1)).on('error', () => process.exit(1))"]
       interval: 30s

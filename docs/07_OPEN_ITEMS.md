@@ -56,9 +56,10 @@ Frontend validation completed 2026-06-18:
     projects/admin, DirectorGuard non-blocking, audit page 300ms debounce
   - dangerouslySetInnerHTML: absent from all application source files
 Remaining required items:
-  - Full-stack docker compose up with real env values — login flow, document
-    upload, and responsive UI check inside the container. Docker auth flow
-    requires deferred fixes (PKCE + container origin; see OPEN-040).
+  - Login flow end-to-end in Docker (Google OAuth → callback → /dashboard).
+    Docker auth flow implemented 2026-06-18 (PKCE + container origin fixes in
+    OPEN-040). Requires SUPABASE_URL=http://host.docker.internal:54321 in .env
+    for local Docker, then rebuild web container and run the login flow manually.
   - Staging environment configured and tested with production-like settings.
   - Production environment configured with distinct credentials.
   - Managed Supabase database backup retention selected and verified.
@@ -423,10 +424,36 @@ Files changed:
   .env.example
   infrastructure/caddy/Caddyfile
   docs/checklists/DOCKERIZATION.md
+Docker auth flow fixes completed 2026-06-18:
+  10. Server-side OAuth initiation route added: GET /auth/signin uses
+      createServerClient with skipBrowserRedirect: true. The PKCE code
+      verifier is now stored in a cookie (set by createServerClient) before
+      the redirect to Google, so exchangeCodeForSession in the callback finds
+      the verifier even when the request comes back through Caddy with no
+      browser state.
+  11. SUPABASE_URL runtime override: server.ts and middleware.ts now prefer
+      process.env.SUPABASE_URL over process.env.NEXT_PUBLIC_SUPABASE_URL.
+      compose.yaml passes SUPABASE_URL to the web container at runtime.
+      In local Docker set SUPABASE_URL=http://host.docker.internal:54321;
+      in production set it to the managed Supabase HTTPS URL.
+  12. Auth callback origin fix: callback/route.ts reads x-forwarded-proto and
+      x-forwarded-host headers from Caddy to build the public-facing origin,
+      so the post-login redirect resolves to the real domain rather than
+      http://web:3000.
+  13. Login page converted to server component: <button onClick> replaced with
+      <a href="/auth/signin">. Page is now static (○) with no client JS.
+  14. /auth/signin added to PUBLIC_PATHS in middleware.ts.
+Additional files changed:
+  apps/web/src/app/auth/signin/route.ts  (new)
+  apps/web/src/app/auth/callback/route.ts
+  apps/web/src/app/login/page.tsx
+  apps/web/src/lib/supabase/server.ts
+  apps/web/src/middleware.ts
+  compose.yaml
 Remaining manual sign-off:
-  - Full-stack docker compose up with real env values
-  - Login flow, document upload, responsive UI check in container
-  - Image scanning before production release
+  - Login flow end-to-end in Docker (Google OAuth → callback → /dashboard).
+    Requires SUPABASE_URL=http://host.docker.internal:54321 in .env for local.
+  - Document upload and responsive UI check in container.
 ```
 
 ### OPEN-039 - Phase 5 end-to-end performance baseline and endpoint query optimization

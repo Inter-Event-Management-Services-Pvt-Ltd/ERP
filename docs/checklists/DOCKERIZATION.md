@@ -76,8 +76,11 @@
   api, worker, scheduler, redis, web, caddy. GET /api/health → 200 via Caddy.
   All protected routes return 307 → /login when unauthenticated. /api/v1/me
   and /api/v1/projects return 401 without a bearer token.
-- [ ] Login flow works. Blocked by OPEN-040 (Docker auth flow / PKCE mismatch).
-- [ ] Document upload works. Blocked by OPEN-040.
+- [ ] Login flow works. Auth flow implemented 2026-06-18 (server-side OAuth,
+  SUPABASE_URL override, x-forwarded headers for origin). Requires manual
+  end-to-end verification: set SUPABASE_URL=http://host.docker.internal:54321
+  in .env, rebuild web container, navigate to /login and complete Google OAuth.
+- [ ] Document upload works. Pending login flow sign-off.
 - [x] ZIP worker works.
 - [x] Restart test passes for backend-owned services. `docker compose restart api worker scheduler redis` completed on 2026-06-18 and API health returned 200 afterward.
 - [x] Logs remain available after restart for backend-owned services. API, worker and scheduler logs were readable after restart on 2026-06-18.
