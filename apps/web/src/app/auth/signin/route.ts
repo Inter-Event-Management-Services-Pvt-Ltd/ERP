@@ -16,14 +16,12 @@ export async function GET(request: NextRequest) {
     new URL(request.url).host
   const origin = `${proto}://${host}`
 
-  // SUPABASE_URL is a runtime env var for server-side use inside Docker
-  // (e.g. http://host.docker.internal:54321 locally, or the managed HTTPS URL
-  // in production). Falls back to the build-time public var when not set.
-  const supabaseUrl =
-    process.env.SUPABASE_URL ?? process.env.NEXT_PUBLIC_SUPABASE_URL!
-
+  // Use the browser-accessible URL here. data.url is redirected to by the
+  // browser, so it must resolve from the user's machine — not the container.
+  // SUPABASE_URL (the internal Docker address) is only for server-side token
+  // exchange (auth/callback → createClient()) and session validation (middleware).
   const supabase = createServerClient(
-    supabaseUrl,
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
     {
       cookies: {
