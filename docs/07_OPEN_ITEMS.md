@@ -19,6 +19,125 @@ Status:
 
 ## Initial Open Items
 
+### OPEN-041 - Phase 5 production-release blockers
+
+```text
+Date: 2026-06-18
+Category: Release / Operations
+Severity: High
+Question or issue:
+  Backend-owned local Phase 5 validation now passes for Ruff, MyPy, pytest,
+  dependency audit, secret scan, clean Supabase reset, Phase 2/3/5 SQL probes,
+  backend Docker build, backend non-root runtime, backend restart/log checks,
+  and local backup/restore proof. The full production release gate is still not
+  complete because several items require external environment setup or human
+  approval.
+Why it matters:
+  The ERP should not be promoted to production based only on local backend
+  validation. Production readiness depends on frontend container sign-off,
+  managed Supabase backup configuration, staging validation, image scanning,
+  monitoring/alerting, and an explicit release owner approval.
+Frontend validation completed 2026-06-18:
+  - Type-check: PASS (tsc --noEmit, no errors)
+  - Lint: PASS (eslint src/, no errors)
+  - Production build: PASS (42 routes, all pages including /login /projects
+    /archive /director /approvals built successfully)
+  - npm audit: 8 vulnerabilities, all dev-only or build-time (see OPEN-043)
+  - Bundle secret scan: CLEAN (no SUPABASE_SERVICE_ROLE_KEY, JWT_SECRET,
+    hardcoded tokens found in .next/static/chunks)
+  - Auth flow: reviewed and secure (only auth-scoped Supabase calls; all data
+    through FastAPI; route guards are presentation-only)
+  - Auth callback next param: validated to start with / (fix applied)
+  - Dockerfile: standalone output, HOSTNAME=0.0.0.0, non-root uid 10001,
+    no server secrets in build args confirmed
+  - Security headers: X-Frame-Options DENY, X-Content-Type-Options nosniff,
+    Referrer-Policy, Permissions-Policy in next.config.mjs; HSTS+CSP in Caddy
+  - Performance fixes: keepPreviousData in use-director/approvals/tasks/
+    projects/admin, DirectorGuard non-blocking, audit page 300ms debounce
+  - dangerouslySetInnerHTML: absent from all application source files
+Remaining required items:
+  - Frontend unit and integration tests (see OPEN-042).
+  - Full-stack docker compose up with real env values — login flow, document
+    upload, and responsive UI check inside the container. Docker auth flow
+    requires deferred fixes (PKCE + container origin; see OPEN-040).
+  - Staging environment configured and tested with production-like settings.
+  - Production environment configured with distinct credentials.
+  - Managed Supabase database backup retention selected and verified.
+  - Supabase Storage backup/export procedure selected and verified.
+  - Monitoring and alerting provider configured.
+  - Docker image vulnerability scan completed.
+  - Production Compose file reviewed by a human.
+  - Incident contact and rollback owner named.
+  - Human release approval recorded.
+Recommended next action:
+  Frontend static validation is now complete. Proceed to Docker full-stack
+  runtime validation when the deferred Docker auth fixes are implemented.
+  Human release owner must configure staging, backups, monitoring, image
+  scanning and record final approval.
+Owner: Human release owner, Claude for remaining frontend items, Codex for
+  backend follow-up if new backend issues are found.
+Status: Open — frontend static validation complete; runtime and ops items remain
+```
+
+### OPEN-042 - No frontend unit or integration tests
+
+```text
+Date: 2026-06-18
+Category: Testing / Frontend
+Severity: Medium
+Question or issue:
+  The frontend has no vitest test files at all. npm run test runs vitest and
+  finds zero test suites. PHASE_5_HARDEN_DEPLOY.md requires frontend tests to
+  pass before the release gate is satisfied.
+Why it matters:
+  Without frontend tests: auth logic, permission gating, query hook behaviour,
+  error state rendering, and form validation are only verified by the production
+  build compiling without TypeScript errors. A regression in any of these areas
+  would not be caught before deployment.
+Recommended next action:
+  Add vitest + @testing-library/react tests for at minimum:
+  - useMe / usePermissions hook (mocked API, check DIRECTOR gate)
+  - DirectorGuard (renders children immediately, renders PermissionDenied when
+    !isLoading && !canView)
+  - apiFetch error handling (non-OK response → throws with code/status/requestId)
+  - Auth callback route (valid code → exchanges; invalid next param → defaults
+    to /dashboard)
+Owner: Claude
+Status: Open
+```
+
+### OPEN-043 - npm audit: dev/build-time dependency vulnerabilities
+
+```text
+Date: 2026-06-18
+Category: Security / Dependencies
+Severity: Low (no production risk)
+Question or issue:
+  npm audit reports 8 vulnerabilities. All are dev-only or build-time:
+  - vitest (critical, GHSA-67mh-4wv8-2f99): esbuild dev server allows any
+    website to read dev server responses. Dev-only; not in production bundle.
+    Fix requires vitest 4.x (breaking API changes).
+  - vite/vite-node/@vitest/mocker/esbuild (moderate): same esbuild chain, all
+    dev-only.
+  - form-data (high, GHSA-hmw2-7cc7-3qxx): CRLF injection. Pulled in by
+    jsdom (test-only). Not in production.
+  - next/postcss (moderate, GHSA-qx2v-qp2m-jg93): PostCSS XSS in CSS
+    Stringify, inside Next.js internals. Build-time only; no client-side risk.
+    Cannot fix without downgrading Next.js.
+Why it matters:
+  None of these vulnerabilities affect the production Docker image. The vitest
+  critical finding does mean the local dev server has a CORS bypass, so
+  developer machines should not run npm run dev on untrusted networks.
+Recommended next action:
+  - Upgrade vitest to 4.x before production release (breaking change: review
+    vitest 4 migration guide).
+  - Wait for Next.js to publish a fix for the postcss issue; upgrade Next.js
+    when available.
+  - Document that form-data / jsdom are test-only and acceptable.
+Owner: Claude
+Status: Open — production safe; dev upgrade needed before release gate closes
+```
+
 ### OPEN-001 — Storage malware scanning
 
 ```text
@@ -277,26 +396,6 @@ Owner: Codex for backend endpoint/query optimization; Claude for frontend reques
 Status: Open
 ```
 
-### OPEN-040 - Frontend Docker and Caddy runtime validation pending
-
-```text
-Date: 2026-06-17
-Category: Dockerization / Frontend
-Severity: Medium
-Question or issue:
-  Codex validated backend-owned production Docker services (`api`, `worker`,
-  `scheduler`, `redis`) and the rendered production exposure model. Full Caddy
-  runtime validation still requires Claude to build and run the Next.js
-  production container under apps/web.
-Why it matters:
-  The production release gate requires Caddy to serve the frontend and route
-  /api/* to FastAPI while keeping frontend runtime secrets safe.
-Recommended next action:
-  Claude should validate the web production image, non-root runtime, standalone
-  Next.js output, client bundle secret safety, and Caddy reverse-proxy behavior.
-Owner: Claude
-Status: Open
-```
 
 ### OPEN-035 - Phase 4 Director Dashboard frontend wiring
 

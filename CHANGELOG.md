@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- Completed Phase 5 frontend static validation: type-check, lint, and production build all pass; bundle secret scan confirmed clean (no SUPABASE_SERVICE_ROLE_KEY or JWT_SECRET in .next/static/chunks); auth callback `next` param hardened to require leading slash; npm audit findings documented in OPEN-043 (all dev-only or build-time); OPEN-042 opened for missing frontend test suite; OPEN-041 updated with full frontend validation status.
 - Started Phase 5 hardening and deployment planning, covering backend performance baselines, security validation, Docker production checks, backup/restore proof, release-gate documentation, and remaining backend contract gaps.
 - Validated local Supabase Phase 0 foundation from a clean Docker-backed environment.
 - Hardened Supabase migrations by moving `citext` and `pg_trgm` into the `extensions` schema.
@@ -57,6 +58,7 @@
 - Added local Supabase app-schema backup and restore scripts plus a runbook, with restore proof against a separate `iems_restore_test` database.
 - Added Phase 5 rollback, incident-response, and CI/CD release-gate runbooks with current local evidence and production-only gaps called out.
 - Recorded final Phase 5 backend validation evidence for Ruff, MyPy, pytest, clean Supabase reset, SQL security probes, backend Docker health, secret scan, and local restore proof.
+- Completed additional Phase 5 backend hardening by adding `pip-audit` to the API dev toolchain and Backend CI, upgrading vulnerable `cryptography` and `starlette` dependency ranges, adding release-gate tests for no debug/token-helper routes and secret-safe Supabase request logs, and refreshing backend Docker restart plus local backup/restore evidence.
 
 - Wired Phase 2 folder CRUD to live backend: inline create, rename, and delete in FolderTreePanel with INVALID_STATE protection and canManage gating.
 - Added DocumentListPanel with per-folder document list, multipart upload dialog (INVALID_FILE_NAME, INVALID_MIME_TYPE, INVALID_FILE_SIZE error display), version upload, and signed download URLs fetched on-demand.

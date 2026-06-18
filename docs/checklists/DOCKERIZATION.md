@@ -34,7 +34,7 @@
 - [x] `public/` directory created in builder stage to prevent missing-dir COPY failure.
 - [x] `.dockerignore` extended to exclude tests, Dockerfile, vitest config.
 - [x] Frontend works behind reverse proxy.
-- [ ] Responsive UI works in containerized environment (manual sign-off needed).
+- [ ] Responsive UI works in containerized environment (manual sign-off needed — deferred until Docker auth flow is fixed, see OPEN-040).
 
 ## Reverse Proxy
 
@@ -68,5 +68,5 @@
 - [ ] Login flow works.
 - [ ] Document upload works.
 - [x] ZIP worker works.
-- [ ] Restart test passes.
-- [ ] Logs remain available after restart.
+- [x] Restart test passes for backend-owned services. `docker compose restart api worker scheduler redis` completed on 2026-06-18 and API health returned 200 afterward.
+- [x] Logs remain available after restart for backend-owned services. API, worker and scheduler logs were readable after restart on 2026-06-18.
