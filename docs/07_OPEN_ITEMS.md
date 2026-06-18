@@ -67,7 +67,7 @@ Remaining required items:
   - Docker image vulnerability scan: all application images now pass on 2026-06-18.
     Web image (node:24-alpine): 0C 0H 0M 0L.
     Backend API/worker/scheduler: 0C 0H 0M 0L (Alpine rebase).
-    Redis: 0C 0H 0M 0L. Caddy remains blocked by OPEN-044.
+    Redis: 0C 0H 0M 0L. Custom source-built Caddy image: 0C 0H 0M 0L.
 Container validation completed 2026-06-18 (after Alpine rebase):
   - Web image (node:24-alpine): Docker Scout 0C 0H 0M 0L — 300 packages indexed.
   - Production build: PASS (47 routes, all pages including /login /projects
@@ -91,12 +91,12 @@ Container validation completed 2026-06-18 (after Alpine rebase):
 Recommended next action:
   Frontend static validation is complete. Proceed to Docker full-stack runtime
   validation when the deferred Docker auth fixes are implemented. Human release
-  owner must configure staging, backups and monitoring, resolve the Caddy image
-  scan blocker, and record final approval.
+  owner must configure staging, backups and monitoring, complete the remaining
+  Docker auth/runtime sign-off, and record final approval.
 Owner: Human release owner, Claude for remaining frontend items, Codex for
   backend follow-up if new backend issues are found.
-Status: Open — frontend static and container validation complete; login flow,
-  Caddy image scan, and ops items remain
+Status: Open — frontend static and container validation complete; login flow
+  and ops items remain
 ```
 
 ### OPEN-042 - No frontend unit or integration tests
@@ -178,14 +178,28 @@ Validated clean on 2026-06-18:
   - iems-erp-worker:latest: 0 critical, 0 high
   - iems-erp-scheduler:latest: 0 critical, 0 high
   - redis:7-alpine: 0 critical, 0 high
-Recommended next action:
-  Wait for a patched official Caddy image or replace the Caddy runtime with a
-  reviewed patched build. Rerun:
-    docker scout cves caddy:2-alpine --only-severity critical,high
-  Do not mark the production image scan gate complete until this returns zero
-  critical/high findings.
+Resolution:
+  Codex added a custom `iems-erp-caddy` image built from
+  infrastructure/caddy/Dockerfile. The image uses `caddy:2-builder-alpine` only
+  as a build stage to compile Caddy v2.11.4 with Go 1.26.4, then copies the
+  binary into a minimal `alpine:3.24` runtime with ca-certificates, libcap and
+  mailcap. The runtime does not include curl, runs as UID 10001, and grants the
+  Caddy binary `cap_net_bind_service` for ports 80/443.
+Verification:
+  - docker pull caddy:2-alpine: still 1 critical, 11 high
+  - docker scout cves caddy:latest --only-severity critical,high: still
+    1 critical, 11 high
+  - custom first pass FROM caddy:2-alpine + apk upgrade removed OpenSSL
+    critical findings but still left 3 high findings (curl and Go stdlib)
+  - docker compose build caddy: passed
+  - docker scout cves iems-erp-caddy:latest --only-severity critical,high:
+    0 critical, 0 high, 0 medium, 0 low
+  - docker compose up -d caddy: passed
+  - curl -sk https://localhost/api/health: returned FastAPI health JSON
+  - curl -sk -o NUL -w "%{http_code}" https://localhost/login: 200
+  - docker compose exec -T caddy id -u: 10001
 Owner: Codex / Human release owner
-Status: Open
+Status: Resolved
 ```
 
 ### OPEN-001 — Storage malware scanning

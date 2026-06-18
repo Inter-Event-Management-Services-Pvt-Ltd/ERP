@@ -121,7 +121,10 @@ services:
       - backend
 
   caddy:
-    image: caddy:2-alpine
+    image: iems-erp-caddy
+    build:
+      context: ./infrastructure/caddy
+      dockerfile: Dockerfile
     depends_on:
       web:
         condition: service_healthy

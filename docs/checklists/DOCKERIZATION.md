@@ -53,13 +53,16 @@
 - [x] No committed `.env`.
 - [x] Secrets not baked into images (SUPABASE_SERVICE_ROLE_KEY, JWT_SECRET never in web build args).
 - [x] Images run as non-root (web: uid 10001, api: confirmed by Codex).
-- [ ] Images scanned. Backend API/worker/scheduler images and Redis scanned
+- [x] Images scanned. Backend API/worker/scheduler images and Redis scanned
   clean for critical/high findings on 2026-06-18. Web image (node:24-alpine base)
   scanned clean: 0C 0H 0M 0L via Docker Scout on 2026-06-18 (300 packages indexed).
-  Caddy still fails the critical/high gate; see OPEN-044.
-- [ ] Base-image versions reviewed. Backend moved from `python:3.12-slim` to
+  Custom `iems-erp-caddy` image scanned clean: 0C 0H 0M 0L via Docker Scout on
+  2026-06-18; OPEN-044 resolved.
+- [x] Base-image versions reviewed. Backend moved from `python:3.12-slim` to
   `python:3.12-alpine` after Docker Scout found unfixed Debian `perl` CVEs.
-  `redis:7-alpine` scanned clean. `caddy:2-alpine` remains blocked by OPEN-044.
+  `redis:7-alpine` scanned clean. Caddy moved from the vulnerable official
+  `caddy:2-alpine` runtime to a source-built Caddy v2.11.4 binary on
+  `alpine:3.24`.
 - [x] Backend network is internal.
 - [x] Redis not exposed publicly.
 - [ ] Production Compose file reviewed by human.
