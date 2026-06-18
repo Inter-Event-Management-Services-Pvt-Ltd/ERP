@@ -2,7 +2,8 @@
 
 ## Unreleased
 
-- Completed Phase 5 frontend static validation: type-check, lint, and production build all pass; bundle secret scan confirmed clean (no SUPABASE_SERVICE_ROLE_KEY or JWT_SECRET in .next/static/chunks); auth callback `next` param hardened to require leading slash; npm audit findings documented in OPEN-043 (all dev-only or build-time); OPEN-042 opened for missing frontend test suite; OPEN-041 updated with full frontend validation status.
+- Added frontend test suite (vitest 4.1.9 + @testing-library/react): 40 tests across 10 suites covering apiFetch error handling, DirectorGuard permission gate, auth callback redirect logic, Badge, PageHeader, EmptyState, ErrorState, PermissionDenied, OfflineBanner, ProjectStatusBadge, SearchInput, and canAccess role helper. Upgraded vitest from 2.x to 4.x resolving critical GHSA-67mh-4wv8-2f99; added @vitejs/plugin-react-swc for rolldown/JSX compatibility in vitest 4.
+- Completed Phase 5 frontend static validation: type-check, lint, and production build all pass; bundle secret scan confirmed clean (no SUPABASE_SERVICE_ROLE_KEY or JWT_SECRET in .next/static/chunks); auth callback `next` param hardened to require leading slash; npm audit findings documented in OPEN-043 (all dev-only or build-time); OPEN-042 resolved; OPEN-041 updated with full frontend validation status.
 - Started Phase 5 hardening and deployment planning, covering backend performance baselines, security validation, Docker production checks, backup/restore proof, release-gate documentation, and remaining backend contract gaps.
 - Validated local Supabase Phase 0 foundation from a clean Docker-backed environment.
 - Hardened Supabase migrations by moving `citext` and `pg_trgm` into the `extensions` schema.

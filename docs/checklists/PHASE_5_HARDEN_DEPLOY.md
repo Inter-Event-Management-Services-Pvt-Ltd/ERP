@@ -17,7 +17,7 @@
 - [x] Lint.
 - [x] Type check.
 - [x] Backend tests.
-- [ ] Frontend tests. No test files exist; vitest finds zero suites. See OPEN-042.
+- [x] Frontend tests. 40 tests / 10 suites pass on 2026-06-18. See OPEN-042 resolved.
 - [x] Build frontend. `npm run build` passes clean with 42 routes on 2026-06-18.
 - [x] Build backend image.
 - [x] Run migration validation.

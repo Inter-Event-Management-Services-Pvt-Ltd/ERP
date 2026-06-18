@@ -56,7 +56,8 @@ Frontend validation completed 2026-06-18:
     projects/admin, DirectorGuard non-blocking, audit page 300ms debounce
   - dangerouslySetInnerHTML: absent from all application source files
 Remaining required items:
-  - Frontend unit and integration tests (see OPEN-042).
+  - Frontend unit and integration tests written and passing — 40 tests across
+    10 suites (see OPEN-042 resolved).
   - Full-stack docker compose up with real env values — login flow, document
     upload, and responsive UI check inside the container. Docker auth flow
     requires deferred fixes (PKCE + container origin; see OPEN-040).
@@ -85,25 +86,21 @@ Status: Open — frontend static validation complete; runtime and ops items rema
 Date: 2026-06-18
 Category: Testing / Frontend
 Severity: Medium
-Question or issue:
-  The frontend has no vitest test files at all. npm run test runs vitest and
-  finds zero test suites. PHASE_5_HARDEN_DEPLOY.md requires frontend tests to
-  pass before the release gate is satisfied.
-Why it matters:
-  Without frontend tests: auth logic, permission gating, query hook behaviour,
-  error state rendering, and form validation are only verified by the production
-  build compiling without TypeScript errors. A regression in any of these areas
-  would not be caught before deployment.
-Recommended next action:
-  Add vitest + @testing-library/react tests for at minimum:
-  - useMe / usePermissions hook (mocked API, check DIRECTOR gate)
-  - DirectorGuard (renders children immediately, renders PermissionDenied when
-    !isLoading && !canView)
-  - apiFetch error handling (non-OK response → throws with code/status/requestId)
-  - Auth callback route (valid code → exchanges; invalid next param → defaults
-    to /dashboard)
+Resolution:
+  Added vitest 4.x + @testing-library/react test suite on 2026-06-18.
+  10 test suites / 40 tests, all passing. Covers:
+  - apiFetch: 200 JSON parse, structured error envelope, HTTP_NNN fallback,
+    no active session, requestId attachment on error
+  - DirectorGuard: children render while loading, DIRECTOR role, super user,
+    non-director denied, no route/resource leak in denied state
+  - Auth callback: next param absent → /dashboard, valid / path passes,
+    non-/ prefix rejected → /dashboard, no code → /dashboard
+  - Plus pre-existing Codex tests: Badge, PageHeader, EmptyState, ErrorState,
+    PermissionDenied, OfflineBanner, ProjectStatusBadge, SearchInput, canAccess
+  vitest upgraded from 2.x to 4.1.9 (resolves critical GHSA-67mh-4wv8-2f99).
+  @vitejs/plugin-react-swc added for vitest 4 / rolldown JSX compatibility.
 Owner: Claude
-Status: Open
+Status: Resolved
 ```
 
 ### OPEN-043 - npm audit: dev/build-time dependency vulnerabilities
@@ -113,10 +110,9 @@ Date: 2026-06-18
 Category: Security / Dependencies
 Severity: Low (no production risk)
 Question or issue:
-  npm audit reports 8 vulnerabilities. All are dev-only or build-time:
-  - vitest (critical, GHSA-67mh-4wv8-2f99): esbuild dev server allows any
-    website to read dev server responses. Dev-only; not in production bundle.
-    Fix requires vitest 4.x (breaking API changes).
+  npm audit reported 8 vulnerabilities (original). All were dev-only or
+  build-time. vitest critical GHSA-67mh-4wv8-2f99 is now resolved.
+  Remaining 5 vulnerabilities after vitest 4.x upgrade:
   - vite/vite-node/@vitest/mocker/esbuild (moderate): same esbuild chain, all
     dev-only.
   - form-data (high, GHSA-hmw2-7cc7-3qxx): CRLF injection. Pulled in by
