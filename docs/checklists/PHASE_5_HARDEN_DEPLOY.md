@@ -18,7 +18,7 @@
 - [x] Type check.
 - [x] Backend tests.
 - [x] Frontend tests. 40 tests / 10 suites pass on 2026-06-18. See OPEN-042 resolved.
-- [x] Build frontend. `npm run build` passes clean with 42 routes on 2026-06-18.
+- [x] Build frontend. `npm run build` passes clean with 47 routes on 2026-06-18.
 - [x] Build backend image.
 - [x] Run migration validation.
 - [ ] Deploy staging.
@@ -59,7 +59,10 @@
 
 - [ ] Complete `docs/checklists/DOCKERIZATION.md`.
 - [x] Production Compose config validated.
-- [x] Containers run as non-root. API, worker and scheduler all ran as UID 10001 in Docker validation on 2026-06-18.
-- [ ] Image scan passes.
+- [x] Containers run as non-root. API, worker, scheduler, and web all run as
+  UID 10001 in Docker validation on 2026-06-18.
+- [ ] Image scan passes. Web (node:24-alpine): 0C 0H 0M 0L on 2026-06-18.
+  Backend API/worker/scheduler (python:3.12-alpine): 0C 0H 0M 0L.
+  Redis (redis:7-alpine): 0C 0H 0M 0L. Caddy still fails; see OPEN-044.
 - [x] Restart test passes. `docker compose restart api worker scheduler redis` completed and API health/log checks passed after restart on 2026-06-18.
 - [x] Only reverse proxy ports are public.

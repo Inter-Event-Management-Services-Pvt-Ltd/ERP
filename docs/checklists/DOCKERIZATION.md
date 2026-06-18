@@ -53,8 +53,13 @@
 - [x] No committed `.env`.
 - [x] Secrets not baked into images (SUPABASE_SERVICE_ROLE_KEY, JWT_SECRET never in web build args).
 - [x] Images run as non-root (web: uid 10001, api: confirmed by Codex).
-- [ ] Images scanned (defer to pre-production gate).
-- [ ] Base-image versions reviewed (node:24-alpine, caddy:2-alpine, redis:7-alpine — review before release).
+- [ ] Images scanned. Backend API/worker/scheduler images and Redis scanned
+  clean for critical/high findings on 2026-06-18. Web image (node:24-alpine base)
+  scanned clean: 0C 0H 0M 0L via Docker Scout on 2026-06-18 (300 packages indexed).
+  Caddy still fails the critical/high gate; see OPEN-044.
+- [ ] Base-image versions reviewed. Backend moved from `python:3.12-slim` to
+  `python:3.12-alpine` after Docker Scout found unfixed Debian `perl` CVEs.
+  `redis:7-alpine` scanned clean. `caddy:2-alpine` remains blocked by OPEN-044.
 - [x] Backend network is internal.
 - [x] Redis not exposed publicly.
 - [ ] Production Compose file reviewed by human.
@@ -64,9 +69,12 @@
 - [x] Clean build succeeds (Docker production build verified with build args).
 - [x] `docker compose config` succeeds.
 - [x] Web container health check added; Caddy waits for `service_healthy`.
-- [ ] Full stack health checks pass (requires running stack).
-- [ ] Login flow works.
-- [ ] Document upload works.
+- [x] Full stack health checks pass. All 6 services healthy on 2026-06-18:
+  api, worker, scheduler, redis, web, caddy. GET /api/health → 200 via Caddy.
+  All protected routes return 307 → /login when unauthenticated. /api/v1/me
+  and /api/v1/projects return 401 without a bearer token.
+- [ ] Login flow works. Blocked by OPEN-040 (Docker auth flow / PKCE mismatch).
+- [ ] Document upload works. Blocked by OPEN-040.
 - [x] ZIP worker works.
 - [x] Restart test passes for backend-owned services. `docker compose restart api worker scheduler redis` completed on 2026-06-18 and API health returned 200 afterward.
 - [x] Logs remain available after restart for backend-owned services. API, worker and scheduler logs were readable after restart on 2026-06-18.

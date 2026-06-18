@@ -56,8 +56,6 @@ Frontend validation completed 2026-06-18:
     projects/admin, DirectorGuard non-blocking, audit page 300ms debounce
   - dangerouslySetInnerHTML: absent from all application source files
 Remaining required items:
-  - Frontend unit and integration tests written and passing — 40 tests across
-    10 suites (see OPEN-042 resolved).
   - Full-stack docker compose up with real env values — login flow, document
     upload, and responsive UI check inside the container. Docker auth flow
     requires deferred fixes (PKCE + container origin; see OPEN-040).
@@ -66,18 +64,39 @@ Remaining required items:
   - Managed Supabase database backup retention selected and verified.
   - Supabase Storage backup/export procedure selected and verified.
   - Monitoring and alerting provider configured.
-  - Docker image vulnerability scan completed.
+  - Docker image vulnerability scan: all application images now pass on 2026-06-18.
+    Web image (node:24-alpine): 0C 0H 0M 0L.
+    Backend API/worker/scheduler: 0C 0H 0M 0L (Alpine rebase).
+    Redis: 0C 0H 0M 0L. Caddy remains blocked by OPEN-044.
+Container validation completed 2026-06-18 (after Alpine rebase):
+  - Web image (node:24-alpine): Docker Scout 0C 0H 0M 0L — 300 packages indexed.
+  - Production build: PASS (47 routes, all pages including /login /projects
+    /archive /director /approvals built successfully, up from 42 in prior run).
+  - npm audit fix applied: 5 → 2 vulnerabilities. Remaining 2 are moderate
+    postcss/next chain (build-time only; fix requires next@9.3.3 breaking change).
+  - All 6 services healthy: api, worker, scheduler, redis, web, caddy.
+  - GET /api/health via Caddy: 200 {"status":"ok","service":"iems-erp-api"}.
+  - Protected routes (/, /projects, /archive, /approvals, /director, /admin):
+    all return HTTP 307 → /login when unauthenticated.
+  - API enforcement: /api/v1/me and /api/v1/projects return 401 without bearer.
+  - Security headers confirmed via Caddy: X-Frame-Options DENY,
+    X-Content-Type-Options nosniff, Referrer-Policy, HSTS, CSP, X-Request-ID.
+  - Non-root container: uid=10001(appuser) confirmed.
+  - Bundle secret scan (inside container): anon key present as expected
+    (NEXT_PUBLIC_SUPABASE_ANON_KEY is intentionally public; role=anon, subject to
+    RLS). SUPABASE_SERVICE_ROLE_KEY and JWT_SECRET absent from all 78 chunks.
   - Production Compose file reviewed by a human.
   - Incident contact and rollback owner named.
   - Human release approval recorded.
 Recommended next action:
-  Frontend static validation is now complete. Proceed to Docker full-stack
-  runtime validation when the deferred Docker auth fixes are implemented.
-  Human release owner must configure staging, backups, monitoring, image
-  scanning and record final approval.
+  Frontend static validation is complete. Proceed to Docker full-stack runtime
+  validation when the deferred Docker auth fixes are implemented. Human release
+  owner must configure staging, backups and monitoring, resolve the Caddy image
+  scan blocker, and record final approval.
 Owner: Human release owner, Claude for remaining frontend items, Codex for
   backend follow-up if new backend issues are found.
-Status: Open — frontend static validation complete; runtime and ops items remain
+Status: Open — frontend static and container validation complete; login flow,
+  Caddy image scan, and ops items remain
 ```
 
 ### OPEN-042 - No frontend unit or integration tests
@@ -112,26 +131,61 @@ Severity: Low (no production risk)
 Question or issue:
   npm audit reported 8 vulnerabilities (original). All were dev-only or
   build-time. vitest critical GHSA-67mh-4wv8-2f99 is now resolved.
-  Remaining 5 vulnerabilities after vitest 4.x upgrade:
-  - vite/vite-node/@vitest/mocker/esbuild (moderate): same esbuild chain, all
-    dev-only.
-  - form-data (high, GHSA-hmw2-7cc7-3qxx): CRLF injection. Pulled in by
-    jsdom (test-only). Not in production.
+  After vitest 4.x upgrade: 5 vulnerabilities remained. After npm audit fix
+  applied on 2026-06-18: 2 vulnerabilities remain.
+  Root cause of residual esbuild chain: @vitejs/plugin-react-swc@4.3.1 depended
+  on vite@5.4.21 → esbuild@0.21.5 (vulnerable range). npm audit fix upgraded
+  the SWC plugin's vite/esbuild subtree. form-data CRLF injection also resolved.
+  Remaining 2 vulnerabilities after npm audit fix:
   - next/postcss (moderate, GHSA-qx2v-qp2m-jg93): PostCSS XSS in CSS
     Stringify, inside Next.js internals. Build-time only; no client-side risk.
-    Cannot fix without downgrading Next.js.
+    Fix requires `npm audit fix --force` which downgrades to next@9.3.3 (breaking).
+    Both are moderate; wait for Next.js upstream fix.
 Why it matters:
   None of these vulnerabilities affect the production Docker image. The vitest
   critical finding does mean the local dev server has a CORS bypass, so
   developer machines should not run npm run dev on untrusted networks.
 Recommended next action:
-  - Upgrade vitest to 4.x before production release (breaking change: review
-    vitest 4 migration guide).
   - Wait for Next.js to publish a fix for the postcss issue; upgrade Next.js
     when available.
   - Document that form-data / jsdom are test-only and acceptable.
 Owner: Claude
-Status: Open — production safe; dev upgrade needed before release gate closes
+Status: Open — production safe; monitor dev/build-time dependency updates
+```
+
+### OPEN-044 - Caddy image scan fails critical/high vulnerability gate
+
+```text
+Date: 2026-06-18
+Category: Security / Docker
+Severity: High
+Question or issue:
+  Docker Scout reports critical/high findings for the current Caddy production
+  reverse-proxy image:
+  - caddy:2-alpine: 1 critical, 11 high
+  - caddy:2.11-alpine candidate: 1 critical, 11 high
+  Affected packages include Alpine openssl/curl and Go stdlib in the Caddy
+  binary. Docker Scout reports fixed versions for openssl and Go stdlib, but
+  the official Caddy image available locally still contains the vulnerable
+  package/binary versions.
+Why it matters:
+  The reverse proxy terminates TLS and is public-facing in production. The Phase
+  5 image scan gate cannot be closed while the public reverse-proxy image has
+  critical/high findings.
+Validated clean on 2026-06-18:
+  - iems-erp-api:latest: 0 critical, 0 high after switching backend image to
+    python:3.12-alpine
+  - iems-erp-worker:latest: 0 critical, 0 high
+  - iems-erp-scheduler:latest: 0 critical, 0 high
+  - redis:7-alpine: 0 critical, 0 high
+Recommended next action:
+  Wait for a patched official Caddy image or replace the Caddy runtime with a
+  reviewed patched build. Rerun:
+    docker scout cves caddy:2-alpine --only-severity critical,high
+  Do not mark the production image scan gate complete until this returns zero
+  critical/high findings.
+Owner: Codex / Human release owner
+Status: Open
 ```
 
 ### OPEN-001 — Storage malware scanning
