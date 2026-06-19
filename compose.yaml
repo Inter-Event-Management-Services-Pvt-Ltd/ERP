@@ -16,6 +16,15 @@ services:
       # reach Supabase from inside the container. In local Docker set this to
       # http://host.docker.internal:54321; in production use the managed URL.
       SUPABASE_URL: ${SUPABASE_URL}
+      # Browser-accessible Supabase URL injected at runtime so auth/signin can
+      # rewrite the OAuth redirect from the container-internal address to one
+      # the user's browser can reach. Must differ from SUPABASE_URL in local
+      # Docker (e.g. http://127.0.0.1:54321 vs http://host.docker.internal:54321).
+      NEXT_PUBLIC_SUPABASE_URL: ${NEXT_PUBLIC_SUPABASE_URL}
+      # Anon key and API URL are baked into the bundle at build time but also
+      # present here so Next.js server.js has them in process.env at runtime.
+      NEXT_PUBLIC_SUPABASE_ANON_KEY: ${NEXT_PUBLIC_SUPABASE_ANON_KEY}
+      NEXT_PUBLIC_API_URL: /api
     healthcheck:
       test: ["CMD", "node", "-e", "require('http').get('http://localhost:3000/', r => process.exit(r.statusCode < 500 ? 0 : 1)).on('error', () => process.exit(1))"]
       interval: 30s
