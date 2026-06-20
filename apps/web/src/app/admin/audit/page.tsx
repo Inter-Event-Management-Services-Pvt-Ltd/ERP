@@ -55,8 +55,10 @@ function AuditRow({ event }: { event: AuditEvent }) {
         <td className="px-4 py-3 whitespace-nowrap">
           <span className="font-mono text-xs text-accent-saffron/80">{event.action_code}</span>
         </td>
-        <td className="px-4 py-3 text-xs text-text-primary/50 font-mono whitespace-nowrap">{event.resource_type}</td>
-        <td className="px-4 py-3 text-xs text-text-primary/40 font-mono whitespace-nowrap">{event.resource_id.slice(0, 8)}…</td>
+        <td className="px-4 py-3 text-xs text-text-primary/50 font-mono whitespace-nowrap">{event.resource_type ?? '—'}</td>
+        <td className="px-4 py-3 text-xs text-text-primary/40 font-mono whitespace-nowrap">
+          {event.resource_id != null ? `${event.resource_id.slice(0, 8)}…` : '—'}
+        </td>
         <td className="px-4 py-3 text-xs text-text-primary/40 font-mono whitespace-nowrap">
           {format(new Date(event.created_at), 'dd MMM HH:mm:ss')}
         </td>

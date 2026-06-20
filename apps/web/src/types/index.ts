@@ -892,8 +892,8 @@ export interface UpdateFolderTemplateItemPayload {
 export interface AuditEvent {
   id: string
   action_code: string
-  resource_type: string
-  resource_id: string
+  resource_type: string | null
+  resource_id: string | null
   actor_employee_id: string
   actor: { id: string; employee_code: string; full_name: string }
   request_id: string
