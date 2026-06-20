@@ -56,15 +56,33 @@ Frontend validation completed 2026-06-18:
     projects/admin, DirectorGuard non-blocking, audit page 300ms debounce
   - dangerouslySetInnerHTML: absent from all application source files
 Remaining required items:
-  - Login flow end-to-end in Docker (Google OAuth → callback → /dashboard).
+  - Login flow end-to-end in Docker (Google OAuth -> callback -> /dashboard).
     Docker auth flow implemented 2026-06-18 (PKCE + container origin fixes in
-    OPEN-040). Requires SUPABASE_URL=http://host.docker.internal:54321 in .env
-    for local Docker, then rebuild web container and run the login flow manually.
+    OPEN-040). Backend Docker auth resolution fixed 2026-06-19: API/worker/
+    scheduler now have explicit egress for local/managed Supabase, and FastAPI
+    separates SUPABASE_URL (container REST URL), SUPABASE_AUTH_ISSUER and
+    SUPABASE_AUTH_ISSUER_ALIASES (allowed token issuers), and SUPABASE_JWKS_URL
+    (container-reachable asymmetric signing-key URL). The issuer alias is needed
+    because local Docker OAuth may mint tokens with either
+    http://127.0.0.1:54321/auth/v1 or
+    http://host.docker.internal:54321/auth/v1 depending on whether the browser
+    authorize URL or the server-side token exchange URL is used. SUPABASE_JWKS_URL
+    must use http://host.docker.internal:54321 in local Docker because
+    http://127.0.0.1:54321 is not reachable from inside the API container. JWT
+    signature, audience, expiry, role and email-domain checks remain enforced.
+    Verified through Caddy with local Director tokens: GET /api/v1/me returned
+    200 for both issuer forms, and GET /api/v1/director/overview returned 200 in
+    200 ms. API container fetched JWKS from host.docker.internal with HTTP 200
+    in 20 ms.
+    Human browser smoke test on 2026-06-20 confirmed Docker sign-in/sign-out and
+    protected app access are working as intended.
   - Staging environment configured and tested with production-like settings.
   - Production environment configured with distinct credentials.
   - Managed Supabase database backup retention selected and verified.
   - Supabase Storage backup/export procedure selected and verified.
   - Monitoring and alerting provider configured.
+  - OPEN-045 frontend follow-up completed or explicitly accepted as a pilot
+    limitation by the release owner.
   - Docker image vulnerability scan: all application images now pass on 2026-06-18.
     Web image (node:24-alpine): 0C 0H 0M 0L.
     Backend API/worker/scheduler: 0C 0H 0M 0L (Alpine rebase).
@@ -90,14 +108,15 @@ Container validation completed 2026-06-18 (after Alpine rebase):
   - Incident contact and rollback owner named.
   - Human release approval recorded.
 Recommended next action:
-  Frontend static validation is complete. Proceed to Docker full-stack runtime
-  validation when the deferred Docker auth fixes are implemented. Human release
-  owner must configure staging, backups and monitoring, complete the remaining
-  Docker auth/runtime sign-off, and record final approval.
+  Frontend static validation is complete, Docker image scans are clean, and
+  browser Docker auth has been manually confirmed. Human release owner must
+  provision staging, configure backups and monitoring, complete the staging
+  validation runbook, decide whether OPEN-045 blocks release, and record final
+  approval.
 Owner: Human release owner, Claude for remaining frontend items, Codex for
   backend follow-up if new backend issues are found.
-Status: Open — frontend static and container validation complete; login flow
-  and ops items remain
+Status: Open — local validation complete; staging, backups, monitoring, release
+  approval and OPEN-045 disposition remain
 ```
 
 ### OPEN-042 - No frontend unit or integration tests
@@ -201,6 +220,52 @@ Verification:
   - docker compose exec -T caddy id -u: 10001
 Owner: Codex / Human release owner
 Status: Resolved
+```
+
+### OPEN-045 - Admin tab does not load; notifications need proper wiring
+
+```text
+Date: 2026-06-20
+Category: Frontend Integration
+Severity: Medium
+Question or issue:
+  The admin tab is not loading correctly for users who should be able to reach
+  admin surfaces, and the notifications area still needs proper end-to-end
+  wiring to the documented contract.
+Resolution (2026-06-20):
+  Admin:
+  - Created AdminGuard (components/layout/admin-guard.tsx) mirroring
+    DirectorGuard; allows ADMIN/SUPER_ADMIN/SUPER_USER roles or is_super_user.
+  - Added app/admin/layout.tsx wrapping all /admin/* routes in AdminGuard so
+    unauthorized users get PermissionDenied at the route level.
+  - Replaced the perpetual-skeleton /admin/page.tsx with a real overview page:
+    7 nav cards (Employees, Policies, Folder Templates, Archive Locations,
+    Departments, Roles, Audit Log) each linking to the corresponding sub-route,
+    with a "Read only" label on sections the user cannot manage.
+  Notifications:
+  - Added Notification type to types/index.ts matching the DB schema
+    (id, employee_id, notification_type, title, message, resource_type,
+    resource_id, read_at, created_at).
+  - Added fetchNotifications and markNotificationRead to lib/api.ts wired to
+    GET /v1/me/notifications and PATCH /v1/me/notifications/{id}/read.
+  - New hooks/use-notifications.ts: useNotifications, useUnreadCount,
+    useMarkNotificationRead (React Query with cache invalidation on read).
+  - Replaced /notifications skeleton with a live list: per-item unread dot,
+    mark-as-read action, cache-invalidation on success, subtitle showing unread
+    count or "All caught up", empty/loading/error states.
+  - TopBar bell shows an unread badge count from useUnreadCount; aria-label
+    updates with the count for screen readers.
+  Backend note:
+  - GET /v1/me/notifications and PATCH /v1/me/notifications/{id}/read are
+    listed in docs/api-contract.md but not yet implemented in FastAPI
+    (apps/api/app/api/v1/me.py has only /v1/me and /v1/me/permissions).
+    The frontend shows ErrorState until Codex adds these routes.
+Verification:
+  cd apps/web && npx tsc --noEmit && npx eslint src/ --ext .ts,.tsx,.js,.jsx
+  npm run build && npm test
+  All pass: 10 test suites / 40 tests, 0 type errors, 0 lint errors, build ok.
+Owner: Claude
+Status: Resolved (frontend); backend notification endpoints pending Codex
 ```
 
 ### OPEN-001 — Storage malware scanning
