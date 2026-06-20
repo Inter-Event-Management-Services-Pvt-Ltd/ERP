@@ -43,6 +43,8 @@ services:
       context: ./apps/api
       dockerfile: Dockerfile
       target: production
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
     env_file:
       - .env
     environment:
@@ -51,6 +53,9 @@ services:
       CELERY_BROKER_URL: redis://redis:6379/0
       CELERY_RESULT_BACKEND: redis://redis:6379/1
       SUPABASE_URL: ${SUPABASE_URL}
+      SUPABASE_AUTH_ISSUER: ${SUPABASE_AUTH_ISSUER:-${NEXT_PUBLIC_SUPABASE_URL}/auth/v1}
+      SUPABASE_AUTH_ISSUER_ALIASES: ${SUPABASE_AUTH_ISSUER_ALIASES:-${SUPABASE_URL}/auth/v1}
+      SUPABASE_JWKS_URL: ${SUPABASE_JWKS_URL:-${SUPABASE_URL}/auth/v1/.well-known/jwks.json}
       SUPABASE_ANON_KEY: ${SUPABASE_ANON_KEY}
       SUPABASE_SERVICE_ROLE_KEY: ${SUPABASE_SERVICE_ROLE_KEY}
       SUPABASE_JWT_SECRET: ${SUPABASE_JWT_SECRET}
@@ -66,12 +71,15 @@ services:
     restart: unless-stopped
     networks:
       - backend
+      - egress
 
   worker:
     build:
       context: ./apps/api
       dockerfile: Dockerfile
       target: production
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
     command: ["celery", "-A", "app.workers.celery_app", "worker", "--loglevel=INFO"]
     env_file:
       - .env
@@ -88,12 +96,15 @@ services:
     restart: unless-stopped
     networks:
       - backend
+      - egress
 
   scheduler:
     build:
       context: ./apps/api
       dockerfile: Dockerfile
       target: production
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
     command:
       [
         "celery",
@@ -118,6 +129,7 @@ services:
     restart: unless-stopped
     networks:
       - backend
+      - egress
 
   redis:
     image: redis:7-alpine
@@ -167,5 +179,6 @@ volumes:
 
 networks:
   frontend:
+  egress:
   backend:
     internal: true

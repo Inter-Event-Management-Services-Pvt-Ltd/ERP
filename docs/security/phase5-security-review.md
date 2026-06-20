@@ -50,6 +50,18 @@ Backend Docker validation on 2026-06-18 confirmed:
 - API health returns 200 after `docker compose restart api worker scheduler redis`.
 - Backend container logs remain readable after restart.
 - `docker compose config` renders local environment values; do not paste its raw output into PRs, issues or external systems.
+- Backend production images were moved from `python:3.12-slim` to
+  `python:3.12-alpine` after Docker Scout found critical/high Debian `perl`
+  CVEs.
+- Docker Scout critical/high scans now pass for `iems-erp-api:latest`,
+  `iems-erp-worker:latest`, `iems-erp-scheduler:latest` and `redis:7-alpine`.
+- Docker Scout critical/high scan passes for the custom source-built Caddy
+  image (`iems-erp-caddy`); OPEN-044 is resolved.
+- Docker auth runtime validation on 2026-06-20 keeps JWT signature, audience and
+  expiry verification enabled while allowing only the configured local issuer
+  aliases. JWKS resolution uses `host.docker.internal` inside the API container
+  for local Docker; staging and production should use their managed Supabase
+  issuer and JWKS URLs directly.
 
 ## Notes
 
@@ -57,5 +69,7 @@ Backend Docker validation on 2026-06-18 confirmed:
 - Frontend public environment variables must use publishable/anon values only.
 - Production and staging credentials must differ before release.
 - Malware scanning for uploads remains an open production decision.
-- Image vulnerability scanning remains required before production.
-- Staging deployment, managed Supabase backup retention and human release approval remain required before production.
+- Staging deployment, managed Supabase backup retention, Supabase Storage backup
+  procedure, monitoring/alerting and human release approval remain required
+  before production.
+- OPEN-045 tracks the frontend admin-tab and notification-wiring issue.

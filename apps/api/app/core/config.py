@@ -32,6 +32,18 @@ class Settings(BaseSettings):
         validation_alias="SUPABASE_JWT_AUDIENCE",
     )
     supabase_jwt_secret: str | None = Field(default=None, validation_alias="SUPABASE_JWT_SECRET")
+    supabase_auth_issuer_override: str | None = Field(
+        default=None,
+        validation_alias="SUPABASE_AUTH_ISSUER",
+    )
+    supabase_auth_issuer_aliases: str | None = Field(
+        default=None,
+        validation_alias="SUPABASE_AUTH_ISSUER_ALIASES",
+    )
+    supabase_jwks_url_override: str | None = Field(
+        default=None,
+        validation_alias="SUPABASE_JWKS_URL",
+    )
     supabase_service_role_key: str | None = Field(
         default=None,
         validation_alias="SUPABASE_SERVICE_ROLE_KEY",
@@ -74,15 +86,27 @@ class Settings(BaseSettings):
 
     @property
     def supabase_auth_issuer(self) -> str | None:
+        if self.supabase_auth_issuer_override is not None:
+            return self.supabase_auth_issuer_override.rstrip("/")
         if self.supabase_url is None:
             return None
         return f"{self.supabase_url.rstrip('/')}/auth/v1"
 
     @property
     def supabase_jwks_url(self) -> str | None:
+        if self.supabase_jwks_url_override is not None:
+            return self.supabase_jwks_url_override.rstrip("/")
         if self.supabase_auth_issuer is None:
             return None
         return f"{self.supabase_auth_issuer}/.well-known/jwks.json"
+
+    @property
+    def supabase_auth_issuer_list(self) -> tuple[str, ...]:
+        issuers: list[str] = []
+        if self.supabase_auth_issuer is not None:
+            issuers.append(self.supabase_auth_issuer)
+        issuers.extend(_csv_values(self.supabase_auth_issuer_aliases))
+        return tuple(dict.fromkeys(issuer.rstrip("/") for issuer in issuers))
 
     @property
     def allowed_email_domain_list(self) -> tuple[str, ...]:

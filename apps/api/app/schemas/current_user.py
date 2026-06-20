@@ -1,3 +1,4 @@
+from datetime import datetime
 from uuid import UUID
 
 from pydantic import BaseModel, Field
@@ -30,3 +31,15 @@ class CurrentUserPermissions(BaseModel):
     permissions: list[str] = Field(default_factory=list)
     is_super_user: bool
     super_user_requires_reason: bool = True
+
+
+class NotificationResponse(BaseModel):
+    id: UUID
+    employee_id: UUID
+    notification_type: str
+    title: str
+    message: str
+    resource_type: str | None
+    resource_id: UUID | None
+    read_at: datetime | None
+    created_at: datetime

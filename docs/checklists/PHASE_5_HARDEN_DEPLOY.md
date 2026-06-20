@@ -21,13 +21,16 @@
 - [x] Build frontend. `npm run build` passes clean with 47 routes on 2026-06-18.
 - [x] Build backend image.
 - [x] Run migration validation.
-- [ ] Deploy staging.
+- [ ] Deploy staging. Staging validation runbook added at
+  `docs/deployment/staging-validation-runbook.md`; environment execution still
+  requires human-provided staging Supabase, domain and secrets.
 - [x] Health checks.
 - [ ] Manual production promotion.
 
 ## Operations
 
-- [ ] Configure staging.
+- [ ] Configure staging. Runbook is documented; external staging environment is
+  not yet provisioned.
 - [ ] Configure production.
 - [ ] Configure monitoring.
 - [ ] Configure alerting.
@@ -61,8 +64,9 @@
 - [x] Production Compose config validated.
 - [x] Containers run as non-root. API, worker, scheduler, and web all run as
   UID 10001 in Docker validation on 2026-06-18.
-- [ ] Image scan passes. Web (node:24-alpine): 0C 0H 0M 0L on 2026-06-18.
+- [x] Image scan passes. Web (node:24-alpine): 0C 0H 0M 0L on 2026-06-18.
   Backend API/worker/scheduler (python:3.12-alpine): 0C 0H 0M 0L.
-  Redis (redis:7-alpine): 0C 0H 0M 0L. Caddy still fails; see OPEN-044.
+  Redis (redis:7-alpine): 0C 0H 0M 0L. Custom source-built Caddy image:
+  0C 0H 0M 0L; OPEN-044 resolved.
 - [x] Restart test passes. `docker compose restart api worker scheduler redis` completed and API health/log checks passed after restart on 2026-06-18.
 - [x] Only reverse proxy ports are public.

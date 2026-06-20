@@ -48,10 +48,12 @@ class SupabaseJwtVerifier:
         audience: str,
         allowed_email_domain: str | None = None,
         allowed_email_domains: Iterable[str] | None = None,
+        issuer_aliases: Iterable[str] | None = None,
         jwks_url: str | None = None,
     ) -> None:
         self._jwt_secret = jwt_secret
         self._issuer = issuer
+        self._issuers = _allowed_issuers(issuer=issuer, issuer_aliases=issuer_aliases)
         self._audience = audience
         self._allowed_email_domains = _allowed_domains(
             allowed_email_domain=allowed_email_domain,
@@ -66,6 +68,7 @@ class SupabaseJwtVerifier:
             issuer=settings.supabase_auth_issuer,
             audience=settings.supabase_jwt_audience,
             allowed_email_domains=settings.allowed_email_domain_list,
+            issuer_aliases=settings.supabase_auth_issuer_list[1:],
             jwks_url=settings.supabase_jwks_url,
         )
 
@@ -81,10 +84,13 @@ class SupabaseJwtVerifier:
         else:
             payload = self._decode_jwks(token, algorithm)
 
-        return self._claims_from_payload(payload)
+        claims = self._claims_from_payload(payload)
+        if claims.issuer not in self._issuers:
+            raise AuthError(401, "INVALID_TOKEN", "Invalid access token")
+        return claims
 
     def _ensure_configured(self) -> None:
-        if self._issuer is None:
+        if not self._issuers:
             raise AuthError(503, "AUTH_NOT_CONFIGURED", "Supabase Auth issuer is not configured")
 
     def _unverified_header(self, token: str) -> dict[str, Any]:
@@ -125,7 +131,7 @@ class SupabaseJwtVerifier:
                     key,
                     algorithms=algorithms,
                     audience=self._audience,
-                    issuer=self._issuer,
+                    options={"verify_iss": False},
                 ),
             )
         except InvalidTokenError as exc:
@@ -198,4 +204,19 @@ def _allowed_domains(
     }
     if not normalized:
         raise AuthError(503, "AUTH_NOT_CONFIGURED", "Allowed email domains are not configured")
+    return frozenset(normalized)
+
+
+def _allowed_issuers(
+    *,
+    issuer: str | None,
+    issuer_aliases: Iterable[str] | None,
+) -> frozenset[str]:
+    issuers: list[str] = []
+    if issuer is not None:
+        issuers.append(issuer)
+    if issuer_aliases is not None:
+        issuers.extend(issuer_aliases)
+
+    normalized = {value.strip().rstrip("/") for value in issuers if value.strip().rstrip("/")}
     return frozenset(normalized)

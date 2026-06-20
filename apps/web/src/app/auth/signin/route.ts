@@ -16,21 +16,21 @@ export async function GET(request: NextRequest) {
     new URL(request.url).host
   const origin = `${proto}://${host}`
 
-  // Use the same URL priority as server.ts / middleware.ts so the PKCE
-  // code-verifier cookie key is consistent between sign-in and callback.
-  // The cookie key is derived from the Supabase URL passed to createServerClient;
-  // if sign-in and callback use different URLs the verifier lookup fails.
-  const supabaseUrl = process.env.SUPABASE_URL ?? process.env.NEXT_PUBLIC_SUPABASE_URL!
-  // Browser-accessible URL (baked into the image at build time via NEXT_PUBLIC_).
-  // In production supabaseUrl === publicUrl (rewrite is a no-op).
-  // In local Docker, SUPABASE_URL is the container-internal address; the rewrite
-  // below replaces it in data.url so the browser can follow the OAuth redirect.
-  const publicUrl = process.env.NEXT_PUBLIC_SUPABASE_URL ?? supabaseUrl
+  // Container-internal URL used for server-side Supabase API calls. Must match
+  // server.ts so the PKCE code-verifier cookie key is the same at sign-in and
+  // callback — @supabase/ssr derives the cookie name from the URL host.
+  const serverUrl = process.env.SUPABASE_URL ?? process.env.NEXT_PUBLIC_SUPABASE_URL!
+  // Browser-accessible URL. Injected at runtime via compose.yaml (not baked at
+  // build time) so process.env reads the correct value inside the container.
+  // In production these are identical; in local Docker they differ so the rewrite
+  // below replaces the container-internal host before the redirect is sent.
+  const browserUrl = process.env.NEXT_PUBLIC_SUPABASE_URL ?? serverUrl
 
   const supabase = createServerClient(
-    supabaseUrl,
+    serverUrl,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
     {
+      cookieOptions: { name: 'sb-iems' },
       cookies: {
         getAll() {
           return cookieStore.getAll()
@@ -62,12 +62,11 @@ export async function GET(request: NextRequest) {
     return NextResponse.redirect(`${origin}/login`)
   }
 
-  // Replace the internal Supabase address with the browser-accessible one.
-  // signInWithOAuth constructs data.url using supabaseUrl; if that is a
-  // Docker-internal address the browser can't reach, swap the base URL prefix.
+  // signInWithOAuth builds data.url from serverUrl. If that is a container-internal
+  // address the browser cannot reach, swap the origin so the redirect works.
   const oauthUrl =
-    supabaseUrl !== publicUrl && data.url.startsWith(supabaseUrl)
-      ? publicUrl + data.url.slice(supabaseUrl.length)
+    serverUrl !== browserUrl && data.url.startsWith(serverUrl)
+      ? browserUrl + data.url.slice(serverUrl.length)
       : data.url
 
   return NextResponse.redirect(oauthUrl)

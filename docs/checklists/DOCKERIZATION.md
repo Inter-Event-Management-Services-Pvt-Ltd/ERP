@@ -34,7 +34,10 @@
 - [x] `public/` directory created in builder stage to prevent missing-dir COPY failure.
 - [x] `.dockerignore` extended to exclude tests, Dockerfile, vitest config.
 - [x] Frontend works behind reverse proxy.
-- [ ] Responsive UI works in containerized environment (manual sign-off needed — deferred until Docker auth flow is fixed, see OPEN-040).
+- [x] Responsive UI works in containerized environment. Claude frontend
+  validation recorded responsive/accessibility review, and the human release
+  owner confirmed the Docker app is working as intended on 2026-06-20 after the
+  auth runtime fix.
 
 ## Reverse Proxy
 
@@ -63,7 +66,9 @@
   `redis:7-alpine` scanned clean. Caddy moved from the vulnerable official
   `caddy:2-alpine` runtime to a source-built Caddy v2.11.4 binary on
   `alpine:3.24`.
-- [x] Backend network is internal.
+- [x] Backend Redis network is internal. API, worker and scheduler also attach
+  to a separate non-internal egress network so they can reach local Docker
+  Supabase (`host.docker.internal`) and managed Supabase without exposing Redis.
 - [x] Redis not exposed publicly.
 - [ ] Production Compose file reviewed by human.
 
@@ -76,11 +81,17 @@
   api, worker, scheduler, redis, web, caddy. GET /api/health → 200 via Caddy.
   All protected routes return 307 → /login when unauthenticated. /api/v1/me
   and /api/v1/projects return 401 without a bearer token.
-- [ ] Login flow works. Auth flow implemented 2026-06-18 (server-side OAuth,
-  SUPABASE_URL override, x-forwarded headers for origin). Requires manual
-  end-to-end verification: set SUPABASE_URL=http://host.docker.internal:54321
-  in .env, rebuild web container, navigate to /login and complete Google OAuth.
-- [ ] Document upload works. Pending login flow sign-off.
+- [x] Login flow works. Auth flow implemented 2026-06-18 (server-side OAuth,
+  SUPABASE_URL override, x-forwarded headers for origin). Backend Docker auth
+  resolution fixed 2026-06-19 with explicit backend egress and
+  SUPABASE_AUTH_ISSUER / SUPABASE_AUTH_ISSUER_ALIASES / SUPABASE_JWKS_URL split
+  from SUPABASE_URL; verified authenticated `/api/v1/me` with both local issuer
+  forms, reachable JWKS from inside the API container, and
+  `/api/v1/director/overview` through Caddy. Human browser smoke test confirmed
+  sign-in/sign-out and protected app access are working on 2026-06-20.
+- [ ] Document upload works. Backend document upload/version/download endpoints
+  are implemented and covered from earlier phases; final Docker browser upload
+  sign-off remains part of staging validation.
 - [x] ZIP worker works.
 - [x] Restart test passes for backend-owned services. `docker compose restart api worker scheduler redis` completed on 2026-06-18 and API health returned 200 afterward.
 - [x] Logs remain available after restart for backend-owned services. API, worker and scheduler logs were readable after restart on 2026-06-18.

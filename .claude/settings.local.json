@@ -55,7 +55,21 @@
       "Bash(git tag *)",
       "Bash(git pull *)",
       "Bash(cat .env.local)",
-      "Bash(cat .env.example)"
+      "Bash(cat .env.example)",
+      "PowerShell(cd \"C:\\\\Users\\\\prath\\\\OneDrive\\\\Desktop\\\\IEMS - Company Projects\\\\dashboard\\\\erp\"; gh pr view 7 --json state,mergedAt,mergeCommit | ConvertFrom-Json | Select-Object state, mergedAt, @{n='mergeCommit';e={$_.mergeCommit.oid}})",
+      "PowerShell(docker run --rm -d --name iems-web-test -p 3001:3000 iems-web-test; Start-Sleep -Seconds 4; docker exec iems-web-test id; docker exec iems-web-test sh -c \"wget -qO- http://localhost:3000/ > /dev/null && echo 'PORT OK' || echo 'PORT FAIL'\"; docker stop iems-web-test 2>&1)",
+      "PowerShell(docker run --rm -d --name iems-web-test2 -p 3001:3000 iems-web-test; Start-Sleep -Seconds 8; docker logs iems-web-test2 2>&1 | Select-Object -Last 15; docker stop iems-web-test2 2>&1)",
+      "Bash(docker compose *)",
+      "PowerShell(npm audit *)",
+      "PowerShell(New-Item *)",
+      "PowerShell(dir *)",
+      "PowerShell(docker scout cves iems-web:phase5-scan --exit-code --only-severity critical,high 2>&1)",
+      "PowerShell(docker compose ps 2>&1; Write-Host \"---\"; docker exec iems-erp-web-1 id 2>&1)",
+      "PowerShell(Start-Sleep -Seconds 3; Invoke-WebRequest -Uri \"http://localhost/api/health\" -UseBasicParsing -TimeoutSec 10 2>&1 | Select-Object -ExpandProperty Content)",
+      "PowerShell(Invoke-WebRequest -Uri \"http://localhost/api/health\" -UseBasicParsing -MaximumRedirection 5 -TimeoutSec 10 2>&1 | Select-Object StatusCode, Content | Format-List)",
+      "PowerShell(Invoke-WebRequest -Uri \"http://localhost/\" -UseBasicParsing -MaximumRedirection 5 -TimeoutSec 10 2>&1 | Select-Object StatusCode, @{N='ContentPreview';E={$_.Content.Substring\\(0,[Math]::Min\\(200,$_.Content.Length\\)\\)}})",
+      "Bash(docker exec *)",
+      "PowerShell(curl.exe -sk -D - -o NUL https://localhost/auth/signin 2>&1)"
     ]
   },
   "disabledMcpjsonServers": [

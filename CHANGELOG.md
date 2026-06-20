@@ -2,6 +2,16 @@
 
 ## Unreleased
 
+- Added Phase 5 staging validation runbook covering staging Supabase, Docker
+  deployment checks, browser smoke tests, security evidence, and exit criteria.
+- Updated Phase 5 release evidence after Docker auth was manually confirmed in
+  browser on 2026-06-20, while keeping staging, backups, monitoring, release
+  approval and OPEN-045 open.
+- Marked the Phase 5 image scan gate complete after the custom source-built
+  Caddy image cleared Docker Scout critical/high scanning.
+- Recorded OPEN-045 for Claude-owned admin tab loading and notification wiring.
+
+- Fixed the Docker auth/runtime split for local Supabase: backend API, worker and scheduler containers now attach to a non-internal egress network and map `host.docker.internal` explicitly, while Redis remains private on the internal backend network; added `SUPABASE_AUTH_ISSUER`, `SUPABASE_AUTH_ISSUER_ALIASES` and `SUPABASE_JWKS_URL` so FastAPI accepts the two local Supabase issuer aliases involved in browser OAuth/server-side token exchange while fetching asymmetric signing keys from the container-reachable Supabase URL. JWT signature, audience, expiry, role and email-domain checks remain enforced. Verified `/api/v1/me` returns Director/Super User context with both local issuer forms and `/api/v1/director/overview` returns 200 through Caddy.
 - Implemented Docker auth flow for containerized Next.js (OPEN-040): added server-side `GET /auth/signin` route using `createServerClient` with `skipBrowserRedirect: true` so the PKCE code verifier is stored in a cookie before the OAuth redirect rather than in browser state; added `SUPABASE_URL` runtime override in `server.ts` and `middleware.ts` so server-side requests reach Supabase from inside the container (set to `http://host.docker.internal:54321` locally); fixed auth callback origin to use `x-forwarded-proto`/`x-forwarded-host` headers from Caddy; converted `/login` page from a client component to a static server component with `<a href="/auth/signin">`.
 - Resolved the Phase 5 Caddy image-scan blocker by replacing the vulnerable official `caddy:2-alpine` runtime with a custom `iems-erp-caddy` image: Caddy v2.11.4 is built with Go 1.26.4 in a builder stage, copied into a minimal `alpine:3.24` runtime, run as UID 10001 with `cap_net_bind_service`, and verified by Docker Scout at 0 critical / 0 high findings plus Caddy routing checks for `/api/health` and `/login`.
 

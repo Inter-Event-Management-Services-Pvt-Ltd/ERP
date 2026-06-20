@@ -21,6 +21,8 @@ Date: 2026-06-18
 ## Results
 
 Backend production image build passed for `api`, `worker`, and `scheduler`.
+The backend images now use `python:3.12-alpine` after Docker Scout found
+critical/high Debian `perl` CVEs in the previous `python:3.12-slim` images.
 
 Runtime validation passed for backend-owned services:
 
@@ -36,6 +38,16 @@ Runtime validation passed for backend-owned services:
 | redis | healthy | `redis-cli ping` returned `PONG` |
 | restart | passed | `docker compose restart api worker scheduler redis` completed; API returned `/health` 200 afterward |
 | logs after restart | passed | API, worker and scheduler logs remained readable after restart |
+
+Image scan evidence from 2026-06-18:
+
+| Image | Result |
+|---|---|
+| `iems-erp-api:latest` | Docker Scout: 0 critical, 0 high |
+| `iems-erp-worker:latest` | Docker Scout: 0 critical, 0 high |
+| `iems-erp-scheduler:latest` | Docker Scout: 0 critical, 0 high |
+| `redis:7-alpine` | Docker Scout: 0 critical, 0 high |
+| `iems-erp-caddy:latest` | Docker Scout: 0 critical, 0 high; custom source-built Caddy image resolves OPEN-044 |
 
 Scheduler initially restarted because Celery beat tried to write
 `celerybeat-schedule` under `/app`, which is intentionally non-writable for the
@@ -62,8 +74,24 @@ with `. db -> /tmp/celerybeat-schedule`.
 development secrets. Use the command to validate the rendered service model, but
 do not paste raw config output into PRs, issues, chat, or external systems.
 
-## Deferred Frontend/Caddy Runtime Checks
+## Full-Stack Docker Auth Validation
 
-Full `caddy -> web -> api` runtime validation is still Claude-owned because it
-requires building and running the Next.js production container under `apps/web`.
-See `OPEN-040`.
+Additional validation on 2026-06-20 confirmed the local Docker auth topology:
+
+- API, worker and scheduler attach to an egress network so they can reach local
+  Docker Supabase at `host.docker.internal` without exposing Redis.
+- `SUPABASE_URL` remains the container-reachable Supabase REST URL.
+- `SUPABASE_AUTH_ISSUER` and `SUPABASE_AUTH_ISSUER_ALIASES` define the exact
+  token issuers accepted by FastAPI.
+- `SUPABASE_JWKS_URL` points to the container-reachable JWKS endpoint.
+- FastAPI still verifies JWT signature, audience and expiry.
+- API container JWKS fetch from `host.docker.internal` returned HTTP 200.
+- Authenticated `GET /api/v1/me` through Caddy returned 200 for both local
+  issuer forms.
+- Authenticated `GET /api/v1/director/overview` through Caddy returned 200.
+- Human browser smoke test confirmed Docker sign-in/sign-out and protected app
+  access are working as intended on 2026-06-20.
+
+Remaining browser sign-off for production is covered by the staging validation
+runbook, especially document upload/download, admin tab behavior and
+notifications.
