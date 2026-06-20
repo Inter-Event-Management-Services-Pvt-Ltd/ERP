@@ -79,6 +79,7 @@ import type {
   DirectorUpcomingEvent,
   DirectorMissingDocument,
   DirectorVerificationReminder,
+  Notification,
 } from '@/types'
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:8000'
@@ -146,6 +147,23 @@ export async function fetchMe(): Promise<MeResponse> {
 
 export async function fetchPermissions(): Promise<PermissionsResponse> {
   return apiFetch<PermissionsResponse>('/v1/me/permissions')
+}
+
+export async function fetchNotifications(params?: {
+  limit?: number
+  offset?: number
+}): Promise<Notification[]> {
+  const qs = new URLSearchParams()
+  if (params?.limit) qs.set('limit', String(params.limit))
+  if (params?.offset) qs.set('offset', String(params.offset))
+  const q = qs.toString()
+  return apiFetch<Notification[]>(`/v1/me/notifications${q ? `?${q}` : ''}`)
+}
+
+export async function markNotificationRead(notificationId: string): Promise<Notification> {
+  return apiFetch<Notification>(`/v1/me/notifications/${notificationId}/read`, {
+    method: 'PATCH',
+  })
 }
 
 // ─── Clients ──────────────────────────────────────────────────────────────────

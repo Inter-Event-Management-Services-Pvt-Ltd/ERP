@@ -952,3 +952,15 @@ export interface DirectorVerificationReminder {
   last_verified_at: string | null
   next_verification_at: string
 }
+
+export interface Notification {
+  id: string
+  employee_id: string
+  notification_type: string
+  title: string
+  message: string
+  resource_type: string | null
+  resource_id: string | null
+  read_at: string | null
+  created_at: string
+}
