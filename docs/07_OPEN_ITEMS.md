@@ -81,8 +81,8 @@ Remaining required items:
   - Managed Supabase database backup retention selected and verified.
   - Supabase Storage backup/export procedure selected and verified.
   - Monitoring and alerting provider configured.
-  - OPEN-045 frontend follow-up completed or explicitly accepted as a pilot
-    limitation by the release owner.
+  - OPEN-045 resolved (2026-06-20): admin guard, notifications wiring, audit
+    log null crash fixed, backend notification endpoints implemented by Codex.
   - Docker image vulnerability scan: all application images now pass on 2026-06-18.
     Web image (node:24-alpine): 0C 0H 0M 0L.
     Backend API/worker/scheduler: 0C 0H 0M 0L (Alpine rebase).
@@ -108,11 +108,10 @@ Container validation completed 2026-06-18 (after Alpine rebase):
   - Incident contact and rollback owner named.
   - Human release approval recorded.
 Recommended next action:
-  Frontend static validation is complete, Docker image scans are clean, and
-  browser Docker auth has been manually confirmed. Human release owner must
-  provision staging, configure backups and monitoring, complete the staging
-  validation runbook, decide whether OPEN-045 blocks release, and record final
-  approval.
+  Frontend static validation is complete, Docker image scans are clean, browser
+  Docker auth has been manually confirmed, and OPEN-045 is fully resolved.
+  Human release owner must provision staging, configure backups and monitoring,
+  complete the staging validation runbook, and record final approval.
 Owner: Human release owner, Claude for remaining frontend items, Codex for
   backend follow-up if new backend issues are found.
 Status: Open — local validation complete; staging, backups, monitoring, release
@@ -255,17 +254,34 @@ Resolution (2026-06-20):
     count or "All caught up", empty/loading/error states.
   - TopBar bell shows an unread badge count from useUnreadCount; aria-label
     updates with the count for screen readers.
-  Backend note:
-  - GET /v1/me/notifications and PATCH /v1/me/notifications/{id}/read are
-    listed in docs/api-contract.md but not yet implemented in FastAPI
-    (apps/api/app/api/v1/me.py has only /v1/me and /v1/me/permissions).
-    The frontend shows ErrorState until Codex adds these routes.
+  Backend (resolved 2026-06-20 by Codex):
+  - GET /v1/me/notifications and PATCH /v1/me/notifications/{id}/read
+    implemented in apps/api/app/api/v1/me.py.
+  - NotificationResponse schema added to apps/api/app/schemas/current_user.py.
+  - Tests added in apps/api/tests/test_me_notifications_api.py.
+  - Auth required; no extra RBAC permission; user sees only their own rows.
+  - PATCH verifies employee_id ownership before marking read; returns 404
+    NOT_FOUND if notification not found or belongs to another employee.
+  End-to-end validation (2026-06-20):
+  - TopBar unread badge confirmed wired to GET /v1/me/notifications via
+    useUnreadCount → useNotifications({ limit: 100 }).
+  - Notifications page list confirmed wired to backend (no placeholder state).
+  - Mark-as-read confirmed calls PATCH and invalidates the React Query cache,
+    updating both the badge count and the list in one refetch.
+  - Empty / loading / error states all render correctly.
+  - No direct Supabase calls; all traffic routed through FastAPI via apiFetch.
+  Audit log null crash fix (2026-06-20):
+  - Visiting /admin/audit crashed with "Cannot read properties of null
+    (reading 'slice')" because AuditEvent.resource_id was typed as string
+    but the database allows null for events not tied to a specific resource.
+  - Fixed: types/index.ts AuditEvent.resource_id and resource_type changed to
+    string | null; admin/audit/page.tsx row renderer now shows '—' when null.
 Verification:
-  cd apps/web && npx tsc --noEmit && npx eslint src/ --ext .ts,.tsx,.js,.jsx
+  cd apps/web && npx tsc --noEmit && npx eslint src/ --max-warnings=0
   npm run build && npm test
-  All pass: 10 test suites / 40 tests, 0 type errors, 0 lint errors, build ok.
-Owner: Claude
-Status: Resolved (frontend); backend notification endpoints pending Codex
+  All pass: 10 test suites / 40 tests, 0 type errors, 0 lint warnings, build ok.
+Owner: Claude (frontend), Codex (backend)
+Status: Resolved
 ```
 
 ### OPEN-001 — Storage malware scanning
