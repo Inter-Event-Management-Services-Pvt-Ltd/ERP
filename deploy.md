@@ -71,7 +71,7 @@ Backend-only Compose command for a server where Vercel hosts the frontend:
 ```bash
 cp .env.server.example .env
 # edit .env before starting
-docker compose -f compose.yaml -f compose.backend.yaml up -d --build api worker scheduler redis
+docker compose -f compose.yaml -f compose.backend.yaml up -d --build
 ```
 
 The backend API is published only on the server loopback interface:
@@ -82,6 +82,9 @@ The backend API is published only on the server loopback interface:
 
 Cloudflare Tunnel should point at `http://127.0.0.1:8000`. Redis remains private
 inside Docker Compose and is not published to the network.
+
+Do not paste `docker compose config` output into chats, issues or PRs after real
+server secrets are configured. It expands environment values.
 
 ## 6. Expose API With Cloudflare Tunnel
 
