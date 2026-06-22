@@ -1,9 +1,12 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useRef } from 'react'
+import { X } from 'lucide-react'
 import { useApprovalTypes, useCreateApproval } from '@/hooks/use-approvals'
 import { useProjects } from '@/hooks/use-projects'
+import { useEmployeeSearch } from '@/hooks/use-employees'
 import { apiErrorMessage } from '@/lib/errors'
+import type { EmployeeSummary } from '@/types'
 
 type TargetField = 'project_id' | 'document_version_id' | 'archive_export_id' | 'leave_request_id'
 
@@ -22,9 +25,26 @@ export function CreateApprovalDialog({ onClose }: { onClose: () => void }) {
   const [approvalTypeId, setApprovalTypeId] = useState('')
   const [targetField, setTargetField] = useState<TargetField>('project_id')
   const [targetId, setTargetId] = useState('')
-  const [assignedTo, setAssignedTo] = useState('')
+  const [assignedTo, setAssignedTo] = useState<string | null>(null)
+  const [assigneeSearch, setAssigneeSearch] = useState('')
+  const [assigneeDropdownOpen, setAssigneeDropdownOpen] = useState(false)
   const [comment, setComment] = useState('')
   const [validationError, setValidationError] = useState('')
+  const assigneeRef = useRef<HTMLDivElement>(null)
+
+  const { data: employeeResults = [], isFetching: employeeSearching } = useEmployeeSearch(assigneeSearch)
+
+  function selectAssignee(emp: EmployeeSummary) {
+    setAssignedTo(emp.id)
+    setAssigneeSearch(`${emp.employee_code} — ${emp.full_name}`)
+    setAssigneeDropdownOpen(false)
+  }
+
+  function clearAssignee() {
+    setAssignedTo(null)
+    setAssigneeSearch('')
+    setAssigneeDropdownOpen(false)
+  }
 
   function handleTargetTypeChange(field: TargetField) {
     setTargetField(field)
@@ -48,7 +68,7 @@ export function CreateApprovalDialog({ onClose }: { onClose: () => void }) {
       await mutateAsync({
         approval_type_id: approvalTypeId,
         [targetField]: targetId.trim(),
-        assigned_to: assignedTo.trim() || null,
+        assigned_to: assignedTo,
         comment: comment.trim() || undefined,
       })
       onClose()
@@ -136,19 +156,67 @@ export function CreateApprovalDialog({ onClose }: { onClose: () => void }) {
           )}
         </div>
 
-        {/* Assigned to (optional) */}
-        <div className="flex flex-col gap-1.5">
-          <label htmlFor="assigned-to" className="text-xs font-semibold text-text-primary/60 uppercase tracking-wide">
-            Assign to <span className="font-normal normal-case text-text-primary/30">(employee UUID, optional)</span>
+        {/* Assigned to — employee typeahead */}
+        <div className="flex flex-col gap-1.5" ref={assigneeRef}>
+          <label htmlFor="assignee-search" className="text-xs font-semibold text-text-primary/60 uppercase tracking-wide">
+            Assign to <span className="font-normal normal-case text-text-primary/30">(optional)</span>
           </label>
-          <input
-            id="assigned-to"
-            type="text"
-            value={assignedTo}
-            onChange={(e) => setAssignedTo(e.target.value)}
-            placeholder="Employee UUID…"
-            className="h-9 px-3 text-sm font-mono bg-surface-raised border border-surface-border rounded-md text-text-primary placeholder:text-text-primary/25 focus:outline-none focus:ring-1 focus:ring-accent-saffron/50"
-          />
+          <div className="relative">
+            <input
+              id="assignee-search"
+              type="text"
+              autoComplete="off"
+              value={assigneeSearch}
+              onChange={(e) => {
+                setAssigneeSearch(e.target.value)
+                setAssignedTo(null)
+                setAssigneeDropdownOpen(true)
+              }}
+              onFocus={() => { if (assigneeSearch.length >= 2) setAssigneeDropdownOpen(true) }}
+              onBlur={() => setTimeout(() => setAssigneeDropdownOpen(false), 150)}
+              placeholder="Type a name to search…"
+              className="h-9 w-full px-3 pr-8 text-sm bg-surface-raised border border-surface-border rounded-md text-text-primary placeholder:text-text-primary/25 focus:outline-none focus:ring-1 focus:ring-accent-saffron/50"
+            />
+            {assigneeSearch && (
+              <button
+                type="button"
+                onClick={clearAssignee}
+                aria-label="Clear assignee"
+                className="absolute right-2 top-1/2 -translate-y-1/2 text-text-primary/30 hover:text-text-primary/60 transition-colors"
+              >
+                <X size={13} aria-hidden="true" />
+              </button>
+            )}
+            {assigneeDropdownOpen && assigneeSearch.length >= 2 && (
+              <ul
+                role="listbox"
+                aria-label="Employee search results"
+                className="absolute z-10 mt-1 w-full bg-surface-base border border-surface-border rounded-md shadow-lg max-h-48 overflow-y-auto"
+              >
+                {employeeSearching && (
+                  <li className="px-3 py-2 text-xs text-text-primary/40">Searching…</li>
+                )}
+                {!employeeSearching && employeeResults.length === 0 && (
+                  <li className="px-3 py-2 text-xs text-text-primary/40">No employees found.</li>
+                )}
+                {!employeeSearching && employeeResults.map((emp) => (
+                  <li key={emp.id}>
+                    <button
+                      type="button"
+                      onMouseDown={() => selectAssignee(emp)}
+                      className="w-full text-left px-3 py-2 text-sm hover:bg-surface-raised transition-colors"
+                    >
+                      <span className="font-mono text-xs text-text-primary/40 mr-2">{emp.employee_code}</span>
+                      <span className="text-text-primary/80">{emp.full_name}</span>
+                      {emp.designation && (
+                        <span className="ml-2 text-xs text-text-primary/40">{emp.designation}</span>
+                      )}
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
         </div>
 
         {/* Comment */}

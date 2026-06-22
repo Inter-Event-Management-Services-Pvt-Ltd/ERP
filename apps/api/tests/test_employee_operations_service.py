@@ -22,6 +22,7 @@ TASK_ID = UUID("99999999-9999-4999-8999-999999999999")
 TASK_STATUS_ID = UUID("aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa")
 PRIORITY_LEVEL_ID = UUID("bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb")
 CALENDAR_EVENT_ID = UUID("cccccccc-cccc-4ccc-8ccc-cccccccccccc")
+COMMENT_ID = UUID("cdcdcdcd-cdcd-4dcd-8dcd-cdcdcdcdcdcd")
 CHECKOUT_ID = UUID("dddddddd-dddd-4ddd-8ddd-dddddddddddd")
 PHYSICAL_FILE_ID = UUID("eeeeeeee-eeee-4eee-8eee-eeeeeeeeeeee")
 REQUEST_ID = UUID("ffffffff-ffff-4fff-8fff-ffffffffffff")
@@ -126,6 +127,18 @@ def _calendar_event_row() -> dict[str, object]:
         "created_by": str(EMPLOYEE_ID),
         "created_at": CREATED_AT,
         "updated_at": CREATED_AT,
+    }
+
+
+def _task_comment_row(*, comment_text: str = "Confirmed with vendor.") -> dict[str, object]:
+    return {
+        "id": str(COMMENT_ID),
+        "task_id": str(TASK_ID),
+        "employee_id": str(EMPLOYEE_ID),
+        "employee": _employee_row(),
+        "comment_text": comment_text,
+        "created_at": CREATED_AT,
+        "edited_at": None,
     }
 
 
@@ -266,6 +279,44 @@ def test_create_task_requires_project_manage_access_before_rpc() -> None:
     assert payload["p_project_id"] == str(PROJECT_ID)
     assert payload["p_assignee_ids"] == [str(EMPLOYEE_ID), str(OTHER_EMPLOYEE_ID)]
     assert payload["p_document_ids"] == [str(DOCUMENT_ID)]
+
+
+def test_list_task_comments_filters_by_task_after_visibility_check() -> None:
+    from app.services.employee_operations import EmployeeOperationsService
+
+    seen_requests: list[httpx.Request] = []
+
+    def handler(request: httpx.Request) -> Response:
+        seen_requests.append(request)
+        if request.url.path == "/rest/v1/tasks":
+            return Response(200, json=[_task_row()])
+        if request.url.path == "/rest/v1/task_comments":
+            return Response(200, json=[_task_comment_row()])
+        return Response(500)
+
+    service = EmployeeOperationsService(
+        supabase_url="http://localhost:54321",
+        service_role_key="legacy-service-role-key",
+        transport=httpx.MockTransport(handler),
+    )
+
+    result = asyncio.run(
+        service.list_task_comments(
+            task_id=TASK_ID,
+            current_user=_current_user(),
+            limit=25,
+            offset=50,
+        )
+    )
+
+    assert result[0].comment_text == "Confirmed with vendor."
+    assert seen_requests[0].url.path == "/rest/v1/tasks"
+    assert seen_requests[1].url.path == "/rest/v1/task_comments"
+    comment_query = dict(seen_requests[1].url.params)
+    assert comment_query["task_id"] == f"eq.{TASK_ID}"
+    assert comment_query["order"] == "created_at.desc"
+    assert comment_query["limit"] == "25"
+    assert comment_query["offset"] == "50"
 
 
 def test_calendar_feed_includes_stored_events_deadlines_leave_and_file_returns() -> None:

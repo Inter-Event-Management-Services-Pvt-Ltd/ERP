@@ -892,8 +892,8 @@ export interface UpdateFolderTemplateItemPayload {
 export interface AuditEvent {
   id: string
   action_code: string
-  resource_type: string
-  resource_id: string
+  resource_type: string | null
+  resource_id: string | null
   actor_employee_id: string
   actor: { id: string; employee_code: string; full_name: string }
   request_id: string
@@ -951,4 +951,16 @@ export interface DirectorVerificationReminder {
   archive_location_code: string
   last_verified_at: string | null
   next_verification_at: string
+}
+
+export interface Notification {
+  id: string
+  employee_id: string
+  notification_type: string
+  title: string
+  message: string
+  resource_type: string | null
+  resource_id: string | null
+  read_at: string | null
+  created_at: string
 }

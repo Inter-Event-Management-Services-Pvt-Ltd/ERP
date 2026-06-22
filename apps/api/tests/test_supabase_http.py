@@ -8,7 +8,11 @@ from starlette.requests import Request
 
 from app.api import dependencies
 from app.core.config import Settings
-from app.core.supabase_http import reset_current_request_id, set_current_request_id
+from app.core.supabase_http import (
+    request_supabase,
+    reset_current_request_id,
+    set_current_request_id,
+)
 from app.schemas.current_user import CurrentUser, EmployeeProfile, UserAccount
 from app.services.clients_projects import ClientsProjectsService
 
@@ -83,3 +87,41 @@ def test_service_logs_supabase_request_timing(caplog: pytest.LogCaptureFixture) 
     assert record.status_code == 200
     assert isinstance(record.duration_ms, float)
     assert record.query_keys == ["is_active", "limit", "offset", "order", "select"]
+
+
+def test_supabase_request_logs_exclude_secrets_and_payloads(
+    caplog: pytest.LogCaptureFixture,
+) -> None:
+    def handler(request: httpx.Request) -> httpx.Response:
+        return httpx.Response(200, json={"ok": True})
+
+    async def run_request() -> None:
+        async with httpx.AsyncClient(transport=httpx.MockTransport(handler)) as client:
+            await request_supabase(
+                client,
+                "POST",
+                "http://localhost:54321/rest/v1/documents",
+                headers={
+                    "apikey": "legacy-service-role-key",
+                    "authorization": "Bearer legacy-service-role-key",
+                },
+                params={"select": "id", "project_id": "eq.secret-project"},
+                json_body={"display_name": "Sensitive Contract.pdf"},
+                request_id="safe-log-test",
+            )
+
+    caplog.set_level(logging.INFO, logger="iems.api.supabase")
+
+    asyncio.run(run_request())
+
+    record = next(
+        record for record in caplog.records if record.message == "supabase_request_completed"
+    )
+    formatted_record = record.__dict__
+
+    assert record.request_id == "safe-log-test"
+    assert record.query_keys == ["project_id", "select"]
+    assert record.has_body is True
+    assert "legacy-service-role-key" not in repr(formatted_record)
+    assert "Sensitive Contract.pdf" not in repr(formatted_record)
+    assert "secret-project" not in repr(formatted_record)

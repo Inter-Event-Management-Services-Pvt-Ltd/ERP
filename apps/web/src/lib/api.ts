@@ -79,6 +79,7 @@ import type {
   DirectorUpcomingEvent,
   DirectorMissingDocument,
   DirectorVerificationReminder,
+  Notification,
 } from '@/types'
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:8000'
@@ -91,8 +92,11 @@ async function getAccessToken(): Promise<string> {
   return token
 }
 
+const SLOW_REQUEST_MS = 2000
+
 async function apiFetch<T>(path: string, init?: RequestInit): Promise<T> {
   const token = await getAccessToken()
+  const t0 = performance.now()
   const res = await fetch(`${API_URL}${path}`, {
     ...init,
     headers: {
@@ -101,12 +105,19 @@ async function apiFetch<T>(path: string, init?: RequestInit): Promise<T> {
       ...(init?.headers ?? {}),
     },
   })
+  const elapsed = Math.round(performance.now() - t0)
+  const requestId = res.headers.get('x-request-id') ?? undefined
+
+  if (elapsed > SLOW_REQUEST_MS) {
+    console.warn(`[IEMS] slow ${init?.method ?? 'GET'} ${path} ${elapsed}ms${requestId ? ` request-id=${requestId}` : ''}`)
+  }
 
   if (!res.ok) {
     const body = await res.json().catch(() => ({}))
     const code = body?.error?.code ?? `HTTP_${res.status}`
     const message = body?.error?.message ?? res.statusText
-    throw Object.assign(new Error(message), { code, status: res.status })
+    if (requestId) console.warn(`[IEMS] api error ${path} code=${code} request-id=${requestId}`)
+    throw Object.assign(new Error(message), { code, status: res.status, requestId })
   }
 
   if (res.status === 204) return undefined as T
@@ -136,6 +147,23 @@ export async function fetchMe(): Promise<MeResponse> {
 
 export async function fetchPermissions(): Promise<PermissionsResponse> {
   return apiFetch<PermissionsResponse>('/v1/me/permissions')
+}
+
+export async function fetchNotifications(params?: {
+  limit?: number
+  offset?: number
+}): Promise<Notification[]> {
+  const qs = new URLSearchParams()
+  if (params?.limit) qs.set('limit', String(params.limit))
+  if (params?.offset) qs.set('offset', String(params.offset))
+  const q = qs.toString()
+  return apiFetch<Notification[]>(`/v1/me/notifications${q ? `?${q}` : ''}`)
+}
+
+export async function markNotificationRead(notificationId: string): Promise<Notification> {
+  return apiFetch<Notification>(`/v1/me/notifications/${notificationId}/read`, {
+    method: 'PATCH',
+  })
 }
 
 // ─── Clients ──────────────────────────────────────────────────────────────────

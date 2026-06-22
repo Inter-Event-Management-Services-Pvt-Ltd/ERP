@@ -2,6 +2,44 @@
 
 ## Unreleased
 
+- Bumped backend `pydantic-settings` and `msgpack` minimum versions after
+  GitHub Backend CI dependency audit reported fixed advisories, restoring a
+  clean `pip-audit` gate.
+- Added Phase 5 backend injection and abuse-protection evidence, including a
+  repeatable security pattern scan for shell execution, dynamic code execution,
+  unsafe deserialization, raw SQL string execution and direct outbound HTTP
+  outside approved Supabase helper paths.
+- Implemented `GET /v1/me/notifications` and
+  `PATCH /v1/me/notifications/{notification_id}/read`, scoped notification
+  access to the current employee, preserved explicit business `NOT_FOUND`
+  messages, and added backend tests for list/read/ownership behavior.
+- Added Phase 5 threat review and rate-limiting decision docs, then updated the
+  release/security checklists to show which security-gate items are locally
+  complete versus still blocked by staging/production operations.
+- Added a key-rotation procedure and an expired-token regression test, then
+  updated `SECURITY_GLOBAL.md` with local auth/session evidence while keeping
+  production credential separation, staging, backups and monitoring open.
+- Expanded the current-user API contract with the notification response shape
+  and mark-read ownership behavior.
+- Added Phase 5 staging validation runbook covering staging Supabase, Docker
+  deployment checks, browser smoke tests, security evidence, and exit criteria.
+- Updated Phase 5 release evidence after Docker auth was manually confirmed in
+  browser on 2026-06-20, while keeping staging, backups, monitoring, release
+  approval and OPEN-045 open.
+- Marked the Phase 5 image scan gate complete after the custom source-built
+  Caddy image cleared Docker Scout critical/high scanning.
+- Recorded OPEN-045 for Claude-owned admin tab loading and notification wiring.
+
+- Fixed the Docker auth/runtime split for local Supabase: backend API, worker and scheduler containers now attach to a non-internal egress network and map `host.docker.internal` explicitly, while Redis remains private on the internal backend network; added `SUPABASE_AUTH_ISSUER`, `SUPABASE_AUTH_ISSUER_ALIASES` and `SUPABASE_JWKS_URL` so FastAPI accepts the two local Supabase issuer aliases involved in browser OAuth/server-side token exchange while fetching asymmetric signing keys from the container-reachable Supabase URL. JWT signature, audience, expiry, role and email-domain checks remain enforced. Verified `/api/v1/me` returns Director/Super User context with both local issuer forms and `/api/v1/director/overview` returns 200 through Caddy.
+- Implemented Docker auth flow for containerized Next.js (OPEN-040): added server-side `GET /auth/signin` route using `createServerClient` with `skipBrowserRedirect: true` so the PKCE code verifier is stored in a cookie before the OAuth redirect rather than in browser state; added `SUPABASE_URL` runtime override in `server.ts` and `middleware.ts` so server-side requests reach Supabase from inside the container (set to `http://host.docker.internal:54321` locally); fixed auth callback origin to use `x-forwarded-proto`/`x-forwarded-host` headers from Caddy; converted `/login` page from a client component to a static server component with `<a href="/auth/signin">`.
+- Resolved the Phase 5 Caddy image-scan blocker by replacing the vulnerable official `caddy:2-alpine` runtime with a custom `iems-erp-caddy` image: Caddy v2.11.4 is built with Go 1.26.4 in a builder stage, copied into a minimal `alpine:3.24` runtime, run as UID 10001 with `cap_net_bind_service`, and verified by Docker Scout at 0 critical / 0 high findings plus Caddy routing checks for `/api/health` and `/login`.
+
+- Validated frontend against updated Alpine-based backend runtime: web image (node:24-alpine) scans clean 0C/0H/0M/0L via Docker Scout (300 packages); applied `npm audit fix` reducing open vulnerabilities from 5 to 2 (both moderate postcss/next, build-time only); all 6 stack services healthy; protected routes return 307→/login; API endpoints enforce 401; Caddy security headers confirmed; web non-root uid 10001 confirmed; client bundle SUPABASE_SERVICE_ROLE_KEY and JWT_SECRET absent from all 78 chunks; 40/40 tests pass; production build passes with 47 routes.
+- Switched backend Docker images from `python:3.12-slim` to `python:3.12-alpine` after Docker Scout found critical/high Debian `perl` CVEs in the API, worker and scheduler images; rebuilt the backend images and verified API/worker/scheduler Docker Scout scans now report 0 critical / 0 high findings while preserving UID 10001 runtime.
+- Ran Phase 5 image scan evidence for Redis and Caddy: `redis:7-alpine` reports 0 critical / 0 high findings; `caddy:2-alpine` and `caddy:2.11-alpine` failed with critical/high OpenSSL, curl and Go stdlib findings before the custom `iems-erp-caddy` image resolved OPEN-044.
+- Added frontend test suite (vitest 4.1.9 + @testing-library/react): 40 tests across 10 suites covering apiFetch error handling, DirectorGuard permission gate, auth callback redirect logic, Badge, PageHeader, EmptyState, ErrorState, PermissionDenied, OfflineBanner, ProjectStatusBadge, SearchInput, and canAccess role helper. Upgraded vitest from 2.x to 4.x resolving critical GHSA-67mh-4wv8-2f99; added @vitejs/plugin-react-swc for rolldown/JSX compatibility in vitest 4.
+- Completed Phase 5 frontend static validation: type-check, lint, and production build all pass; bundle secret scan confirmed clean (no SUPABASE_SERVICE_ROLE_KEY or JWT_SECRET in .next/static/chunks); auth callback `next` param hardened to require leading slash; npm audit findings documented in OPEN-043 (all dev-only or build-time); OPEN-042 resolved; OPEN-041 updated with full frontend validation status.
+- Started Phase 5 hardening and deployment planning, covering backend performance baselines, security validation, Docker production checks, backup/restore proof, release-gate documentation, and remaining backend contract gaps.
 - Validated local Supabase Phase 0 foundation from a clean Docker-backed environment.
 - Hardened Supabase migrations by moving `citext` and `pg_trgm` into the `extensions` schema.
 - Hardened SQL helper functions with explicit `search_path` settings and RLS-friendly `auth.uid()` usage.
@@ -49,6 +87,14 @@
 - Completed Phase 4 approval workflow backend APIs with approval type lookup, approval request list/create/detail, approve/reject/request-revision actions, server-side RBAC/ABAC, service-role-only audited Supabase RPCs, notifications, immutable action history and SQL validation.
 - Completed Phase 4 admin/policy/audit backend APIs with Director upcoming-events, missing-required-documents and verification-reminder feeds; employee admin writes; role assignment with self-elevation protection; department history; policy audit events; folder-template editing; archive room/location editing; full audit explorer; service-role-only audited Supabase RPCs; and SQL validation.
 - Started Phase 5 performance hardening by replacing per-call Supabase HTTP client construction with a lifespan-managed shared `httpx.AsyncClient`, threading it through auth resolution, audit writes and all Supabase-backed services, and adding structured per-Supabase-request timing logs with request-id correlation and safe query-key metadata.
+- Added `GET /v1/tasks/{task_id}/comments` so task detail screens can load persisted comments newest-first with the same task visibility ABAC used by task reads and comment writes.
+- Hardened Supabase RLS helper functions by moving policy helpers behind a non-exposed `app_private` schema, revoking direct browser-role execution from the old public wrappers, and adding a Phase 5 SQL release-gate probe for RLS, private Storage buckets, audit immutability and `SECURITY DEFINER` exposure.
+- Added a Phase 5 tracked-file secret scan script and security review note, with local evidence that the repository scan passes without committed Supabase, JWT, Google client, or database URL secrets.
+- Tightened production Compose isolation by keeping web off the backend network, preventing web from inheriting server secrets, forcing backend containers to use internal Redis URLs, moving Celery beat state to `/tmp`, and documenting backend Docker validation evidence.
+- Added local Supabase app-schema backup and restore scripts plus a runbook, with restore proof against a separate `iems_restore_test` database.
+- Added Phase 5 rollback, incident-response, and CI/CD release-gate runbooks with current local evidence and production-only gaps called out.
+- Recorded final Phase 5 backend validation evidence for Ruff, MyPy, pytest, clean Supabase reset, SQL security probes, backend Docker health, secret scan, and local restore proof.
+- Completed additional Phase 5 backend hardening by adding `pip-audit` to the API dev toolchain and Backend CI, upgrading vulnerable `cryptography` and `starlette` dependency ranges, adding release-gate tests for no debug/token-helper routes and secret-safe Supabase request logs, and refreshing backend Docker restart plus local backup/restore evidence.
 
 - Wired Phase 2 folder CRUD to live backend: inline create, rename, and delete in FolderTreePanel with INVALID_STATE protection and canManage gating.
 - Added DocumentListPanel with per-folder document list, multipart upload dialog (INVALID_FILE_NAME, INVALID_MIME_TYPE, INVALID_FILE_SIZE error display), version upload, and signed download URLs fetched on-demand.

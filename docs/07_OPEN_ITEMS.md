@@ -19,6 +19,272 @@ Status:
 
 ## Initial Open Items
 
+### OPEN-041 - Phase 5 production-release blockers
+
+```text
+Date: 2026-06-18
+Category: Release / Operations
+Severity: High
+Question or issue:
+  Backend-owned local Phase 5 validation now passes for Ruff, MyPy, pytest,
+  dependency audit, secret scan, clean Supabase reset, Phase 2/3/5 SQL probes,
+  backend injection/abuse pattern scan, backend Docker build, backend non-root
+  runtime, backend restart/log checks, and local backup/restore proof. The full
+  production release gate is still not complete because several items require
+  external environment setup or human approval.
+Why it matters:
+  The ERP should not be promoted to production based only on local backend
+  validation. Production readiness depends on frontend container sign-off,
+  managed Supabase backup configuration, staging validation, image scanning,
+  monitoring/alerting, and an explicit release owner approval.
+Frontend validation completed 2026-06-18:
+  - Type-check: PASS (tsc --noEmit, no errors)
+  - Lint: PASS (eslint src/, no errors)
+  - Production build: PASS (42 routes, all pages including /login /projects
+    /archive /director /approvals built successfully)
+  - npm audit: 8 vulnerabilities, all dev-only or build-time (see OPEN-043)
+  - Bundle secret scan: CLEAN (no SUPABASE_SERVICE_ROLE_KEY, JWT_SECRET,
+    hardcoded tokens found in .next/static/chunks)
+  - Auth flow: reviewed and secure (only auth-scoped Supabase calls; all data
+    through FastAPI; route guards are presentation-only)
+  - Auth callback next param: validated to start with / (fix applied)
+  - Dockerfile: standalone output, HOSTNAME=0.0.0.0, non-root uid 10001,
+    no server secrets in build args confirmed
+  - Security headers: X-Frame-Options DENY, X-Content-Type-Options nosniff,
+    Referrer-Policy, Permissions-Policy in next.config.mjs; HSTS+CSP in Caddy
+  - Performance fixes: keepPreviousData in use-director/approvals/tasks/
+    projects/admin, DirectorGuard non-blocking, audit page 300ms debounce
+  - dangerouslySetInnerHTML: absent from all application source files
+Remaining required items:
+  - Login flow end-to-end in Docker (Google OAuth -> callback -> /dashboard).
+    Docker auth flow implemented 2026-06-18 (PKCE + container origin fixes in
+    OPEN-040). Backend Docker auth resolution fixed 2026-06-19: API/worker/
+    scheduler now have explicit egress for local/managed Supabase, and FastAPI
+    separates SUPABASE_URL (container REST URL), SUPABASE_AUTH_ISSUER and
+    SUPABASE_AUTH_ISSUER_ALIASES (allowed token issuers), and SUPABASE_JWKS_URL
+    (container-reachable asymmetric signing-key URL). The issuer alias is needed
+    because local Docker OAuth may mint tokens with either
+    http://127.0.0.1:54321/auth/v1 or
+    http://host.docker.internal:54321/auth/v1 depending on whether the browser
+    authorize URL or the server-side token exchange URL is used. SUPABASE_JWKS_URL
+    must use http://host.docker.internal:54321 in local Docker because
+    http://127.0.0.1:54321 is not reachable from inside the API container. JWT
+    signature, audience, expiry, role and email-domain checks remain enforced.
+    Verified through Caddy with local Director tokens: GET /api/v1/me returned
+    200 for both issuer forms, and GET /api/v1/director/overview returned 200 in
+    200 ms. API container fetched JWKS from host.docker.internal with HTTP 200
+    in 20 ms.
+    Human browser smoke test on 2026-06-20 confirmed Docker sign-in/sign-out and
+    protected app access are working as intended.
+  - Staging environment configured and tested with production-like settings.
+  - Production environment configured with distinct credentials.
+  - Managed Supabase database backup retention selected and verified.
+  - Supabase Storage backup/export procedure selected and verified.
+  - Monitoring and alerting provider configured.
+  - Production edge or provider rate limiting enforced.
+  - OPEN-045 resolved (2026-06-20): admin guard, notifications wiring, audit
+    log null crash fixed, backend notification endpoints implemented by Codex.
+  - Docker image vulnerability scan: all application images now pass on 2026-06-18.
+    Web image (node:24-alpine): 0C 0H 0M 0L.
+    Backend API/worker/scheduler: 0C 0H 0M 0L (Alpine rebase).
+    Redis: 0C 0H 0M 0L. Custom source-built Caddy image: 0C 0H 0M 0L.
+Container validation completed 2026-06-18 (after Alpine rebase):
+  - Web image (node:24-alpine): Docker Scout 0C 0H 0M 0L — 300 packages indexed.
+  - Production build: PASS (47 routes, all pages including /login /projects
+    /archive /director /approvals built successfully, up from 42 in prior run).
+  - npm audit fix applied: 5 → 2 vulnerabilities. Remaining 2 are moderate
+    postcss/next chain (build-time only; fix requires next@9.3.3 breaking change).
+  - All 6 services healthy: api, worker, scheduler, redis, web, caddy.
+  - GET /api/health via Caddy: 200 {"status":"ok","service":"iems-erp-api"}.
+  - Protected routes (/, /projects, /archive, /approvals, /director, /admin):
+    all return HTTP 307 → /login when unauthenticated.
+  - API enforcement: /api/v1/me and /api/v1/projects return 401 without bearer.
+  - Security headers confirmed via Caddy: X-Frame-Options DENY,
+    X-Content-Type-Options nosniff, Referrer-Policy, HSTS, CSP, X-Request-ID.
+  - Non-root container: uid=10001(appuser) confirmed.
+  - Bundle secret scan (inside container): anon key present as expected
+    (NEXT_PUBLIC_SUPABASE_ANON_KEY is intentionally public; role=anon, subject to
+    RLS). SUPABASE_SERVICE_ROLE_KEY and JWT_SECRET absent from all 78 chunks.
+  - Production Compose file human review remains required.
+  - Incident contact and rollback owner remain required.
+  - Human release approval remains required.
+Recommended next action:
+  Frontend static validation is complete, Docker image scans are clean, browser
+  Docker auth has been manually confirmed, and OPEN-045 is fully resolved.
+  Human release owner must provision staging, configure backups and monitoring,
+  complete the staging validation runbook, and record final approval.
+Owner: Human release owner, Claude for remaining frontend items, Codex for
+  backend follow-up if new backend issues are found.
+Status: Open — local validation complete; staging, backups, monitoring and
+  release approval remain
+```
+
+### OPEN-042 - No frontend unit or integration tests
+
+```text
+Date: 2026-06-18
+Category: Testing / Frontend
+Severity: Medium
+Resolution:
+  Added vitest 4.x + @testing-library/react test suite on 2026-06-18.
+  10 test suites / 40 tests, all passing. Covers:
+  - apiFetch: 200 JSON parse, structured error envelope, HTTP_NNN fallback,
+    no active session, requestId attachment on error
+  - DirectorGuard: children render while loading, DIRECTOR role, super user,
+    non-director denied, no route/resource leak in denied state
+  - Auth callback: next param absent → /dashboard, valid / path passes,
+    non-/ prefix rejected → /dashboard, no code → /dashboard
+  - Plus pre-existing Codex tests: Badge, PageHeader, EmptyState, ErrorState,
+    PermissionDenied, OfflineBanner, ProjectStatusBadge, SearchInput, canAccess
+  vitest upgraded from 2.x to 4.1.9 (resolves critical GHSA-67mh-4wv8-2f99).
+  @vitejs/plugin-react-swc added for vitest 4 / rolldown JSX compatibility.
+Owner: Claude
+Status: Resolved
+```
+
+### OPEN-043 - npm audit: dev/build-time dependency vulnerabilities
+
+```text
+Date: 2026-06-18
+Category: Security / Dependencies
+Severity: Low (no production risk)
+Question or issue:
+  npm audit reported 8 vulnerabilities (original). All were dev-only or
+  build-time. vitest critical GHSA-67mh-4wv8-2f99 is now resolved.
+  After vitest 4.x upgrade: 5 vulnerabilities remained. After npm audit fix
+  applied on 2026-06-18: 2 vulnerabilities remain.
+  Root cause of residual esbuild chain: @vitejs/plugin-react-swc@4.3.1 depended
+  on vite@5.4.21 → esbuild@0.21.5 (vulnerable range). npm audit fix upgraded
+  the SWC plugin's vite/esbuild subtree. form-data CRLF injection also resolved.
+  Remaining 2 vulnerabilities after npm audit fix:
+  - next/postcss (moderate, GHSA-qx2v-qp2m-jg93): PostCSS XSS in CSS
+    Stringify, inside Next.js internals. Build-time only; no client-side risk.
+    Fix requires `npm audit fix --force` which downgrades to next@9.3.3 (breaking).
+    Both are moderate; wait for Next.js upstream fix.
+Why it matters:
+  None of these vulnerabilities affect the production Docker image. The vitest
+  critical finding does mean the local dev server has a CORS bypass, so
+  developer machines should not run npm run dev on untrusted networks.
+Recommended next action:
+  - Wait for Next.js to publish a fix for the postcss issue; upgrade Next.js
+    when available.
+  - Document that form-data / jsdom are test-only and acceptable.
+Owner: Claude
+Status: Open — production safe; monitor dev/build-time dependency updates
+```
+
+### OPEN-044 - Caddy image scan fails critical/high vulnerability gate
+
+```text
+Date: 2026-06-18
+Category: Security / Docker
+Severity: High
+Question or issue:
+  Docker Scout reports critical/high findings for the current Caddy production
+  reverse-proxy image:
+  - caddy:2-alpine: 1 critical, 11 high
+  - caddy:2.11-alpine candidate: 1 critical, 11 high
+  Affected packages include Alpine openssl/curl and Go stdlib in the Caddy
+  binary. Docker Scout reports fixed versions for openssl and Go stdlib, but
+  the official Caddy image available locally still contains the vulnerable
+  package/binary versions.
+Why it matters:
+  The reverse proxy terminates TLS and is public-facing in production. The Phase
+  5 image scan gate cannot be closed while the public reverse-proxy image has
+  critical/high findings.
+Validated clean on 2026-06-18:
+  - iems-erp-api:latest: 0 critical, 0 high after switching backend image to
+    python:3.12-alpine
+  - iems-erp-worker:latest: 0 critical, 0 high
+  - iems-erp-scheduler:latest: 0 critical, 0 high
+  - redis:7-alpine: 0 critical, 0 high
+Resolution:
+  Codex added a custom `iems-erp-caddy` image built from
+  infrastructure/caddy/Dockerfile. The image uses `caddy:2-builder-alpine` only
+  as a build stage to compile Caddy v2.11.4 with Go 1.26.4, then copies the
+  binary into a minimal `alpine:3.24` runtime with ca-certificates, libcap and
+  mailcap. The runtime does not include curl, runs as UID 10001, and grants the
+  Caddy binary `cap_net_bind_service` for ports 80/443.
+Verification:
+  - docker pull caddy:2-alpine: still 1 critical, 11 high
+  - docker scout cves caddy:latest --only-severity critical,high: still
+    1 critical, 11 high
+  - custom first pass FROM caddy:2-alpine + apk upgrade removed OpenSSL
+    critical findings but still left 3 high findings (curl and Go stdlib)
+  - docker compose build caddy: passed
+  - docker scout cves iems-erp-caddy:latest --only-severity critical,high:
+    0 critical, 0 high, 0 medium, 0 low
+  - docker compose up -d caddy: passed
+  - curl -sk https://localhost/api/health: returned FastAPI health JSON
+  - curl -sk -o NUL -w "%{http_code}" https://localhost/login: 200
+  - docker compose exec -T caddy id -u: 10001
+Owner: Codex / Human release owner
+Status: Resolved
+```
+
+### OPEN-045 - Admin tab does not load; notifications need proper wiring
+
+```text
+Date: 2026-06-20
+Category: Frontend Integration
+Severity: Medium
+Question or issue:
+  The admin tab is not loading correctly for users who should be able to reach
+  admin surfaces, and the notifications area still needs proper end-to-end
+  wiring to the documented contract.
+Resolution (2026-06-20):
+  Admin:
+  - Created AdminGuard (components/layout/admin-guard.tsx) mirroring
+    DirectorGuard; allows ADMIN/SUPER_ADMIN/SUPER_USER roles or is_super_user.
+  - Added app/admin/layout.tsx wrapping all /admin/* routes in AdminGuard so
+    unauthorized users get PermissionDenied at the route level.
+  - Replaced the perpetual-skeleton /admin/page.tsx with a real overview page:
+    7 nav cards (Employees, Policies, Folder Templates, Archive Locations,
+    Departments, Roles, Audit Log) each linking to the corresponding sub-route,
+    with a "Read only" label on sections the user cannot manage.
+  Notifications:
+  - Added Notification type to types/index.ts matching the DB schema
+    (id, employee_id, notification_type, title, message, resource_type,
+    resource_id, read_at, created_at).
+  - Added fetchNotifications and markNotificationRead to lib/api.ts wired to
+    GET /v1/me/notifications and PATCH /v1/me/notifications/{id}/read.
+  - New hooks/use-notifications.ts: useNotifications, useUnreadCount,
+    useMarkNotificationRead (React Query with cache invalidation on read).
+  - Replaced /notifications skeleton with a live list: per-item unread dot,
+    mark-as-read action, cache-invalidation on success, subtitle showing unread
+    count or "All caught up", empty/loading/error states.
+  - TopBar bell shows an unread badge count from useUnreadCount; aria-label
+    updates with the count for screen readers.
+  Backend (resolved 2026-06-20 by Codex):
+  - GET /v1/me/notifications and PATCH /v1/me/notifications/{id}/read
+    implemented in apps/api/app/api/v1/me.py.
+  - NotificationResponse schema added to apps/api/app/schemas/current_user.py.
+  - Tests added in apps/api/tests/test_me_notifications_api.py.
+  - Auth required; no extra RBAC permission; user sees only their own rows.
+  - PATCH verifies employee_id ownership before marking read; returns 404
+    NOT_FOUND if notification not found or belongs to another employee.
+  End-to-end validation (2026-06-20):
+  - TopBar unread badge confirmed wired to GET /v1/me/notifications via
+    useUnreadCount → useNotifications({ limit: 100 }).
+  - Notifications page list confirmed wired to backend (no placeholder state).
+  - Mark-as-read confirmed calls PATCH and invalidates the React Query cache,
+    updating both the badge count and the list in one refetch.
+  - Empty / loading / error states all render correctly.
+  - No direct Supabase calls; all traffic routed through FastAPI via apiFetch.
+  Audit log null crash fix (2026-06-20):
+  - Visiting /admin/audit crashed with "Cannot read properties of null
+    (reading 'slice')" because AuditEvent.resource_id was typed as string
+    but the database allows null for events not tied to a specific resource.
+  - Fixed: types/index.ts AuditEvent.resource_id and resource_type changed to
+    string | null; admin/audit/page.tsx row renderer now shows '—' when null.
+Verification:
+  cd apps/web && npx tsc --noEmit && npx eslint src/ --max-warnings=0
+  npm run build && npm test
+  All pass: 10 test suites / 40 tests, 0 type errors, 0 lint warnings, build ok.
+Owner: Claude (frontend), Codex (backend)
+Status: Resolved
+```
+
 ### OPEN-001 — Storage malware scanning
 
 ```text
@@ -152,8 +418,8 @@ Resolution:
   - apps/web/src/app/tasks/[id]/page.tsx: GET /v1/tasks/{id} detail with
     inline edit (PATCH /v1/tasks/{id}), assignees (POST
     /v1/tasks/{id}/assignees via employee search), comments (POST
-    /v1/tasks/{id}/comments, shown session-locally since no list endpoint
-    exists - see OPEN-034) and linked documents (POST
+    /v1/tasks/{id}/comments; backend list endpoint now available through
+    OPEN-034) and linked documents (POST
     /v1/tasks/{id}/documents), all edit actions gated by task.manage /
     isSuperUser.
   - apps/web/src/app/calendar/page.tsx: GET /v1/calendar/events for the
@@ -189,12 +455,87 @@ Why it matters:
   the current browser session (held in local state). Comments posted by other
   users, or in previous sessions, are not visible after a page reload.
 Recommended next action:
-  Codex to add GET /v1/tasks/{task_id}/comments (list, newest first) to
-  docs/api-contract.md and the FastAPI backend. Once available, Claude will
-  replace the session-local comment list in apps/web/src/app/tasks/[id]/
-  page.tsx with a query against this endpoint.
-Owner: Codex (contract + backend), Claude (frontend follow-up)
-Status: Open
+  Backend resolved: Codex added GET /v1/tasks/{task_id}/comments (list,
+  newest first, limit/offset pagination) to docs/api-contract.md and
+  FastAPI. Claude still needs to replace the session-local comment list in
+  apps/web/src/app/tasks/[id]/page.tsx with a query against this endpoint.
+Owner: Claude (frontend follow-up)
+Status: Backend Resolved / Frontend Open
+```
+
+### OPEN-040 - Phase 5 Docker and reverse-proxy validation (frontend)
+
+```text
+Date: 2026-06-17
+Category: DevOps / Frontend Security
+Severity: High
+Question or issue:
+  Next.js production Docker build, standalone output, non-root runtime, client
+  bundle secret safety, and Caddy routing where /api/* reaches FastAPI.
+Resolution:
+  All frontend Docker issues identified and fixed:
+  1. Env var name mismatch: NEXT_PUBLIC_API_BASE_URL renamed to NEXT_PUBLIC_API_URL
+     everywhere (.env.example, compose.yaml). Code already used NEXT_PUBLIC_API_URL.
+  2. Build args added to Dockerfile builder stage for NEXT_PUBLIC_API_URL,
+     NEXT_PUBLIC_SUPABASE_URL, NEXT_PUBLIC_SUPABASE_ANON_KEY so the client bundle
+     is built with the correct values, not undefined/localhost fallbacks.
+     NEXT_PUBLIC_API_URL defaults to /api (correct for Caddy deployment).
+  3. HOSTNAME=0.0.0.0 added to production stage so standalone server.js listens
+     on all container interfaces (Caddy can reach web:3000).
+  4. mkdir -p public added to builder stage to prevent COPY failure when the
+     public/ directory does not exist in the source tree.
+  5. Web service health check added to compose.yaml; Caddy now waits for
+     service_healthy instead of service_started.
+  6. X-Request-ID request_header added to Caddyfile (Caddy UUID per request);
+     header exposed in responses via Access-Control-Expose-Headers so the browser
+     can read it. apiFetch now captures it, logs slow requests (>2s) and errors
+     to console.warn with the request ID so Codex can match to iems.api.supabase logs.
+  7. CSP and HSTS headers added to Caddyfile. Note: script-src uses unsafe-inline
+     for Next.js App Router SSR hydration; tighten to nonce-based CSP when
+     Next.js middleware issues nonces.
+  8. .dockerignore extended to exclude tests, Dockerfile, vitest config.
+  9. Bundle-scanned: SUPABASE_SERVICE_ROLE_KEY and SUPABASE_JWT_SECRET confirmed
+     absent from client bundle. localhost:8000 confirmed absent (replaced by /api).
+Owner: Claude (resolved)
+Status: Resolved
+Files changed:
+  apps/web/Dockerfile
+  apps/web/.dockerignore
+  apps/web/src/lib/api.ts
+  compose.yaml
+  .env.example
+  infrastructure/caddy/Caddyfile
+  docs/checklists/DOCKERIZATION.md
+Docker auth flow fixes completed 2026-06-18:
+  10. Server-side OAuth initiation route added: GET /auth/signin uses
+      createServerClient with skipBrowserRedirect: true. The PKCE code
+      verifier is now stored in a cookie (set by createServerClient) before
+      the redirect to Google, so exchangeCodeForSession in the callback finds
+      the verifier even when the request comes back through Caddy with no
+      browser state.
+  11. SUPABASE_URL runtime override: server.ts and middleware.ts now prefer
+      process.env.SUPABASE_URL over process.env.NEXT_PUBLIC_SUPABASE_URL.
+      compose.yaml passes SUPABASE_URL to the web container at runtime.
+      In local Docker set SUPABASE_URL=http://host.docker.internal:54321;
+      in production set it to the managed Supabase HTTPS URL.
+  12. Auth callback origin fix: callback/route.ts reads x-forwarded-proto and
+      x-forwarded-host headers from Caddy to build the public-facing origin,
+      so the post-login redirect resolves to the real domain rather than
+      http://web:3000.
+  13. Login page converted to server component: <button onClick> replaced with
+      <a href="/auth/signin">. Page is now static (○) with no client JS.
+  14. /auth/signin added to PUBLIC_PATHS in middleware.ts.
+Additional files changed:
+  apps/web/src/app/auth/signin/route.ts  (new)
+  apps/web/src/app/auth/callback/route.ts
+  apps/web/src/app/login/page.tsx
+  apps/web/src/lib/supabase/server.ts
+  apps/web/src/middleware.ts
+  compose.yaml
+Remaining manual sign-off:
+  - Login flow end-to-end in Docker (Google OAuth → callback → /dashboard).
+    Requires SUPABASE_URL=http://host.docker.internal:54321 in .env for local.
+  - Document upload and responsive UI check in container.
 ```
 
 ### OPEN-039 - Phase 5 end-to-end performance baseline and endpoint query optimization
@@ -215,10 +556,19 @@ Remaining work:
   identify slow Supabase calls by request_id. Optimize heavy endpoints, especially
   GET /v1/director/overview, by batching independent reads or replacing serial
   read composition with SQL/RPC-backed aggregate reads where appropriate.
+Baseline update:
+  Codex added apps/api/scripts/perf_probe.py and recorded a local backend
+  baseline in docs/performance/phase5-local-baseline.md. After the shared
+  Supabase HTTP client change, sampled backend routes completed locally in
+  25.83ms to 294.77ms; GET /v1/director/overview measured 84.36ms.
+  No immediate backend query-shape optimization is required from that baseline.
+  Keep this item open until Claude completes the frontend request waterfall
+  review and any slow full-page paths are mapped to request IDs.
 Owner: Codex for backend endpoint/query optimization; Claude for frontend request
   waterfall review.
 Status: Open
 ```
+
 
 ### OPEN-035 - Phase 4 Director Dashboard frontend wiring
 

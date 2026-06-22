@@ -52,8 +52,8 @@ async def http_exception_handler(
     if exc.status_code == status.HTTP_404_NOT_FOUND:
         return error_response(
             status_code=status.HTTP_404_NOT_FOUND,
-            code="NOT_FOUND",
-            message="Route not found",
+            code=_detail_value(exc.detail, "code", "NOT_FOUND"),
+            message=_detail_value(exc.detail, "message", "Route not found"),
             request_id=request_id,
         )
 

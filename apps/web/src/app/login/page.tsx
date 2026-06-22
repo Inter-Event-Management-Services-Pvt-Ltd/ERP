@@ -1,16 +1,4 @@
-'use client'
-
-import { createClient } from '@/lib/supabase/client'
-
 export default function LoginPage() {
-  async function handleGoogleSignIn() {
-    const supabase = createClient()
-    await supabase.auth.signInWithOAuth({
-      provider: 'google',
-      options: { redirectTo: `${window.location.origin}/auth/callback` },
-    })
-  }
-
   return (
     <div className="min-h-screen bg-surface-base flex items-center justify-center px-4">
       <div className="w-full max-w-sm">
@@ -27,8 +15,8 @@ export default function LoginPage() {
               </p>
             </div>
 
-            <button
-              onClick={handleGoogleSignIn}
+            <a
+              href="/auth/signin"
               className="w-full flex items-center justify-center gap-3 px-4 py-3 rounded-md border border-surface-border bg-surface-base text-text-primary text-sm font-sans hover:bg-surface-deep transition-colors focus-visible:ring-2 focus-visible:ring-accent-saffron focus-visible:ring-offset-2 focus-visible:ring-offset-surface-raised"
             >
               <svg width="18" height="18" viewBox="0 0 18 18" aria-hidden="true" focusable="false">
@@ -38,7 +26,7 @@ export default function LoginPage() {
                 <path d="M9 3.58c1.321 0 2.508.454 3.44 1.345l2.582-2.58C13.463.891 11.426 0 9 0A8.997 8.997 0 00.957 4.958L3.964 7.29C4.672 5.163 6.656 3.58 9 3.58z" fill="#EA4335" />
               </svg>
               Sign in with Google
-            </button>
+            </a>
 
             <p className="mt-6 text-center text-xs text-text-primary/25 font-sans leading-relaxed">
               Access restricted to authorised IEMS personnel

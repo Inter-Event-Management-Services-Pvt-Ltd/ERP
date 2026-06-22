@@ -25,6 +25,7 @@ celerybeat.pid
 # build output
 dist/
 build/
+tmp/
 *.egg-info/
 
 # env files

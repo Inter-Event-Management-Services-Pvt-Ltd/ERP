@@ -287,6 +287,25 @@ async def add_task_comment(
         raise _http_error(exc) from exc
 
 
+@router.get("/tasks/{task_id}/comments", response_model=list[TaskCommentResponse])
+async def list_task_comments(
+    task_id: UUID,
+    current_user: AuthenticatedUser,
+    service: EmployeeOperationsServiceDep,
+    limit: Annotated[int, Query(ge=1, le=100)] = 50,
+    offset: Annotated[int, Query(ge=0)] = 0,
+) -> list[TaskCommentResponse]:
+    try:
+        return await service.list_task_comments(
+            task_id=task_id,
+            current_user=current_user,
+            limit=limit,
+            offset=offset,
+        )
+    except EmployeeOperationsError as exc:
+        raise _http_error(exc) from exc
+
+
 @router.post("/tasks/{task_id}/documents", response_model=TaskResponse)
 async def link_task_document(
     task_id: UUID,

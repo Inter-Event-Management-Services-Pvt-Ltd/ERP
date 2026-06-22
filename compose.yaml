@@ -6,34 +6,56 @@ services:
       context: ./apps/web
       dockerfile: Dockerfile
       target: production
-    env_file:
-      - .env
+      args:
+        NEXT_PUBLIC_API_URL: /api
+        NEXT_PUBLIC_SUPABASE_URL: ${NEXT_PUBLIC_SUPABASE_URL}
+        NEXT_PUBLIC_SUPABASE_ANON_KEY: ${NEXT_PUBLIC_SUPABASE_ANON_KEY}
     environment:
       NODE_ENV: production
-      NEXT_PUBLIC_API_BASE_URL: ${NEXT_PUBLIC_API_BASE_URL}
+      # Runtime override so server-side Next.js (middleware, auth routes) can
+      # reach Supabase from inside the container. In local Docker set this to
+      # http://host.docker.internal:54321; in production use the managed URL.
+      SUPABASE_URL: ${SUPABASE_URL}
+      # Browser-accessible Supabase URL injected at runtime so auth/signin can
+      # rewrite the OAuth redirect from the container-internal address to one
+      # the user's browser can reach. Must differ from SUPABASE_URL in local
+      # Docker (e.g. http://127.0.0.1:54321 vs http://host.docker.internal:54321).
       NEXT_PUBLIC_SUPABASE_URL: ${NEXT_PUBLIC_SUPABASE_URL}
+      # Anon key and API URL are baked into the bundle at build time but also
+      # present here so Next.js server.js has them in process.env at runtime.
       NEXT_PUBLIC_SUPABASE_ANON_KEY: ${NEXT_PUBLIC_SUPABASE_ANON_KEY}
+      NEXT_PUBLIC_API_URL: /api
+    healthcheck:
+      test: ["CMD", "node", "-e", "require('http').get('http://localhost:3000/', r => process.exit(r.statusCode < 500 ? 0 : 1)).on('error', () => process.exit(1))"]
+      interval: 30s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
     depends_on:
       api:
         condition: service_healthy
     restart: unless-stopped
     networks:
       - frontend
-      - backend
 
   api:
     build:
       context: ./apps/api
       dockerfile: Dockerfile
       target: production
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
     env_file:
       - .env
     environment:
       APP_ENV: production
-      REDIS_URL: ${REDIS_URL}
-      CELERY_BROKER_URL: ${CELERY_BROKER_URL}
-      CELERY_RESULT_BACKEND: ${CELERY_RESULT_BACKEND}
+      REDIS_URL: redis://redis:6379/0
+      CELERY_BROKER_URL: redis://redis:6379/0
+      CELERY_RESULT_BACKEND: redis://redis:6379/1
       SUPABASE_URL: ${SUPABASE_URL}
+      SUPABASE_AUTH_ISSUER: ${SUPABASE_AUTH_ISSUER:-${NEXT_PUBLIC_SUPABASE_URL}/auth/v1}
+      SUPABASE_AUTH_ISSUER_ALIASES: ${SUPABASE_AUTH_ISSUER_ALIASES:-${SUPABASE_URL}/auth/v1}
+      SUPABASE_JWKS_URL: ${SUPABASE_JWKS_URL:-${SUPABASE_URL}/auth/v1/.well-known/jwks.json}
       SUPABASE_ANON_KEY: ${SUPABASE_ANON_KEY}
       SUPABASE_SERVICE_ROLE_KEY: ${SUPABASE_SERVICE_ROLE_KEY}
       SUPABASE_JWT_SECRET: ${SUPABASE_JWT_SECRET}
@@ -49,15 +71,23 @@ services:
     restart: unless-stopped
     networks:
       - backend
+      - egress
 
   worker:
     build:
       context: ./apps/api
       dockerfile: Dockerfile
       target: production
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
     command: ["celery", "-A", "app.workers.celery_app", "worker", "--loglevel=INFO"]
     env_file:
       - .env
+    environment:
+      APP_ENV: production
+      REDIS_URL: redis://redis:6379/0
+      CELERY_BROKER_URL: redis://redis:6379/0
+      CELERY_RESULT_BACKEND: redis://redis:6379/1
     depends_on:
       redis:
         condition: service_healthy
@@ -66,15 +96,31 @@ services:
     restart: unless-stopped
     networks:
       - backend
+      - egress
 
   scheduler:
     build:
       context: ./apps/api
       dockerfile: Dockerfile
       target: production
-    command: ["celery", "-A", "app.workers.celery_app", "beat", "--loglevel=INFO"]
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    command:
+      [
+        "celery",
+        "-A",
+        "app.workers.celery_app",
+        "beat",
+        "--loglevel=INFO",
+        "--schedule=/tmp/celerybeat-schedule",
+      ]
     env_file:
       - .env
+    environment:
+      APP_ENV: production
+      REDIS_URL: redis://redis:6379/0
+      CELERY_BROKER_URL: redis://redis:6379/0
+      CELERY_RESULT_BACKEND: redis://redis:6379/1
     depends_on:
       redis:
         condition: service_healthy
@@ -83,6 +129,7 @@ services:
     restart: unless-stopped
     networks:
       - backend
+      - egress
 
   redis:
     image: redis:7-alpine
@@ -99,10 +146,18 @@ services:
       - backend
 
   caddy:
-    image: caddy:2-alpine
+    image: iems-erp-caddy
+    build:
+      context: ./infrastructure/caddy
+      dockerfile: Dockerfile
+    environment:
+      # Injected into the Caddyfile CSP connect-src so the browser Supabase
+      # client can reach Supabase. Local Docker: http://127.0.0.1:54321.
+      # Production: https://xxx.supabase.co (already covered by *.supabase.co).
+      NEXT_PUBLIC_SUPABASE_URL: ${NEXT_PUBLIC_SUPABASE_URL}
     depends_on:
       web:
-        condition: service_started
+        condition: service_healthy
       api:
         condition: service_healthy
     ports:
@@ -124,5 +179,6 @@ volumes:
 
 networks:
   frontend:
+  egress:
   backend:
     internal: true

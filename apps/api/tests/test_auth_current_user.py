@@ -21,11 +21,16 @@ AUDIENCE = "authenticated"
 SECRET = "local-test-jwt-secret-at-least-32-bytes"
 
 
-def _token(email: str, secret: str = SECRET, subject: UUID = AUTH_USER_ID) -> str:
+def _token(
+    email: str,
+    secret: str = SECRET,
+    subject: UUID = AUTH_USER_ID,
+    issuer: str = ISSUER,
+) -> str:
     now = datetime.now(tz=UTC)
     return jwt.encode(
         {
-            "iss": ISSUER,
+            "iss": issuer,
             "aud": AUDIENCE,
             "sub": str(subject),
             "email": email,
@@ -129,6 +134,35 @@ def test_jwt_verifier_rejects_invalid_signature() -> None:
     assert exc_info.value.code == "INVALID_TOKEN"
 
 
+def test_jwt_verifier_rejects_expired_access_token() -> None:
+    verifier = SupabaseJwtVerifier(
+        jwt_secret=SECRET,
+        issuer=ISSUER,
+        audience=AUDIENCE,
+        allowed_email_domain="iemsnewdelhi.com",
+    )
+    now = datetime.now(tz=UTC)
+    token = jwt.encode(
+        {
+            "iss": ISSUER,
+            "aud": AUDIENCE,
+            "sub": str(AUTH_USER_ID),
+            "email": "employee@iemsnewdelhi.com",
+            "role": "authenticated",
+            "iat": int((now - timedelta(minutes=30)).timestamp()),
+            "exp": int((now - timedelta(minutes=15)).timestamp()),
+        },
+        SECRET,
+        algorithm="HS256",
+    )
+
+    with pytest.raises(AuthError) as exc_info:
+        verifier.verify(token)
+
+    assert exc_info.value.status_code == 401
+    assert exc_info.value.code == "INVALID_TOKEN"
+
+
 def test_jwt_verifier_rejects_disallowed_email_domain() -> None:
     verifier = SupabaseJwtVerifier(
         jwt_secret=SECRET,
@@ -157,6 +191,37 @@ def test_jwt_verifier_accepts_configured_secondary_email_domain() -> None:
     assert claims.email == "local.dev@gmail.com"
 
 
+def test_jwt_verifier_accepts_configured_issuer_alias() -> None:
+    verifier = SupabaseJwtVerifier(
+        jwt_secret=SECRET,
+        issuer="http://127.0.0.1:54321/auth/v1",
+        audience=AUDIENCE,
+        allowed_email_domain="iemsnewdelhi.com",
+        issuer_aliases=("http://host.docker.internal:54321/auth/v1",),
+    )
+
+    claims = verifier.verify(
+        _token(
+            "director@iemsnewdelhi.com",
+            issuer="http://host.docker.internal:54321/auth/v1",
+        )
+    )
+
+    assert claims.issuer == "http://host.docker.internal:54321/auth/v1"
+
+
+def test_settings_parses_auth_issuer_aliases() -> None:
+    settings = Settings(
+        SUPABASE_AUTH_ISSUER="http://127.0.0.1:54321/auth/v1",
+        SUPABASE_AUTH_ISSUER_ALIASES="http://host.docker.internal:54321/auth/v1",
+    )
+
+    assert settings.supabase_auth_issuer_list == (
+        "http://127.0.0.1:54321/auth/v1",
+        "http://host.docker.internal:54321/auth/v1",
+    )
+
+
 def test_settings_parses_email_domain_and_cors_allowlists() -> None:
     settings = Settings(
         ALLOWED_EMAIL_DOMAINS="iemsnewdelhi.com, gmail.com",
@@ -167,6 +232,19 @@ def test_settings_parses_email_domain_and_cors_allowlists() -> None:
     assert settings.cors_allowed_origin_list == (
         "http://localhost:3000",
         "https://erp.example.com",
+    )
+
+
+def test_settings_allows_auth_issuer_override_separate_from_supabase_url() -> None:
+    settings = Settings(
+        SUPABASE_URL="http://host.docker.internal:54321",
+        SUPABASE_AUTH_ISSUER="http://127.0.0.1:54321/auth/v1",
+        SUPABASE_JWKS_URL="http://host.docker.internal:54321/auth/v1/.well-known/jwks.json",
+    )
+
+    assert settings.supabase_auth_issuer == "http://127.0.0.1:54321/auth/v1"
+    assert settings.supabase_jwks_url == (
+        "http://host.docker.internal:54321/auth/v1/.well-known/jwks.json"
     )
 
 

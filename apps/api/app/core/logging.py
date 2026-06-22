@@ -47,6 +47,9 @@ def configure_logging(log_level: str) -> None:
     root_logger.handlers = [handler]
     root_logger.setLevel(_log_level(log_level))
 
+    logging.getLogger("httpx").setLevel(logging.NOTSET)
+    logging.getLogger("httpcore").setLevel(logging.NOTSET)
+
 
 async def structured_access_log_middleware(
     request: Request,

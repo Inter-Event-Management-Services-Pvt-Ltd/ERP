@@ -164,6 +164,40 @@ server-side checks. Sensitive override operations still require
 `X-IEMS-Override-Reason`; frontend permission data is for navigation and UI
 state only.
 
+`GET /v1/me/notifications` requires authentication and returns only
+notifications for the current employee. No additional RBAC permission is
+required.
+
+Query parameters:
+
+```text
+limit=1..100    default 50
+offset=0..n     default 0
+```
+
+Response:
+
+```json
+[
+  {
+    "id": "44444444-4444-4444-8444-444444444444",
+    "employee_id": "22222222-2222-4222-8222-222222222222",
+    "notification_type": "APPROVAL",
+    "title": "Approval requested",
+    "message": "Please review the approval request.",
+    "resource_type": "approval_request",
+    "resource_id": "66666666-6666-4666-8666-666666666666",
+    "read_at": null,
+    "created_at": "2026-06-20T09:00:00Z"
+  }
+]
+```
+
+`PATCH /v1/me/notifications/{notification_id}/read` marks only the current
+employee's own notification as read and returns the updated row. If the
+notification does not exist or belongs to another employee, the backend returns
+`404 NOT_FOUND` with message `Notification not found`.
+
 ## Employees and Departments
 
 ```text
@@ -936,6 +970,7 @@ POST   /v1/tasks
 GET    /v1/tasks/{task_id}
 PATCH  /v1/tasks/{task_id}
 POST   /v1/tasks/{task_id}/assignees
+GET    /v1/tasks/{task_id}/comments
 POST   /v1/tasks/{task_id}/comments
 POST   /v1/tasks/{task_id}/documents
 
@@ -1051,6 +1086,34 @@ It accepts:
 {
   "comment_text": "Confirmed with vendor."
 }
+```
+
+`GET /v1/tasks/{task_id}/comments` is available to users who can see the task.
+It returns comments newest first and accepts:
+
+```text
+limit=1..100            default 50
+offset=0..n             default 0
+```
+
+Response:
+
+```json
+[
+  {
+    "id": "dddddddd-dddd-4ddd-8ddd-dddddddddddd",
+    "task_id": "99999999-9999-4999-8999-999999999999",
+    "employee_id": "22222222-2222-4222-8222-222222222222",
+    "employee": {
+      "id": "22222222-2222-4222-8222-222222222222",
+      "employee_code": "IEMS-001",
+      "full_name": "Example Employee"
+    },
+    "comment_text": "Confirmed with vendor.",
+    "created_at": "2026-06-15T09:00:00Z",
+    "edited_at": null
+  }
+]
 ```
 
 `POST /v1/tasks/{task_id}/documents` accepts:
