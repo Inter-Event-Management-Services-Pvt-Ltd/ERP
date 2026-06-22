@@ -2,8 +2,10 @@
 
 Complete before production deployment.
 
-- [ ] Threat review completed.
-- [ ] Auth allowlist tested with approved and rejected accounts.
+- [x] Threat review completed. See `docs/security/phase5-threat-review.md`.
+- [x] Auth allowlist tested with approved and rejected accounts. Backend tests
+  cover accepted IEMS accounts, rejected outside-domain tokens, disabled
+  accounts and employee-email mismatch.
 - [x] RLS tests pass.
 - [x] ABAC tests pass.
 - [x] Super User override tests pass.
@@ -12,7 +14,9 @@ Complete before production deployment.
 - [x] Audit immutability verified.
 - [x] Audit coverage verified.
 - [x] File upload validation verified.
-- [ ] Rate-limiting decision documented.
+- [x] Rate-limiting decision documented. See
+  `docs/deployment/rate-limiting-decision.md`; production enforcement remains a
+  deployment task.
 - [x] Dependency vulnerabilities reviewed.
 - [x] Secret scan clean.
 - [ ] Backup exists.

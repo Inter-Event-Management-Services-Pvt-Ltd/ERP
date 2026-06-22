@@ -134,6 +134,35 @@ def test_jwt_verifier_rejects_invalid_signature() -> None:
     assert exc_info.value.code == "INVALID_TOKEN"
 
 
+def test_jwt_verifier_rejects_expired_access_token() -> None:
+    verifier = SupabaseJwtVerifier(
+        jwt_secret=SECRET,
+        issuer=ISSUER,
+        audience=AUDIENCE,
+        allowed_email_domain="iemsnewdelhi.com",
+    )
+    now = datetime.now(tz=UTC)
+    token = jwt.encode(
+        {
+            "iss": ISSUER,
+            "aud": AUDIENCE,
+            "sub": str(AUTH_USER_ID),
+            "email": "employee@iemsnewdelhi.com",
+            "role": "authenticated",
+            "iat": int((now - timedelta(minutes=30)).timestamp()),
+            "exp": int((now - timedelta(minutes=15)).timestamp()),
+        },
+        SECRET,
+        algorithm="HS256",
+    )
+
+    with pytest.raises(AuthError) as exc_info:
+        verifier.verify(token)
+
+    assert exc_info.value.status_code == 401
+    assert exc_info.value.code == "INVALID_TOKEN"
+
+
 def test_jwt_verifier_rejects_disallowed_email_domain() -> None:
     verifier = SupabaseJwtVerifier(
         jwt_secret=SECRET,

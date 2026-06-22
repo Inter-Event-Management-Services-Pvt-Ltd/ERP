@@ -104,9 +104,9 @@ Container validation completed 2026-06-18 (after Alpine rebase):
   - Bundle secret scan (inside container): anon key present as expected
     (NEXT_PUBLIC_SUPABASE_ANON_KEY is intentionally public; role=anon, subject to
     RLS). SUPABASE_SERVICE_ROLE_KEY and JWT_SECRET absent from all 78 chunks.
-  - Production Compose file reviewed by a human.
-  - Incident contact and rollback owner named.
-  - Human release approval recorded.
+  - Production Compose file human review remains required.
+  - Incident contact and rollback owner remain required.
+  - Human release approval remains required.
 Recommended next action:
   Frontend static validation is complete, Docker image scans are clean, browser
   Docker auth has been manually confirmed, and OPEN-045 is fully resolved.
@@ -114,8 +114,8 @@ Recommended next action:
   complete the staging validation runbook, and record final approval.
 Owner: Human release owner, Claude for remaining frontend items, Codex for
   backend follow-up if new backend issues are found.
-Status: Open — local validation complete; staging, backups, monitoring, release
-  approval and OPEN-045 disposition remain
+Status: Open — local validation complete; staging, backups, monitoring and
+  release approval remain
 ```
 
 ### OPEN-042 - No frontend unit or integration tests

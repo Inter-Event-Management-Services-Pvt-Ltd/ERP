@@ -2,6 +2,18 @@
 
 ## Unreleased
 
+- Implemented `GET /v1/me/notifications` and
+  `PATCH /v1/me/notifications/{notification_id}/read`, scoped notification
+  access to the current employee, preserved explicit business `NOT_FOUND`
+  messages, and added backend tests for list/read/ownership behavior.
+- Added Phase 5 threat review and rate-limiting decision docs, then updated the
+  release/security checklists to show which security-gate items are locally
+  complete versus still blocked by staging/production operations.
+- Added a key-rotation procedure and an expired-token regression test, then
+  updated `SECURITY_GLOBAL.md` with local auth/session evidence while keeping
+  production credential separation, staging, backups and monitoring open.
+- Expanded the current-user API contract with the notification response shape
+  and mark-read ownership behavior.
 - Added Phase 5 staging validation runbook covering staging Supabase, Docker
   deployment checks, browser smoke tests, security evidence, and exit criteria.
 - Updated Phase 5 release evidence after Docker auth was manually confirmed in

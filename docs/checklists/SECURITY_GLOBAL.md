@@ -8,16 +8,22 @@
 - [x] JWT secret is server-only. Backend Docker validation confirms JWT secret is only present in backend-owned service environments and is not baked into images.
 - [x] Redis credentials are server-only. Production Compose keeps Redis on the internal backend network and browser-facing services do not receive Redis URLs.
 - [ ] Production and staging credentials differ.
-- [ ] Key rotation procedure exists.
+- [x] Key rotation procedure exists. See
+  `docs/deployment/key-rotation-procedure.md`.
 
 ## Authentication
 
-- [ ] Google sign-in configured.
-- [ ] Domain and employee allowlist enforced.
-- [ ] Disabled employees cannot sign in.
-- [ ] Director account tested.
-- [ ] Session expiry tested.
-- [ ] Logout tested.
+- [x] Google sign-in configured. Docker browser smoke test confirmed sign-in on
+  2026-06-20.
+- [x] Domain and employee allowlist enforced. Backend tests cover rejected
+  outside-domain tokens and employee-account resolution.
+- [x] Disabled employees cannot sign in. Backend current-user resolver test
+  rejects disabled accounts.
+- [x] Director account tested. Backend resolver and Docker auth probes validated
+  Director/Super User context.
+- [x] Session expiry tested. JWT verifier regression test rejects expired access
+  tokens.
+- [x] Logout tested. Docker browser smoke test confirmed sign-out on 2026-06-20.
 
 ## Authorization
 
