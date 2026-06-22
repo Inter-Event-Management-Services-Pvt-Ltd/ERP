@@ -44,6 +44,10 @@ configuration or human production approval.
 | Public Redis/API exposure | Production Compose exposes only Caddy; Redis on internal backend network | Human production Compose review remains required |
 | Vulnerable container image | Docker Scout critical/high scans pass for app images, Redis and custom Caddy | Re-scan before every production promotion |
 | Auth token issuer mismatch in Docker | FastAPI separates REST URL, accepted issuers and JWKS URL; signature, audience and expiry remain verified | Use managed Supabase issuer/JWKS in staging/prod |
+| SQL injection | Backend app code uses Supabase PostgREST/RPC calls and typed schemas instead of string-built SQL; backend security scan fails raw SQL string execution patterns | Re-run scan before release |
+| Command injection or dynamic code execution | Backend security scan fails shell execution and `eval`/`exec`/`compile` patterns in production app code | Any future exception requires explicit security review |
+| Unsafe deserialization | Backend security scan fails `pickle`, `marshal` and unsafe `yaml.load` patterns | Any future parser change requires explicit security review |
+| SSRF through arbitrary outbound HTTP | Direct HTTP calls are limited to approved Supabase helper paths; backend routes do not fetch user-supplied URLs | Any new outbound integration needs allowlist and timeout review |
 | Brute force or request flooding | Caddy/security headers in place; no app-level limiter yet | Rate-limiting decision documented; provider/proxy enforcement required before production |
 | Backup cannot restore after incident | Local app-schema backup/restore proof passed | Managed Supabase database and Storage backup procedures still required |
 
@@ -59,5 +63,5 @@ from this review. Production is still blocked until:
 - monitoring and alerting are configured,
 - rate limiting is enforced at the production edge,
 - OPEN-001 malware scanning decision is accepted or implemented,
-- OPEN-045 frontend validation is completed against the live backend endpoints,
+- OPEN-045 admin-tab loading issue is resolved or accepted,
 - human release approval is recorded.

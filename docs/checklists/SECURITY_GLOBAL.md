@@ -34,6 +34,20 @@
 - [x] Override logged.
 - [x] Unauthorized tests exist.
 
+## Injection and Abuse Protection
+
+- [x] SQL injection controls reviewed. Backend uses Supabase PostgREST/RPC calls
+  and typed request models instead of string-built SQL in application code.
+- [x] Command injection controls reviewed. Backend security scan blocks shell
+  execution patterns in production app code.
+- [x] Dynamic code execution blocked by review guardrail. Backend security scan
+  fails `eval`, `exec` and `compile` patterns.
+- [x] Unsafe deserialization blocked by review guardrail. Backend security scan
+  fails `pickle`, `marshal` and unsafe `yaml.load` patterns.
+- [x] SSRF controls reviewed. Direct outbound HTTP is limited to approved
+  Supabase helper paths.
+- [ ] Production rate limiting enforced.
+
 ## Storage
 
 - [x] Buckets private. Phase 5 local SQL probe verified expected buckets are private on 2026-06-17.
@@ -58,6 +72,7 @@
 - [ ] Staging tested.
 - [x] Dependency scan passed.
 - [x] Secret scan passed.
+- [x] Backend injection and abuse pattern scan passed.
 - [ ] Backups enabled.
 - [x] Restore tested.
 - [ ] Monitoring enabled.

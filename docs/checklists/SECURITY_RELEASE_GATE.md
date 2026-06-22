@@ -19,6 +19,7 @@ Complete before production deployment.
   deployment task.
 - [x] Dependency vulnerabilities reviewed.
 - [x] Secret scan clean.
+- [x] Backend injection and abuse pattern scan clean.
 - [ ] Backup exists.
 - [x] Restore test passed.
 - [ ] Incident contact and rollback owner identified.

@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+- Added Phase 5 backend injection and abuse-protection evidence, including a
+  repeatable security pattern scan for shell execution, dynamic code execution,
+  unsafe deserialization, raw SQL string execution and direct outbound HTTP
+  outside approved Supabase helper paths.
 - Implemented `GET /v1/me/notifications` and
   `PATCH /v1/me/notifications/{notification_id}/read`, scoped notification
   access to the current employee, preserved explicit business `NOT_FOUND`

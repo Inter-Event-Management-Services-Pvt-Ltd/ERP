@@ -24,6 +24,17 @@ Commands:
 
 Result: passed locally on 2026-06-18.
 
+## Injection and Abuse Pattern Scan
+
+Command: `.\scripts\phase5_backend_security_scan.ps1`
+
+Result: `Backend security pattern scan passed.` on 2026-06-22.
+
+The scan covers backend production Python files under `apps/api/app` and fails on
+shell command execution, runtime code execution, unsafe deserialization,
+string-built raw SQL execution and direct outbound HTTP outside approved
+Supabase helper paths.
+
 ## Release-Gate Tests
 
 Command: `uv run --group dev pytest -q` from `apps/api`
@@ -69,6 +80,8 @@ Backend Docker validation on 2026-06-18 confirmed:
 - Frontend public environment variables must use publishable/anon values only.
 - Production and staging credentials must differ before release.
 - Malware scanning for uploads remains an open production decision.
+- Injection and abuse-protection evidence is recorded in
+  `docs/security/phase5-injection-abuse-protections.md`.
 - Staging deployment, managed Supabase backup retention, Supabase Storage backup
   procedure, monitoring/alerting and human release approval remain required
   before production.

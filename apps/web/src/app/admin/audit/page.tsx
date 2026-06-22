@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import { format } from 'date-fns'
-import { ChevronDown, ChevronRight, Activity } from 'lucide-react'
+import { ChevronDown, ChevronRight, Activity, X } from 'lucide-react'
 import { AppShell } from '@/components/layout/app-shell'
 import { PageHeader } from '@/components/layout/page-header'
 import { ContentArea } from '@/components/layout/content-area'
@@ -11,7 +11,8 @@ import { EmptyState } from '@/components/states/empty-state'
 import { ErrorState } from '@/components/states/error-state'
 import { useAuditEvents } from '@/hooks/use-admin'
 import { useMe } from '@/hooks/use-me'
-import type { AuditEvent } from '@/types'
+import { useEmployeeSearch } from '@/hooks/use-employees'
+import type { AuditEvent, EmployeeSummary } from '@/types'
 
 const inputCls = 'px-3 py-2 text-sm bg-surface-base border border-surface-border rounded-md text-text-primary placeholder:text-text-primary/25 focus:outline-none focus:ring-1 focus:ring-accent-saffron/50'
 const labelCls = 'text-xs font-semibold text-text-primary/60 uppercase tracking-wide'
@@ -101,9 +102,25 @@ export default function AdminAuditPage() {
   const [resourceType, setResourceType] = useState('')
   const [resourceId, setResourceId] = useState('')
   const [actorId, setActorId] = useState('')
+  const [actorSearch, setActorSearch] = useState('')
+  const [actorDropdownOpen, setActorDropdownOpen] = useState(false)
   const [createdFrom, setCreatedFrom] = useState('')
   const [createdTo, setCreatedTo] = useState('')
   const [offset, setOffset] = useState(0)
+
+  const { data: actorResults = [], isFetching: actorSearching } = useEmployeeSearch(actorSearch)
+
+  function selectActor(emp: EmployeeSummary) {
+    setActorId(emp.id)
+    setActorSearch(`${emp.employee_code} — ${emp.full_name}`)
+    setActorDropdownOpen(false)
+  }
+
+  function clearActor() {
+    setActorId('')
+    setActorSearch('')
+    setActorDropdownOpen(false)
+  }
 
   const params = {
     action_code: actionCode.trim() || undefined,
@@ -129,6 +146,7 @@ export default function AdminAuditPage() {
     setResourceType('')
     setResourceId('')
     setActorId('')
+    setActorSearch('')
     setCreatedFrom('')
     setCreatedTo('')
     setOffset(0)
@@ -165,8 +183,55 @@ export default function AdminAuditPage() {
             <input className={inputCls} value={resourceId} onChange={(e) => setResourceId(e.target.value)} placeholder="UUID" />
           </div>
           <div className="flex flex-col gap-1.5">
-            <label className={labelCls}>Actor Employee ID</label>
-            <input className={inputCls} value={actorId} onChange={(e) => setActorId(e.target.value)} placeholder="UUID" />
+            <label className={labelCls}>Actor</label>
+            <div className="relative">
+              <input
+                type="text"
+                autoComplete="off"
+                value={actorSearch}
+                onChange={(e) => {
+                  setActorSearch(e.target.value)
+                  setActorId('')
+                  setActorDropdownOpen(true)
+                }}
+                onFocus={() => { if (actorSearch.length >= 2) setActorDropdownOpen(true) }}
+                onBlur={() => setTimeout(() => setActorDropdownOpen(false), 150)}
+                placeholder="Type a name to filter…"
+                className={`${inputCls} pr-7`}
+              />
+              {actorSearch && (
+                <button
+                  type="button"
+                  onClick={clearActor}
+                  aria-label="Clear actor filter"
+                  className="absolute right-2 top-1/2 -translate-y-1/2 text-text-primary/30 hover:text-text-primary/60 transition-colors"
+                >
+                  <X size={13} aria-hidden="true" />
+                </button>
+              )}
+              {actorDropdownOpen && actorSearch.length >= 2 && (
+                <ul
+                  role="listbox"
+                  aria-label="Employee search results"
+                  className="absolute z-10 mt-1 w-full bg-surface-base border border-surface-border rounded-md shadow-lg max-h-40 overflow-y-auto"
+                >
+                  {actorSearching && <li className="px-3 py-2 text-xs text-text-primary/40">Searching…</li>}
+                  {!actorSearching && actorResults.length === 0 && <li className="px-3 py-2 text-xs text-text-primary/40">No employees found.</li>}
+                  {!actorSearching && actorResults.map((emp) => (
+                    <li key={emp.id}>
+                      <button
+                        type="button"
+                        onMouseDown={() => selectActor(emp)}
+                        className="w-full text-left px-3 py-2 text-xs hover:bg-surface-raised transition-colors"
+                      >
+                        <span className="font-mono text-text-primary/40 mr-1.5">{emp.employee_code}</span>
+                        <span className="text-text-primary/80">{emp.full_name}</span>
+                      </button>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </div>
           </div>
           <div className="flex flex-col gap-1.5">
             <label className={labelCls}>From</label>

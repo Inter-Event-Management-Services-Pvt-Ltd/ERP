@@ -28,10 +28,10 @@ Severity: High
 Question or issue:
   Backend-owned local Phase 5 validation now passes for Ruff, MyPy, pytest,
   dependency audit, secret scan, clean Supabase reset, Phase 2/3/5 SQL probes,
-  backend Docker build, backend non-root runtime, backend restart/log checks,
-  and local backup/restore proof. The full production release gate is still not
-  complete because several items require external environment setup or human
-  approval.
+  backend injection/abuse pattern scan, backend Docker build, backend non-root
+  runtime, backend restart/log checks, and local backup/restore proof. The full
+  production release gate is still not complete because several items require
+  external environment setup or human approval.
 Why it matters:
   The ERP should not be promoted to production based only on local backend
   validation. Production readiness depends on frontend container sign-off,
@@ -81,6 +81,7 @@ Remaining required items:
   - Managed Supabase database backup retention selected and verified.
   - Supabase Storage backup/export procedure selected and verified.
   - Monitoring and alerting provider configured.
+  - Production edge or provider rate limiting enforced.
   - OPEN-045 resolved (2026-06-20): admin guard, notifications wiring, audit
     log null crash fixed, backend notification endpoints implemented by Codex.
   - Docker image vulnerability scan: all application images now pass on 2026-06-18.
