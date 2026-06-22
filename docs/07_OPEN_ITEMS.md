@@ -19,6 +19,26 @@ Status:
 
 ## Initial Open Items
 
+### OPEN-046 - Phase 6 department administration workflow
+
+```text
+Date: 2026-06-22
+Category: Phase 6 / Admin
+Severity: Medium
+Question or issue:
+  Admin users should eventually be able to create, edit and deactivate
+  departments from the admin UI. The current backend/frontend supports listing
+  departments and assigning employees to departments, but not department CRUD.
+Why it matters:
+  During pilot rollout, real department names may need to be added or corrected
+  without direct SQL access.
+Recommended next action:
+  Scope audited backend department create/update/deactivate endpoints and Claude
+  admin UI wiring during Phase 6 after the pilot admin workflow is reviewed.
+Owner: Codex for backend/API contract, Claude for admin UI
+Status: Backlog — Phase 6
+```
+
 ### OPEN-041 - Phase 5 production-release blockers
 
 ```text

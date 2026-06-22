@@ -32,6 +32,19 @@ managed Supabase Free
 - [ ] Create private Storage buckets.
 - [ ] Copy project URL, anon key, service-role key, and JWT settings.
 
+For hosted/staging without demo data, apply migrations first and then run the
+manual minimal seed:
+
+```bash
+supabase db push
+supabase db query --file supabase/manual_seeds/001_minimal_required_seed.sql
+```
+
+Do not use `supabase db push --include-seed` for the hosted staging project
+unless demo clients, demo projects and demo employees are intentionally wanted.
+The default auto seed at `supabase/seeds/001_reference_seed.sql` includes demo
+records for local development.
+
 ## 4. Deploy Frontend To Vercel
 
 - [ ] Import GitHub repo.

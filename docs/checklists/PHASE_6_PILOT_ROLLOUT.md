@@ -3,6 +3,9 @@
 ## Pilot
 
 - [ ] Select pilot users.
+- [ ] Confirm department administration workflow. Phase 6 should decide whether
+  admins need create/edit/deactivate department screens and backend audited
+  department CRUD beyond the current department assignment workflow.
 - [ ] Import a limited set of real folders.
 - [ ] Train pilot users.
 - [ ] Observe common mistakes.
