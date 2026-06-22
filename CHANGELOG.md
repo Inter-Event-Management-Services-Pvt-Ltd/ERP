@@ -2,6 +2,9 @@
 
 ## Unreleased
 
+- Bumped backend `pydantic-settings` and `msgpack` minimum versions after
+  GitHub Backend CI dependency audit reported fixed advisories, restoring a
+  clean `pip-audit` gate.
 - Added Phase 5 backend injection and abuse-protection evidence, including a
   repeatable security pattern scan for shell execution, dynamic code execution,
   unsafe deserialization, raw SQL string execution and direct outbound HTTP
