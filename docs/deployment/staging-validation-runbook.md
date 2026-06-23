@@ -23,6 +23,27 @@ domain. Do not connect staging validation to production Supabase.
 Never paste rendered `docker compose config` output into chat, issues or PRs
 because it expands local secret values.
 
+## Current Temporary Staging Shape
+
+The 2026-06-22 deployment used Vercel for the frontend and a Cloudflare Quick
+Tunnel to reach the backend server. This is acceptable for early smoke testing,
+but it is not production-like staging because the tunnel hostname is temporary
+and cannot hold durable Cloudflare WAF/rate-limit policy.
+
+Before marking staging production-like:
+
+- Buy or attach a domain in Cloudflare.
+- Use a named Cloudflare Tunnel for the backend.
+- Route `api.<domain>` to the backend tunnel.
+- Route `app.<domain>` or the selected app hostname to Vercel.
+- Set Vercel `NEXT_PUBLIC_API_URL=https://api.<domain>`.
+- Set backend `CORS_ALLOWED_ORIGINS` to the Vercel production URL and
+  `https://app.<domain>`.
+- Re-run this runbook against the stable hostnames.
+
+Do not mark the Phase 5 staging exit criterion complete while the backend is
+only reachable through a throwaway `trycloudflare.com` URL.
+
 ## Deploy
 
 ```powershell
@@ -54,6 +75,35 @@ Expected results:
 - `/api/health` returns:
   `{"status":"ok","service":"iems-erp-api","version":"0.1.0"}`.
 - `/login` returns `200`.
+
+FastAPI documentation must not be publicly exposed on hosted API domains:
+
+```powershell
+curl.exe -i https://<api-domain>/docs
+curl.exe -i https://<api-domain>/redoc
+curl.exe -i https://<api-domain>/openapi.json
+```
+
+Expected result:
+
+- Each request returns `404` unless `ENABLE_API_DOCS=true` was intentionally set
+  for a short debugging window.
+
+For the current split Vercel plus backend-tunnel setup, also verify CORS before
+browser testing:
+
+```powershell
+curl.exe -i -X OPTIONS https://<api-domain>/v1/me `
+  -H "Origin: https://<vercel-app-domain>" `
+  -H "Access-Control-Request-Method: GET" `
+  -H "Access-Control-Request-Headers: authorization"
+```
+
+Expected result:
+
+- HTTP 200.
+- `Access-Control-Allow-Origin` exactly matches the Vercel origin.
+- `Access-Control-Allow-Headers` includes `authorization`.
 
 ## Browser Smoke Test
 

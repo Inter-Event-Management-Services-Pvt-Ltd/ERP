@@ -97,10 +97,19 @@ Remaining required items:
     Human browser smoke test on 2026-06-20 confirmed Docker sign-in/sign-out and
     protected app access are working as intended.
   - Staging environment configured and tested with production-like settings.
+    A temporary Vercel plus Cloudflare Quick Tunnel smoke deployment was used on
+    2026-06-22, but it is not production-like until a stable domain or named
+    Cloudflare Tunnel is configured and the staging runbook evidence is
+    recorded.
   - Production environment configured with distinct credentials.
   - Managed Supabase database backup retention selected and verified.
-  - Supabase Storage backup/export procedure selected and verified.
-  - Monitoring and alerting provider configured.
+  - Supabase Storage backup/export procedure selected and verified. The intended
+    low-cost path is documented: sync private Supabase Storage to the backend
+    machine, wake and sync to the offsite personal server, then clone/sync to a
+    cloud target such as Google Workspace Drive.
+  - Monitoring and alerting provider configured. Minimum signals, cheap initial
+    setup, thresholds and evidence requirements are documented in
+    `docs/deployment/monitoring-alerting-runbook.md`.
   - Production edge or provider rate limiting enforced.
   - OPEN-045 resolved (2026-06-20): admin guard, notifications wiring, audit
     log null crash fixed, backend notification endpoints implemented by Codex.

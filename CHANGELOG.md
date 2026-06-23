@@ -2,6 +2,15 @@
 
 ## Unreleased
 
+- Disabled public FastAPI documentation endpoints by default outside local
+  development/test environments, with `ENABLE_API_DOCS` as an explicit override,
+  so hosted API domains no longer expose `/docs`, `/redoc` or `/openapi.json`
+  unless a release owner intentionally enables them.
+- Added Phase 5 deployment-ops runbooks for Vercel plus Cloudflare Tunnel
+  staging validation, hosted Supabase database backup evidence, Supabase
+  Storage offsite backup flow, and monitoring/alerting thresholds; updated the
+  Phase 5 and security checklists to keep external dashboard work open until
+  real evidence is recorded.
 - Bumped backend `pydantic-settings` and `msgpack` minimum versions after
   GitHub Backend CI dependency audit reported fixed advisories, restoring a
   clean `pip-audit` gate.

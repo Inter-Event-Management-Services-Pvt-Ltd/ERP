@@ -46,7 +46,9 @@
   fails `pickle`, `marshal` and unsafe `yaml.load` patterns.
 - [x] SSRF controls reviewed. Direct outbound HTTP is limited to approved
   Supabase helper paths.
-- [ ] Production rate limiting enforced.
+- [ ] Production rate limiting enforced. Policy is documented in
+  `docs/deployment/rate-limiting-decision.md`; enforcement still requires a
+  stable Cloudflare domain/named tunnel or equivalent edge provider rule.
 
 ## Storage
 
@@ -73,7 +75,14 @@
 - [x] Dependency scan passed.
 - [x] Secret scan passed.
 - [x] Backend injection and abuse pattern scan passed.
-- [ ] Backups enabled.
+- [x] Public API documentation exposure is disabled for hosted environments by
+  default. Keep `ENABLE_API_DOCS=false` for staging and production unless a
+  release owner intentionally enables it for a short debugging window.
+- [ ] Backups enabled. Hosted database and Storage backup requirements are
+  documented in `docs/deployment/backup-restore-runbook.md`; dashboard/sync
+  evidence still requires human setup.
 - [x] Restore tested.
-- [ ] Monitoring enabled.
+- [ ] Monitoring enabled. Minimum signals and alert thresholds are documented in
+  `docs/deployment/monitoring-alerting-runbook.md`; provider setup still
+  requires human setup.
 - [x] Error logs redact sensitive values.

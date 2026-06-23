@@ -22,6 +22,7 @@ class Settings(BaseSettings):
         default="http://localhost:3000",
         validation_alias="CORS_ALLOWED_ORIGINS",
     )
+    enable_api_docs: bool = Field(default=False, validation_alias="ENABLE_API_DOCS")
     director_email: str = Field(
         default="director@iemsnewdelhi.com",
         validation_alias="DIRECTOR_EMAIL",
@@ -118,6 +119,10 @@ class Settings(BaseSettings):
     @property
     def cors_allowed_origin_list(self) -> tuple[str, ...]:
         return _csv_values(self.cors_allowed_origins)
+
+    @property
+    def expose_api_docs(self) -> bool:
+        return self.enable_api_docs or self.app_env.lower() in {"development", "local", "test"}
 
     @property
     def allowed_upload_mime_type_set(self) -> frozenset[str]:

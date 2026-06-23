@@ -25,6 +25,10 @@ from app.core.supabase_http import create_supabase_http_client
 settings = get_settings()
 configure_logging(settings.log_level)
 
+docs_url = "/docs" if settings.expose_api_docs else None
+redoc_url = "/redoc" if settings.expose_api_docs else None
+openapi_url = "/openapi.json" if settings.expose_api_docs else None
+
 
 @asynccontextmanager
 async def lifespan(app: FastAPI) -> AsyncIterator[None]:
@@ -39,6 +43,9 @@ app = FastAPI(
     title=settings.app_name,
     version=settings.app_version,
     lifespan=lifespan,
+    docs_url=docs_url,
+    redoc_url=redoc_url,
+    openapi_url=openapi_url,
 )
 
 app.add_middleware(

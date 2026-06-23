@@ -21,21 +21,30 @@
 - [x] Build frontend. `npm run build` passes clean with 47 routes on 2026-06-18.
 - [x] Build backend image.
 - [x] Run migration validation.
-- [ ] Deploy staging. Staging validation runbook added at
-  `docs/deployment/staging-validation-runbook.md`; environment execution still
-  requires human-provided staging Supabase, domain and secrets.
+- [ ] Deploy staging. Temporary Vercel plus Cloudflare Quick Tunnel smoke
+  deployment was exercised on 2026-06-22, but production-like staging still
+  requires a stable domain or named tunnel, staging Supabase, and recorded
+  runbook evidence.
 - [x] Health checks.
 - [ ] Manual production promotion.
 
 ## Operations
 
-- [ ] Configure staging. Runbook is documented; external staging environment is
-  not yet provisioned.
+- [ ] Configure staging. Runbook is documented; stable staging domain, named
+  tunnel and external staging evidence still require human setup.
 - [ ] Configure production.
-- [ ] Configure monitoring.
-- [ ] Configure alerting.
-- [ ] Configure database backups.
-- [ ] Configure Storage backups.
+- [ ] Configure monitoring. Runbook added at
+  `docs/deployment/monitoring-alerting-runbook.md`; provider setup and test
+  alert evidence still require human setup.
+- [ ] Configure alerting. Runbook added at
+  `docs/deployment/monitoring-alerting-runbook.md`; alert recipients and a test
+  alert still need to be recorded.
+- [ ] Configure database backups. Hosted Supabase backup evidence requirements
+  are documented in `docs/deployment/backup-restore-runbook.md`; dashboard
+  configuration still requires human setup.
+- [ ] Configure Storage backups. Supabase Storage sync/offsite backup plan is
+  documented in `docs/deployment/backup-restore-runbook.md`; scheduled sync and
+  restore evidence still require human setup.
 - [x] Test restore.
 - [x] Write rollback steps.
 - [x] Write incident-response notes.
@@ -52,6 +61,9 @@
 - [x] Storage buckets verified private.
 - [x] RLS verified enabled.
 - [x] No debug endpoints exposed. `test_no_debug_or_token_helper_routes_are_registered` passed on 2026-06-18.
+- [x] Public API docs disabled outside local development/test by default.
+  Hosted API domains should keep `ENABLE_API_DOCS=false` so `/docs`, `/redoc`
+  and `/openapi.json` are not publicly exposed.
 - [x] Logging excludes secrets. Supabase timing-log test verifies headers, request payloads and query values are not emitted.
 - [x] Restore test passes.
 

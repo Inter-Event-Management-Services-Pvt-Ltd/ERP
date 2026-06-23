@@ -36,6 +36,24 @@ Recommended starting point:
 Adjust after staging load and pilot feedback. Do not treat these numbers as
 permanent production tuning.
 
+## Vercel And Cloudflare Tunnel Path
+
+For the current deployment shape, enforce request limiting at Cloudflare once a
+stable domain and named tunnel exist:
+
+- `api.<domain>/v1/auth` or auth-adjacent backend routes if added later:
+  30 requests/minute per client IP.
+- `api.<domain>/v1/folders/*/documents` and
+  `api.<domain>/v1/documents/*/versions`: 20 requests/minute per client IP.
+- `api.<domain>/v1/projects/*/exports` and `api.<domain>/v1/exports/*/cancel`:
+  10 requests/minute per client IP.
+- `api.<domain>/v1/admin`, `api.<domain>/v1/audit-events` and
+  `api.<domain>/v1/director`: 60 requests/minute per client IP.
+- All other `api.<domain>/v1/*`: 120 requests/minute per client IP.
+
+Cloudflare Quick Tunnel hostnames under `trycloudflare.com` are temporary and
+should not be used as the final rate-limit enforcement point.
+
 ## Verification
 
 Before production promotion:

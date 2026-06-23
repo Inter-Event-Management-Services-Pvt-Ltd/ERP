@@ -20,7 +20,10 @@ Complete before production deployment.
 - [x] Dependency vulnerabilities reviewed.
 - [x] Secret scan clean.
 - [x] Backend injection and abuse pattern scan clean.
-- [ ] Backup exists.
+- [ ] Backup exists. Local restore proof exists; hosted Supabase database and
+  Storage backup evidence must still be recorded before production.
 - [x] Restore test passed.
-- [ ] Incident contact and rollback owner identified.
+- [ ] Incident contact and rollback owner identified. Required fields are
+  documented in `docs/deployment/monitoring-alerting-runbook.md`; names still
+  need to be recorded by the release owner.
 - [ ] Human approval recorded.
