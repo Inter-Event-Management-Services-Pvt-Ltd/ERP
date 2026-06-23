@@ -54,6 +54,35 @@ class Settings(BaseSettings):
         validation_alias="SUPABASE_REQUEST_TIMEOUT_SECONDS",
     )
     redis_url: str = Field(default="redis://localhost:6379/0", validation_alias="REDIS_URL")
+    rate_limit_enabled: bool = Field(default=True, validation_alias="RATE_LIMIT_ENABLED")
+    rate_limit_window_seconds: int = Field(
+        default=60,
+        validation_alias="RATE_LIMIT_WINDOW_SECONDS",
+    )
+    rate_limit_default_requests: int = Field(
+        default=120,
+        validation_alias="RATE_LIMIT_DEFAULT_REQUESTS",
+    )
+    rate_limit_auth_requests: int = Field(
+        default=30,
+        validation_alias="RATE_LIMIT_AUTH_REQUESTS",
+    )
+    rate_limit_upload_requests: int = Field(
+        default=20,
+        validation_alias="RATE_LIMIT_UPLOAD_REQUESTS",
+    )
+    rate_limit_export_requests: int = Field(
+        default=10,
+        validation_alias="RATE_LIMIT_EXPORT_REQUESTS",
+    )
+    rate_limit_admin_requests: int = Field(
+        default=60,
+        validation_alias="RATE_LIMIT_ADMIN_REQUESTS",
+    )
+    rate_limit_trust_proxy_headers: bool = Field(
+        default=True,
+        validation_alias="RATE_LIMIT_TRUST_PROXY_HEADERS",
+    )
     celery_broker_url: str = Field(
         default="redis://localhost:6379/0",
         validation_alias="CELERY_BROKER_URL",

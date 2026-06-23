@@ -46,9 +46,12 @@
   fails `pickle`, `marshal` and unsafe `yaml.load` patterns.
 - [x] SSRF controls reviewed. Direct outbound HTTP is limited to approved
   Supabase helper paths.
-- [ ] Production rate limiting enforced. Policy is documented in
-  `docs/deployment/rate-limiting-decision.md`; enforcement still requires a
-  stable Cloudflare domain/named tunnel or equivalent edge provider rule.
+- [x] Native API rate limiting implemented. FastAPI now enforces Redis-backed
+  route-group limits with stable `429 RATE_LIMIT_EXCEEDED` responses; the
+  production edge policy remains documented in
+  `docs/deployment/rate-limiting-decision.md`.
+- [ ] Production edge rate limiting enforced. Cloudflare/WAF or equivalent
+  provider evidence must still be recorded before production promotion.
 
 ## Storage
 
@@ -78,6 +81,9 @@
 - [x] Public API documentation exposure is disabled for hosted environments by
   default. Keep `ENABLE_API_DOCS=false` for staging and production unless a
   release owner intentionally enables it for a short debugging window.
+- [x] API security headers are emitted by FastAPI, including nosniff, deny
+  framing, no-referrer, restrictive permissions policy, COOP and default-deny
+  CSP for API responses.
 - [ ] Backups enabled. Hosted database and Storage backup requirements are
   documented in `docs/deployment/backup-restore-runbook.md`; dashboard/sync
   evidence still requires human setup.

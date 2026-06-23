@@ -19,7 +19,9 @@ from app.api.v1.physical_archive import router as physical_archive_router
 from app.core.config import get_settings
 from app.core.errors import http_exception_handler, validation_exception_handler
 from app.core.logging import configure_logging, structured_access_log_middleware
+from app.core.rate_limit import close_rate_limiter, create_rate_limiter, rate_limit_middleware
 from app.core.request_id import request_id_middleware
+from app.core.security_headers import security_headers_middleware
 from app.core.supabase_http import create_supabase_http_client
 
 settings = get_settings()
@@ -32,10 +34,13 @@ openapi_url = "/openapi.json" if settings.expose_api_docs else None
 
 @asynccontextmanager
 async def lifespan(app: FastAPI) -> AsyncIterator[None]:
+    app.state.settings = settings
     app.state.supabase_http_client = create_supabase_http_client(settings)
+    app.state.rate_limiter = create_rate_limiter(settings)
     try:
         yield
     finally:
+        await close_rate_limiter(app.state.rate_limiter)
         await app.state.supabase_http_client.aclose()
 
 
@@ -55,7 +60,10 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+app.state.settings = settings
 app.middleware("http")(request_id_middleware)
+app.middleware("http")(rate_limit_middleware)
+app.middleware("http")(security_headers_middleware(settings))
 app.middleware("http")(structured_access_log_middleware)
 app.add_exception_handler(StarletteHTTPException, http_exception_handler)
 app.add_exception_handler(RequestValidationError, validation_exception_handler)

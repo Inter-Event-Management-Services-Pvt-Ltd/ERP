@@ -45,6 +45,34 @@ For non-IEMS local/staging accounts, set `ALLOWED_EMAIL_DOMAINS` to an explicit
 comma-separated allowlist. The current-user resolver still requires an approved
 employee account with a matching official email.
 
+## Rate Limiting And Security Headers
+
+The API has native fixed-window rate limiting backed by Redis, with an
+in-memory fallback for local/test operation. Keep Redis configured in staging
+and production:
+
+```text
+RATE_LIMIT_ENABLED=true
+RATE_LIMIT_WINDOW_SECONDS=60
+RATE_LIMIT_DEFAULT_REQUESTS=120
+RATE_LIMIT_AUTH_REQUESTS=30
+RATE_LIMIT_UPLOAD_REQUESTS=20
+RATE_LIMIT_EXPORT_REQUESTS=10
+RATE_LIMIT_ADMIN_REQUESTS=60
+RATE_LIMIT_TRUST_PROXY_HEADERS=true
+```
+
+Route groups map to auth/current-user, upload, archive export and admin/audit
+paths. Limit responses use `429 RATE_LIMIT_EXCEEDED` and include
+`Retry-After`, `X-RateLimit-Limit`, `X-RateLimit-Remaining`,
+`X-RateLimit-Reset` and `X-RateLimit-Policy`.
+
+The API also emits conservative security headers, including
+`X-Content-Type-Options`, `X-Frame-Options`, `Referrer-Policy`,
+`Permissions-Policy`, `Cross-Origin-Opener-Policy` and a default-deny
+`Content-Security-Policy` for API responses. Keep Cloudflare/WAF rate limiting
+as the outer protection layer for production traffic.
+
 ## Workers
 
 Celery uses the app namespace `iems_erp`:

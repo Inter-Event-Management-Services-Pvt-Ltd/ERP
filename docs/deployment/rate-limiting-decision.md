@@ -1,47 +1,66 @@
 # Rate-Limiting Decision
 
-Date: 2026-06-20
+Date: 2026-06-23
 
 ## Decision
 
-For the MVP release candidate, rate limiting will be enforced at the production
-edge before traffic reaches FastAPI:
+The API enforces native fixed-window rate limiting in FastAPI, backed by Redis
+and grouped by route sensitivity. Cloudflare or the production edge must remain
+the outer protection layer for volumetric traffic before requests reach the
+server.
 
-- Caddy or the hosting provider/load balancer should enforce request limits for
-  `/api/*`.
+- FastAPI enforces per-client limits for `/v1/*` API traffic.
+- Redis is the production shared state store; the in-memory fallback is for
+  local/test continuity only.
+- Caddy, Cloudflare or the hosting provider/load balancer should also enforce
+  request limits for the public API hostname.
 - Supabase Auth remains responsible for OAuth/session protection.
-- FastAPI keeps stable authorization, validation and audit controls, but does
-  not add an in-process rate limiter in Phase 5.
+- FastAPI keeps stable authorization, validation, audit controls and structured
+  `429 RATE_LIMIT_EXCEEDED` responses.
 
 ## Why
 
 - The app currently runs as multiple containers behind Caddy.
 - Edge limiting protects both Next.js and FastAPI from request floods.
-- In-process FastAPI-only limiting would not cover static/frontend routes and
-  would need shared state to behave correctly across multiple API replicas.
-- Redis is currently reserved for Celery broker/result use; using it for
-  request throttling should be scoped as a separate production hardening task.
+- Native API limiting protects the FastAPI process if edge policy is missing or
+  misconfigured.
+- Redis provides shared state if the API is scaled beyond one replica.
+- The native limiter does not replace Cloudflare/WAF controls because it only
+  runs after traffic reaches the backend host.
 
-## Required Production Policy
+## Native API Policy
 
-The release owner must configure concrete limits in staging before production.
-Recommended starting point:
+Default policy:
 
-- General `/api/*`: 120 requests/minute per client IP.
-- Auth/session routes: 30 requests/minute per client IP.
-- Upload endpoints: 20 requests/minute per client IP.
-- Archive export creation/cancel: 10 requests/minute per client IP.
-- Admin/audit endpoints: 60 requests/minute per client IP.
+- General `/v1/*`: 120 requests/minute per client.
+- Auth/current-user routes: 30 requests/minute per client.
+- Upload endpoints: 20 requests/minute per client.
+- Archive export creation/cancel: 10 requests/minute per client.
+- Admin/audit/director endpoints: 60 requests/minute per client.
 
-Adjust after staging load and pilot feedback. Do not treat these numbers as
-permanent production tuning.
+The client key is the bearer-token hash for authenticated requests, otherwise
+the client IP. With `RATE_LIMIT_TRUST_PROXY_HEADERS=true`, the API uses
+`CF-Connecting-IP` first, then the first `X-Forwarded-For` value.
+
+Tune limits through:
+
+```text
+RATE_LIMIT_ENABLED=true
+RATE_LIMIT_WINDOW_SECONDS=60
+RATE_LIMIT_DEFAULT_REQUESTS=120
+RATE_LIMIT_AUTH_REQUESTS=30
+RATE_LIMIT_UPLOAD_REQUESTS=20
+RATE_LIMIT_EXPORT_REQUESTS=10
+RATE_LIMIT_ADMIN_REQUESTS=60
+RATE_LIMIT_TRUST_PROXY_HEADERS=true
+```
 
 ## Vercel And Cloudflare Tunnel Path
 
-For the current deployment shape, enforce request limiting at Cloudflare once a
-stable domain and named tunnel exist:
+For the current deployment shape, keep Cloudflare rate limiting on the stable
+API hostname as defense in depth:
 
-- `api.<domain>/v1/auth` or auth-adjacent backend routes if added later:
+- `api.<domain>/v1/me*` and auth-adjacent backend routes if added later:
   30 requests/minute per client IP.
 - `api.<domain>/v1/folders/*/documents` and
   `api.<domain>/v1/documents/*/versions`: 20 requests/minute per client IP.
@@ -58,12 +77,11 @@ should not be used as the final rate-limit enforcement point.
 
 Before production promotion:
 
-- Confirm the selected provider/Caddy configuration is active in staging.
-- Send requests above the configured threshold and verify `429 Too Many Requests`.
+- Confirm Redis is reachable from API containers.
+- Send requests above the native API threshold and verify
+  `429 RATE_LIMIT_EXCEEDED`.
+- Confirm rate-limit responses include `Retry-After`, `X-RateLimit-Limit`,
+  `X-RateLimit-Remaining`, `X-RateLimit-Reset` and `X-RateLimit-Policy`.
+- Confirm the selected Cloudflare/provider policy is active in staging.
 - Confirm normal browser workflows still pass under expected use.
-- Record the final provider/Caddy policy in deployment notes.
-
-## Follow-Up
-
-If the ERP is scaled beyond one API replica or exposed to higher traffic, add a
-shared Redis-backed FastAPI limiter with route groups matching this document.
+- Record the final native settings and provider policy in deployment notes.

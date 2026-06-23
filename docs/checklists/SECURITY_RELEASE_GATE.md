@@ -14,9 +14,9 @@ Complete before production deployment.
 - [x] Audit immutability verified.
 - [x] Audit coverage verified.
 - [x] File upload validation verified.
-- [x] Rate-limiting decision documented. See
-  `docs/deployment/rate-limiting-decision.md`; production enforcement remains a
-  deployment task.
+- [x] Native API rate limiting implemented and documented. See
+  `docs/deployment/rate-limiting-decision.md`; Cloudflare/WAF edge enforcement
+  evidence remains a production deployment task.
 - [x] Dependency vulnerabilities reviewed.
 - [x] Secret scan clean.
 - [x] Backend injection and abuse pattern scan clean.

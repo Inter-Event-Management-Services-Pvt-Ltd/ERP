@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+- Added native FastAPI rate limiting with Redis-backed shared state,
+  route-group policies, stable `429 RATE_LIMIT_EXCEEDED` responses and API
+  security headers for nosniff, deny framing, no-referrer, permissions policy,
+  COOP and default-deny CSP.
 - Disabled public FastAPI documentation endpoints by default outside local
   development/test environments, with `ENABLE_API_DOCS` as an explicit override,
   so hosted API domains no longer expose `/docs`, `/redoc` or `/openapi.json`

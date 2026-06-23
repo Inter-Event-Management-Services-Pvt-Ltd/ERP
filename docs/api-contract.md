@@ -73,6 +73,10 @@ input values:
 
 The API returns `X-Request-ID` on responses. If the client sends `X-Request-ID`, the same value is echoed.
 
+Rate-limited responses return `429` with `RATE_LIMIT_EXCEEDED` and may include
+`Retry-After`, `X-RateLimit-Limit`, `X-RateLimit-Remaining`,
+`X-RateLimit-Reset` and `X-RateLimit-Policy`.
+
 Stable platform/auth errors:
 
 | HTTP status | Code | Meaning |
@@ -94,6 +98,7 @@ Stable platform/auth errors:
 | 422 | `INVALID_FILE_NAME` | Uploaded file name failed server-side validation |
 | 422 | `INVALID_MIME_TYPE` | Uploaded file MIME type is not allowed |
 | 422 | `INVALID_FILE_SIZE` | Uploaded file is empty or larger than the configured limit |
+| 429 | `RATE_LIMIT_EXCEEDED` | Request rate exceeded the configured API policy |
 | 409 | `RESOURCE_CONFLICT` | Unique client, project, folder, or member constraint would be violated |
 | 409 | `INVALID_PROJECT_MEMBER_STATE` | Project-member change would leave the project without an active manager |
 | 409 | `INVALID_PHYSICAL_FILE_STATE` | Physical file checkout, return or move is invalid for the current state |

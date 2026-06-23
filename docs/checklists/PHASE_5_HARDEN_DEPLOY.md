@@ -53,8 +53,8 @@
 
 - [ ] Complete `SECURITY_GLOBAL.md`.
 - [ ] Complete `SECURITY_RELEASE_GATE.md`. Threat review, auth allowlist test
-  evidence and rate-limiting decision are documented; backup, incident owner and
-  human approval items remain open.
+  evidence and native rate limiting are documented; backup, incident owner,
+  Cloudflare/WAF evidence and human approval items remain open.
 - [x] Dependency scan passes. `uv run --group dev pip-audit` returned no known vulnerabilities on 2026-06-18.
 - [x] Secret scan passes.
 - [x] Service-role key server-only check passes. Secret scan checks tracked files, backend Docker validation confirms secrets are not baked into images, and frontend bundle secret-scan evidence remains recorded in Dockerization docs.
