@@ -7,6 +7,7 @@ All writes go through FastAPI. Each protected route performs JWT validation, RBA
 ```text
 GET    /health
 GET    /ready
+GET    /v1/modules
 ```
 
 Browser clients are allowed from explicit configured origins only. Local
@@ -33,6 +34,38 @@ CORS_ALLOWED_ORIGINS=http://localhost:3000
   "status": "ready",
   "checks": {
     "api": "ok"
+  }
+}
+```
+
+`GET /v1/modules` returns the rollout flags currently active on the API. It is
+intentionally unauthenticated so the frontend can hide disabled navigation
+before user context finishes loading:
+
+```json
+[
+  { "code": "projects", "enabled": true },
+  { "code": "documents", "enabled": true },
+  { "code": "archive_exports", "enabled": true },
+  { "code": "physical_archive", "enabled": true },
+  { "code": "attendance", "enabled": false },
+  { "code": "leave", "enabled": true },
+  { "code": "tasks", "enabled": true },
+  { "code": "calendar", "enabled": true },
+  { "code": "approvals", "enabled": true },
+  { "code": "director_dashboard", "enabled": true },
+  { "code": "admin", "enabled": true }
+]
+```
+
+Disabled module requests fail before business logic runs:
+
+```json
+{
+  "error": {
+    "code": "MODULE_DISABLED",
+    "message": "This module is not enabled for this rollout.",
+    "request_id": "request-id"
   }
 }
 ```
@@ -89,6 +122,7 @@ Stable platform/auth errors:
 | 403 | `ACCOUNT_EMAIL_MISMATCH` | JWT email does not match the linked employee official email |
 | 403 | `PERMISSION_DENIED` | Authenticated user does not have the required RBAC permission |
 | 403 | `ABAC_DENIED` | Authenticated user failed contextual ABAC authorization |
+| 403 | `MODULE_DISABLED` | Requested module is disabled for the current rollout |
 | 403 | `SUPER_USER_REQUIRED` | Sensitive override operation requires a Super User account |
 | 403 | `SUPER_USER_OVERRIDE_REASON_REQUIRED` | Sensitive override operation is missing a meaningful override reason |
 | 404 | `NOT_FOUND` | Route or resource not found |

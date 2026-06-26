@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+- Added Phase 6 backend module rollout controls: `GET /v1/modules` exposes
+  current module flags, disabled module paths return stable `MODULE_DISABLED`
+  errors before business logic runs, and production Compose passes explicit
+  module env vars so modules can be enabled/disabled per rollout.
 - Recorded Pratham's 2026-06-26 production Compose review, release-candidate
   approval and manual production-promotion confirmation, closing the Phase 5
   release gate for the accepted scope.

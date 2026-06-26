@@ -19,6 +19,26 @@ Status:
 
 ## Initial Open Items
 
+### OPEN-048 - Phase 6 frontend module rollout flags
+
+```text
+Date: 2026-06-26
+Category: Frontend Integration / Phase 6
+Severity: Medium
+Question or issue:
+  Codex added backend module rollout flags and `GET /v1/modules` so production
+  can disable modules such as Attendance during initial rollout. Claude needs to
+  consume these flags in the frontend.
+Required from Claude:
+  - Fetch `GET /v1/modules`.
+  - Hide disabled modules from navigation.
+  - Show a calm disabled-module state if a disabled route is opened directly.
+  - Remove or mark disabled module cards/metrics on dashboards.
+  - Keep onboarding copy aligned with enabled modules.
+Owner: Claude
+Status: Open — backend contract available
+```
+
 ### OPEN-047 - Production host egress filtering and nonce-based CSP follow-up
 
 ```text

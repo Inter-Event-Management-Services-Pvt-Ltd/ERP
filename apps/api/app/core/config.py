@@ -121,6 +121,41 @@ class Settings(BaseSettings):
         default="generated-archives",
         validation_alias="GENERATED_ARCHIVES_BUCKET",
     )
+    module_projects_enabled: bool = Field(
+        default=True,
+        validation_alias="MODULE_PROJECTS_ENABLED",
+    )
+    module_documents_enabled: bool = Field(
+        default=True,
+        validation_alias="MODULE_DOCUMENTS_ENABLED",
+    )
+    module_archive_exports_enabled: bool = Field(
+        default=True,
+        validation_alias="MODULE_ARCHIVE_EXPORTS_ENABLED",
+    )
+    module_physical_archive_enabled: bool = Field(
+        default=True,
+        validation_alias="MODULE_PHYSICAL_ARCHIVE_ENABLED",
+    )
+    module_attendance_enabled: bool = Field(
+        default=True,
+        validation_alias="MODULE_ATTENDANCE_ENABLED",
+    )
+    module_leave_enabled: bool = Field(default=True, validation_alias="MODULE_LEAVE_ENABLED")
+    module_tasks_enabled: bool = Field(default=True, validation_alias="MODULE_TASKS_ENABLED")
+    module_calendar_enabled: bool = Field(
+        default=True,
+        validation_alias="MODULE_CALENDAR_ENABLED",
+    )
+    module_approvals_enabled: bool = Field(
+        default=True,
+        validation_alias="MODULE_APPROVALS_ENABLED",
+    )
+    module_director_dashboard_enabled: bool = Field(
+        default=True,
+        validation_alias="MODULE_DIRECTOR_DASHBOARD_ENABLED",
+    )
+    module_admin_enabled: bool = Field(default=True, validation_alias="MODULE_ADMIN_ENABLED")
     log_level: str = Field(default="INFO", validation_alias="LOG_LEVEL")
 
     @model_validator(mode="after")
@@ -178,6 +213,22 @@ class Settings(BaseSettings):
     @property
     def allowed_upload_mime_type_set(self) -> frozenset[str]:
         return frozenset(_csv_values(self.allowed_upload_mime_types))
+
+    @property
+    def module_flags(self) -> dict[str, bool]:
+        return {
+            "projects": self.module_projects_enabled,
+            "documents": self.module_documents_enabled,
+            "archive_exports": self.module_archive_exports_enabled,
+            "physical_archive": self.module_physical_archive_enabled,
+            "attendance": self.module_attendance_enabled,
+            "leave": self.module_leave_enabled,
+            "tasks": self.module_tasks_enabled,
+            "calendar": self.module_calendar_enabled,
+            "approvals": self.module_approvals_enabled,
+            "director_dashboard": self.module_director_dashboard_enabled,
+            "admin": self.module_admin_enabled,
+        }
 
 
 def _csv_values(raw_value: str | None) -> tuple[str, ...]:

@@ -15,10 +15,12 @@ from app.api.v1.documents_archive import router as documents_archive_router
 from app.api.v1.employee_operations import router as employee_operations_router
 from app.api.v1.employees import router as employees_router
 from app.api.v1.me import router as me_router
+from app.api.v1.modules import router as modules_router
 from app.api.v1.physical_archive import router as physical_archive_router
 from app.core.config import get_settings
 from app.core.errors import http_exception_handler, validation_exception_handler
 from app.core.logging import configure_logging, structured_access_log_middleware
+from app.core.module_flags import module_gate_middleware
 from app.core.rate_limit import close_rate_limiter, create_rate_limiter, rate_limit_middleware
 from app.core.request_id import request_id_middleware
 from app.core.security_headers import security_headers_middleware
@@ -62,6 +64,7 @@ app.add_middleware(
 )
 app.state.settings = settings
 app.middleware("http")(request_id_middleware)
+app.middleware("http")(module_gate_middleware)
 app.middleware("http")(rate_limit_middleware)
 app.middleware("http")(security_headers_middleware(settings))
 app.middleware("http")(structured_access_log_middleware)
@@ -76,6 +79,7 @@ app.include_router(documents_archive_router)
 app.include_router(employee_operations_router)
 app.include_router(employees_router)
 app.include_router(me_router)
+app.include_router(modules_router)
 app.include_router(physical_archive_router)
 
 
