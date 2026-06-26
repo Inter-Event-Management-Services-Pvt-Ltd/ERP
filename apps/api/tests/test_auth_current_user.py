@@ -1,5 +1,6 @@
 import asyncio
 from datetime import UTC, datetime, timedelta
+from pathlib import Path
 from uuid import UUID
 
 import httpx
@@ -246,6 +247,35 @@ def test_settings_allows_auth_issuer_override_separate_from_supabase_url() -> No
     assert settings.supabase_jwks_url == (
         "http://host.docker.internal:54321/auth/v1/.well-known/jwks.json"
     )
+
+
+def test_settings_loads_file_backed_secrets(tmp_path: Path) -> None:
+    jwt_secret_file = tmp_path / "jwt_secret"
+    service_role_file = tmp_path / "service_role_key"
+    jwt_secret_file.write_text("jwt-secret-from-file\n", encoding="utf-8")
+    service_role_file.write_text("service-role-from-file\n", encoding="utf-8")
+
+    settings = Settings(
+        _env_file=None,
+        SUPABASE_JWT_SECRET_FILE=str(jwt_secret_file),
+        SUPABASE_SERVICE_ROLE_KEY_FILE=str(service_role_file),
+    )
+
+    assert settings.supabase_jwt_secret == "jwt-secret-from-file"
+    assert settings.supabase_service_role_key == "service-role-from-file"
+
+
+def test_settings_prefers_env_secret_over_file_secret(tmp_path: Path) -> None:
+    jwt_secret_file = tmp_path / "jwt_secret"
+    jwt_secret_file.write_text("jwt-secret-from-file\n", encoding="utf-8")
+
+    settings = Settings(
+        _env_file=None,
+        SUPABASE_JWT_SECRET="jwt-secret-from-env",
+        SUPABASE_JWT_SECRET_FILE=str(jwt_secret_file),
+    )
+
+    assert settings.supabase_jwt_secret == "jwt-secret-from-env"
 
 
 def test_current_user_resolver_returns_active_employee_context() -> None:

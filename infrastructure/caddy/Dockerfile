@@ -15,6 +15,6 @@ COPY --from=builder /usr/bin/caddy /usr/bin/caddy
 RUN setcap cap_net_bind_service=+ep /usr/bin/caddy
 
 USER caddy
-EXPOSE 80 443 2019
+EXPOSE 80 443
 WORKDIR /srv
 CMD ["caddy", "run", "--config", "/etc/caddy/Caddyfile", "--adapter", "caddyfile"]

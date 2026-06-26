@@ -17,6 +17,13 @@ domain. Do not connect staging validation to production Supabase.
   `https://<staging-project>.supabase.co/auth/v1/.well-known/jwks.json`.
 - `SUPABASE_AUTH_ISSUER_ALIASES` unset unless the staging auth issuer has a
   known second hostname that must be accepted.
+- `REDIS_PASSWORD` set to a strong random value; API, worker and scheduler must
+  use authenticated Redis/Celery URLs rendered by production Compose.
+- `CORS_ALLOWED_ORIGINS` set to the exact Vercel/app origin.
+- `IEMS_DOMAIN` set to the real public Caddy hostname before TLS starts.
+- `SUPABASE_SERVICE_ROLE_KEY_FILE` and `SUPABASE_JWT_SECRET_FILE` preferred
+  when the deployment host supports file-mounted secrets. Use raw env vars only
+  when file-mounted secrets are not available.
 - Distinct staging values for Google, JWT, Caddy domain and application secrets.
 - Redis, worker, scheduler, API, web and Caddy running from production Compose.
 
@@ -60,6 +67,9 @@ Expected result:
 - Only Caddy exposes public ports.
 - Redis is not publicly reachable.
 - API is reachable only through Caddy.
+- Redis health check uses authentication and returns healthy.
+- Caddy admin API is disabled.
+- Production Compose has no `host.docker.internal:host-gateway` mappings.
 
 ## Health Checks
 

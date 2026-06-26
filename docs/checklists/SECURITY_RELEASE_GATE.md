@@ -20,10 +20,13 @@ Complete before production deployment.
 - [x] Dependency vulnerabilities reviewed.
 - [x] Secret scan clean.
 - [x] Backend injection and abuse pattern scan clean.
-- [ ] Backup exists. Local restore proof exists; hosted Supabase database and
-  Storage backup evidence must still be recorded before production.
+- [x] Backup exists. Local database backup/restore and local Storage
+  export/restore spot-checks passed on 2026-06-26. Hosted Supabase managed
+  backups/PITR and hosted Storage backup proof are unavailable on the current
+  Free plan and are explicitly risk-accepted in `OPEN-002`.
 - [x] Restore test passed.
-- [ ] Incident contact and rollback owner identified. Required fields are
-  documented in `docs/deployment/monitoring-alerting-runbook.md`; names still
-  need to be recorded by the release owner.
+- [x] Incident contact and rollback owner identified. Pratham is recorded as
+  primary incident contact, backup incident contact and rollback owner in
+  `docs/deployment/monitoring-alerting-runbook.md`; email is the current alert
+  delivery channel.
 - [ ] Human approval recorded.

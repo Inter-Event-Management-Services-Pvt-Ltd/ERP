@@ -1,6 +1,7 @@
 from functools import lru_cache
+from pathlib import Path
 
-from pydantic import Field
+from pydantic import Field, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -33,6 +34,10 @@ class Settings(BaseSettings):
         validation_alias="SUPABASE_JWT_AUDIENCE",
     )
     supabase_jwt_secret: str | None = Field(default=None, validation_alias="SUPABASE_JWT_SECRET")
+    supabase_jwt_secret_file: str | None = Field(
+        default=None,
+        validation_alias="SUPABASE_JWT_SECRET_FILE",
+    )
     supabase_auth_issuer_override: str | None = Field(
         default=None,
         validation_alias="SUPABASE_AUTH_ISSUER",
@@ -48,6 +53,10 @@ class Settings(BaseSettings):
     supabase_service_role_key: str | None = Field(
         default=None,
         validation_alias="SUPABASE_SERVICE_ROLE_KEY",
+    )
+    supabase_service_role_key_file: str | None = Field(
+        default=None,
+        validation_alias="SUPABASE_SERVICE_ROLE_KEY_FILE",
     )
     supabase_request_timeout_seconds: float = Field(
         default=5.0,
@@ -114,6 +123,19 @@ class Settings(BaseSettings):
     )
     log_level: str = Field(default="INFO", validation_alias="LOG_LEVEL")
 
+    @model_validator(mode="after")
+    def load_file_backed_secrets(self) -> "Settings":
+        if self.supabase_jwt_secret is None or self.supabase_jwt_secret.strip() == "":
+            self.supabase_jwt_secret = _read_secret_file(self.supabase_jwt_secret_file)
+        if (
+            self.supabase_service_role_key is None
+            or self.supabase_service_role_key.strip() == ""
+        ):
+            self.supabase_service_role_key = _read_secret_file(
+                self.supabase_service_role_key_file,
+            )
+        return self
+
     @property
     def supabase_auth_issuer(self) -> str | None:
         if self.supabase_auth_issuer_override is not None:
@@ -162,6 +184,15 @@ def _csv_values(raw_value: str | None) -> tuple[str, ...]:
     if raw_value is None:
         return ()
     return tuple(value.strip() for value in raw_value.split(",") if value.strip())
+
+
+def _read_secret_file(path_value: str | None) -> str | None:
+    if path_value is None or path_value.strip() == "":
+        return None
+    secret_value = Path(path_value).read_text(encoding="utf-8").strip()
+    if not secret_value:
+        raise ValueError(f"Secret file is empty: {path_value}")
+    return secret_value
 
 
 @lru_cache

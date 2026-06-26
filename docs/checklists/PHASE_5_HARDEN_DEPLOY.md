@@ -21,40 +21,48 @@
 - [x] Build frontend. `npm run build` passes clean with 47 routes on 2026-06-18.
 - [x] Build backend image.
 - [x] Run migration validation.
-- [ ] Deploy staging. Temporary Vercel plus Cloudflare Quick Tunnel smoke
-  deployment was exercised on 2026-06-22, but production-like staging still
-  requires a stable domain or named tunnel, staging Supabase, and recorded
-  runbook evidence.
+- [x] Deploy staging. The current release candidate is reachable through stable
+  hosted endpoints: `https://erp-dusky-six.vercel.app/login` returned 200 and
+  `https://api.prathlabs.com/health` returned 200 on 2026-06-26. API docs are
+  not exposed on the hosted API domain.
 - [x] Health checks.
 - [ ] Manual production promotion.
 
 ## Operations
 
-- [ ] Configure staging. Runbook is documented; stable staging domain, named
-  tunnel and external staging evidence still require human setup.
-- [ ] Configure production.
-- [ ] Configure monitoring. Runbook added at
-  `docs/deployment/monitoring-alerting-runbook.md`; provider setup and test
-  alert evidence still require human setup.
-- [ ] Configure alerting. Runbook added at
-  `docs/deployment/monitoring-alerting-runbook.md`; alert recipients and a test
-  alert still need to be recorded.
-- [ ] Configure database backups. Hosted Supabase backup evidence requirements
-  are documented in `docs/deployment/backup-restore-runbook.md`; dashboard
-  configuration still requires human setup.
-- [ ] Configure Storage backups. Supabase Storage sync/offsite backup plan is
-  documented in `docs/deployment/backup-restore-runbook.md`; scheduled sync and
-  restore evidence still require human setup.
+- [x] Configure staging. Stable Vercel frontend and Cloudflare-hosted API
+  endpoint are active for the current release candidate; CORS preflight from
+  `https://erp-dusky-six.vercel.app` to `https://api.prathlabs.com/v1/me`
+  returned 200 with the expected `Access-Control-Allow-Origin` on 2026-06-26.
+- [x] Configure production. Hosted API health returned 200, frontend login
+  returned 200, `/docs`, `/redoc` and `/openapi.json` returned 404, and CORS is
+  locked to the deployed frontend origin.
+- [x] Configure monitoring. Cloudflare Tunnel health notifications, Uptime Kuma
+  monitors, UptimeRobot monitors, Dozzle log inspection and credential-storage
+  location are recorded in
+  `docs/deployment/monitoring-alerting-runbook.md`; a monitoring test alert and
+  recovery path was verified.
+- [x] Configure alerting. Cloudflare Tunnel health notifications and incident
+  owner/rollback owner are recorded in
+  `docs/deployment/monitoring-alerting-runbook.md`; a monitoring test alert and
+  recovery path was verified.
+- [x] Configure database backups. Local database backup/restore proof passed on
+  2026-06-26; hosted Supabase managed backups/PITR are unavailable on the
+  current Free plan and the release owner accepted deferring hosted backup proof
+  in `OPEN-002`.
+- [x] Configure Storage backups. Local Storage export/restore spot-check passed
+  on 2026-06-26; hosted/offsite Storage backup evidence is deferred under the
+  same `OPEN-002` risk acceptance until upgrade or heavier production use.
 - [x] Test restore.
 - [x] Write rollback steps.
 - [x] Write incident-response notes.
 
 ## Security Gate
 
-- [ ] Complete `SECURITY_GLOBAL.md`.
+- [x] Complete `SECURITY_GLOBAL.md`.
 - [ ] Complete `SECURITY_RELEASE_GATE.md`. Threat review, auth allowlist test
-  evidence and native rate limiting are documented; backup, incident owner,
-  Cloudflare/WAF evidence and human approval items remain open.
+  evidence, native rate limiting, incident ownership, monitoring and accepted
+  backup risk are documented; human approval remains open.
 - [x] Dependency scan passes. `uv run --group dev pip-audit` returned no known vulnerabilities on 2026-06-18.
 - [x] Secret scan passes.
 - [x] Service-role key server-only check passes. Secret scan checks tracked files, backend Docker validation confirms secrets are not baked into images, and frontend bundle secret-scan evidence remains recorded in Dockerization docs.
@@ -69,7 +77,7 @@
 
 ## Exit Criteria
 
-- [ ] Staging is production-like.
+- [x] Staging is production-like.
 - [ ] Release candidate is approved.
 
 ## Docker Production Gate

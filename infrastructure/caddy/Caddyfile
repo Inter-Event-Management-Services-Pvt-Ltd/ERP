@@ -1,4 +1,8 @@
-{$IEMS_DOMAIN:localhost} {
+{
+  admin off
+}
+
+{$IEMS_DOMAIN} {
   encode zstd gzip
 
   # Stamp every request with a UUID so browser console warnings and backend

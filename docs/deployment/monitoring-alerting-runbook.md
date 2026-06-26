@@ -89,3 +89,24 @@ To mark monitoring and alerting complete, record evidence in
 - Alert recipients.
 - Date of a passing test alert.
 - Date of a successful `/health` and `/login` uptime check.
+
+## Current Evidence
+
+Date: 2026-06-26
+
+- Cloudflare Tunnel health notifications are configured for the API tunnel.
+- Log inspection is available through Dozzle on the server.
+- Primary incident contact: Pratham.
+- Backup incident contact: Pratham.
+- Rollback owner: Pratham.
+- Alert delivery channel: email.
+- Uptime Kuma monitors are configured for the public app login URL and API
+  health URL.
+- UptimeRobot monitors are configured for the public app login URL and API
+  health URL.
+- Deployment credentials are stored outside this repository in the relevant
+  provider dashboards/admin accounts and local server environment files. No
+  credentials are stored in git.
+- A monitoring test alert and recovery path was verified successfully.
+
+Monitoring and alerting are complete for the current low-cost production setup.

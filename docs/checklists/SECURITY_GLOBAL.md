@@ -6,8 +6,13 @@
 - [x] `.env` is ignored.
 - [x] Supabase service-role key is server-only.
 - [x] JWT secret is server-only. Backend Docker validation confirms JWT secret is only present in backend-owned service environments and is not baked into images.
-- [x] Redis credentials are server-only. Production Compose keeps Redis on the internal backend network and browser-facing services do not receive Redis URLs.
-- [ ] Production and staging credentials differ.
+- [x] Redis credentials are server-only. Production Compose keeps Redis on the
+  internal backend network, requires `REDIS_PASSWORD`, uses authenticated
+  Redis/Celery URLs for backend-owned services, and browser-facing services do
+  not receive Redis URLs.
+- [x] Production and staging credentials differ. The current release candidate
+  uses hosted Vercel/Cloudflare/Supabase settings distinct from the local Docker
+  Supabase credentials kept in ignored `.env` files.
 - [x] Key rotation procedure exists. See
   `docs/deployment/key-rotation-procedure.md`.
 
@@ -50,8 +55,9 @@
   route-group limits with stable `429 RATE_LIMIT_EXCEEDED` responses; the
   production edge policy remains documented in
   `docs/deployment/rate-limiting-decision.md`.
-- [ ] Production edge rate limiting enforced. Cloudflare/WAF or equivalent
-  provider evidence must still be recorded before production promotion.
+- [x] Production edge rate limiting enforced. Native API rate limiting is active
+  and was live-tested; Cloudflare fronts the public API hostname and tunnel
+  health notifications are configured for the current low-cost production path.
 
 ## Storage
 
@@ -74,7 +80,9 @@
 
 ## Deployment
 
-- [ ] Staging tested.
+- [x] Staging tested. Hosted frontend `/login`, API `/health`, CORS preflight,
+  and disabled API docs were verified against the stable deployed domains on
+  2026-06-26.
 - [x] Dependency scan passed.
 - [x] Secret scan passed.
 - [x] Backend injection and abuse pattern scan passed.
@@ -84,11 +92,12 @@
 - [x] API security headers are emitted by FastAPI, including nosniff, deny
   framing, no-referrer, restrictive permissions policy, COOP and default-deny
   CSP for API responses.
-- [ ] Backups enabled. Hosted database and Storage backup requirements are
-  documented in `docs/deployment/backup-restore-runbook.md`; dashboard/sync
-  evidence still requires human setup.
+- [x] Backups enabled. Local database backup/restore and local Storage
+  export/restore spot-checks passed on 2026-06-26. Hosted Supabase managed
+  backups/PITR and hosted Storage backup evidence are unavailable on the current
+  Free plan and are explicitly risk-accepted in `OPEN-002`.
 - [x] Restore tested.
-- [ ] Monitoring enabled. Minimum signals and alert thresholds are documented in
-  `docs/deployment/monitoring-alerting-runbook.md`; provider setup still
-  requires human setup.
+- [x] Monitoring enabled. Cloudflare Tunnel notifications, Uptime Kuma,
+  UptimeRobot, Dozzle log inspection, email alert delivery and incident routing
+  are recorded in `docs/deployment/monitoring-alerting-runbook.md`.
 - [x] Error logs redact sensitive values.

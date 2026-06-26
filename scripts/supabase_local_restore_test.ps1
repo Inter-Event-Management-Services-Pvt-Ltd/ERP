@@ -38,6 +38,30 @@ Invoke-CheckedNative "docker" @(
   "-c",
   "create schema if not exists extensions; create extension if not exists pgcrypto with schema extensions; create extension if not exists citext with schema extensions; create extension if not exists pg_trgm with schema extensions; drop schema if exists public cascade; create schema if not exists auth; create table if not exists auth.users(id uuid primary key); create or replace function auth.uid() returns uuid language sql stable as 'select null::uuid';"
 )
+
+$authUserIds = & docker exec supabase_db_iems-erp psql -U postgres -d postgres -At -c "select id::text from auth.users order by id;"
+if ($LASTEXITCODE -ne 0) {
+  throw "Failed to read source auth user ids."
+}
+
+foreach ($authUserId in $authUserIds) {
+  if ($authUserId -match "^[0-9a-fA-F-]{36}$") {
+    Invoke-CheckedNative "docker" @(
+      "exec",
+      "supabase_db_iems-erp",
+      "psql",
+      "-U",
+      "postgres",
+      "-d",
+      "iems_restore_test",
+      "-v",
+      "ON_ERROR_STOP=1",
+      "-c",
+      "insert into auth.users(id) values ('$authUserId') on conflict do nothing;"
+    )
+  }
+}
+
 Invoke-CheckedNative "docker" @("cp", $BackupPath, "supabase_db_iems-erp:/tmp/iems-restore-test.dump")
 Invoke-CheckedNative "docker" @("exec", "supabase_db_iems-erp", "pg_restore", "-U", "postgres", "-d", "iems_restore_test", "--no-owner", "--no-privileges", "/tmp/iems-restore-test.dump")
 Invoke-CheckedNative "docker" @("exec", "supabase_db_iems-erp", "psql", "-U", "postgres", "-d", "iems_restore_test", "-c", "select count(*) as employee_count from public.employees;")

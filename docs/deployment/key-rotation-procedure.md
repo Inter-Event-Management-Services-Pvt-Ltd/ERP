@@ -12,7 +12,7 @@ explicitly approved the maintenance window.
 - Supabase anon/publishable key.
 - Supabase JWT/Auth signing configuration and JWKS issuer settings.
 - Google OAuth client secret.
-- Redis password or broker credentials if configured.
+- Redis password / broker credentials.
 - Caddy/domain TLS provider credentials if configured externally.
 
 ## Rotation Order

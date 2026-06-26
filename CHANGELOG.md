@@ -2,6 +2,29 @@
 
 ## Unreleased
 
+- Hardened production Docker Compose after security review: Redis now requires
+  auth, backend containers no longer receive host-gateway mappings in
+  production, Caddy admin is disabled, no-new-privileges/resource limits/tmpfs
+  are configured where compatible, Celery beat state moved to `/var/run/celery`,
+  required production env vars fail loudly, and backend settings support
+  `_FILE` secret mounts for Supabase service-role/JWT secrets.
+- Refreshed local Phase 5 backup evidence: local Supabase database dump restored
+  into `iems_restore_test` with `employee_count = 5`, local Storage volume export
+  copied 26 payload files, and PDF/ZIP restore spot-checks passed. Updated the
+  local restore test script to seed `auth.users` ID stubs before restoring
+  app-schema tables that reference Supabase Auth users.
+- Recorded Cloudflare Tunnel health notifications, Dozzle log inspection, and
+  Pratham as the primary incident contact, backup incident contact and rollback
+  owner for Phase 5 monitoring/incident routing.
+- Recorded Uptime Kuma and UptimeRobot as redundant public monitors for the app
+  login URL and API health URL, plus the credential-storage location policy for
+  deployment secrets.
+- Marked Phase 5 monitoring and alerting complete after a monitoring test alert
+  and recovery path were verified.
+- Recorded stable deployed frontend/API evidence for the current release
+  candidate, accepted the Supabase Free-plan hosted backup limitation for this
+  phase, and marked Docker document-upload validation complete based on human
+  browser confirmation.
 - Added native FastAPI rate limiting with Redis-backed shared state,
   route-group policies, stable `429 RATE_LIMIT_EXCEEDED` responses and API
   security headers for nosniff, deny framing, no-referrer, permissions policy,

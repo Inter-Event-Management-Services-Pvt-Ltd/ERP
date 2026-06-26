@@ -2,6 +2,8 @@
 
 Date: 2026-06-18
 
+Updated: 2026-06-26 for production Compose security hardening.
+
 ## Commands
 
 - `docker compose config`
@@ -52,8 +54,42 @@ Image scan evidence from 2026-06-18:
 Scheduler initially restarted because Celery beat tried to write
 `celerybeat-schedule` under `/app`, which is intentionally non-writable for the
 non-root production user. `compose.yaml` now sets
-`--schedule=/tmp/celerybeat-schedule`; scheduler logs confirm Celery beat starts
-with `. db -> /tmp/celerybeat-schedule`.
+`--schedule=/var/run/celery/celerybeat-schedule` and mounts that directory as a
+dedicated uid/gid 10001 tmpfs.
+
+## Production Compose Security Hardening
+
+The production Compose file was tightened on 2026-06-26 after a Docker Compose
+security review:
+
+- Redis now requires `REDIS_PASSWORD`.
+- API, worker and scheduler use authenticated Redis/Celery URLs.
+- Production API, worker and scheduler no longer define
+  `host.docker.internal:host-gateway`; managed Supabase URLs must be used for
+  hosted deployments.
+- Caddy admin API is disabled with `admin off`, and the custom Caddy image no
+  longer exposes port 2019.
+- `no-new-privileges:true` is enabled for web, API, worker, scheduler and Redis.
+  Caddy is excluded because the image uses `cap_net_bind_service` to bind ports
+  80/443 as a non-root user.
+- CPU and memory limits are declared for every production service.
+- API, worker, scheduler, web and Redis use tmpfs for ephemeral state.
+- Celery beat state moved from `/tmp` to `/var/run/celery`.
+- Production Compose now fails loudly when `IEMS_DOMAIN`,
+  `CORS_ALLOWED_ORIGINS`, `REDIS_PASSWORD`, `SUPABASE_URL`,
+  `SUPABASE_AUTH_ISSUER`, `SUPABASE_JWKS_URL`, `SUPABASE_ANON_KEY` or
+  `NEXT_PUBLIC_SUPABASE_URL` is missing.
+- Backend settings support `SUPABASE_SERVICE_ROLE_KEY_FILE` and
+  `SUPABASE_JWT_SECRET_FILE` so production can mount these values as files
+  instead of only passing raw environment values.
+
+Validation:
+
+- `docker compose config --quiet` passed with fake production env values.
+- `docker compose -f compose.yaml -f compose.backend.yaml config --quiet`
+  passed with fake production env values.
+- Targeted backend tests for auth/settings and API docs passed:
+  `22 passed`.
 
 ## Production Exposure Review
 
@@ -78,8 +114,9 @@ do not paste raw config output into PRs, issues, chat, or external systems.
 
 Additional validation on 2026-06-20 confirmed the local Docker auth topology:
 
-- API, worker and scheduler attach to an egress network so they can reach local
-  Docker Supabase at `host.docker.internal` without exposing Redis.
+- Previous local Docker auth validation used `host.docker.internal` for local
+  Supabase. That mapping is no longer present in production Compose; local
+  Supabase testing should use development-specific configuration only.
 - `SUPABASE_URL` remains the container-reachable Supabase REST URL.
 - `SUPABASE_AUTH_ISSUER` and `SUPABASE_AUTH_ISSUER_ALIASES` define the exact
   token issuers accepted by FastAPI.

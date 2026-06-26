@@ -19,6 +19,37 @@ Status:
 
 ## Initial Open Items
 
+### OPEN-047 - Production host egress filtering and nonce-based CSP follow-up
+
+```text
+Date: 2026-06-26
+Category: Security / Deployment
+Severity: Medium
+Question or issue:
+  Production Compose hardening now removes host-gateway mappings, authenticates
+  Redis, disables the Caddy admin API, enables no-new-privileges where
+  compatible, adds resource limits and moves Celery beat state out of /tmp.
+  Two controls remain outside the current Compose-only fix:
+  1. Host-level egress filtering for API/worker/scheduler outbound traffic.
+  2. Replacing the temporary Next.js `script-src 'unsafe-inline'` CSP allowance
+     with nonce-based script policy.
+Why it matters:
+  Docker networks are not outbound firewalls. If a backend container is
+  compromised, host-level firewall rules would reduce data exfiltration and C2
+  paths. The current CSP remains weaker than the desired final browser security
+  posture because injected inline script would execute.
+Recommended next action:
+  During the next production-host hardening pass, add nftables/iptables or a
+  provider firewall policy that restricts backend container egress to required
+  destinations such as Supabase and package/security update endpoints. Track
+  nonce-based CSP with Claude's frontend/runtime work because it requires
+  Next.js script nonce plumbing.
+Owner: Codex for host egress documentation/configuration; Claude for CSP nonce
+  frontend integration
+Status: Open — accepted for current Phase 5 close unless the release owner
+  requires host firewall enforcement before production promotion.
+```
+
 ### OPEN-046 - Phase 6 department administration workflow
 
 ```text
@@ -336,10 +367,40 @@ Status: Decision recorded; implementation remains open before production
 ### OPEN-002 — Supabase production plan
 
 ```text
+Date: 2026-06-26
 Category: Operations
 Severity: Medium
-Question: Which managed Supabase plan and backup-retention settings are required?
-Status: Open
+Question:
+  Which managed Supabase plan and backup-retention settings are required?
+Finding:
+  Current production Supabase project is on the Free plan. Managed project
+  backups are not included, and PITR is not available.
+Why it matters:
+  Phase 5 cannot rely on Supabase-managed restore points while the project
+  remains on the Free plan.
+Decision:
+  Use manual logical database backups as the production fallback until the
+  project is upgraded to a Supabase plan with managed backups and PITR.
+Risk acceptance:
+  Release owner accepts deferring Supabase subscription upgrade for now. If the
+  ERP becomes heavily used in the company, upgrade Supabase to a plan that
+  includes managed backups and PITR.
+  On 2026-06-26, the release owner confirmed hosted Supabase backup proof will
+  not be available on the current plan and is intentionally deferred for this
+  phase. Local Docker database and Storage backup/restore mechanics are proven,
+  but production data-loss risk remains until a hosted logical backup/offsite
+  Storage sync or paid Supabase backup plan is added.
+Required before Phase 5 close:
+  - Add hosted logical backup/offsite Storage sync evidence before depending on
+    the system for high-volume or business-critical production data, or upgrade
+    to a Supabase plan with managed backups and PITR.
+Local evidence:
+  Local Docker backup/restore proof was refreshed on 2026-06-26. The app-schema
+  dump restored into `iems_restore_test` with `employee_count = 5`. Local
+  Storage export copied 26 payload files and PDF/ZIP restore spot-checks passed.
+  This does not replace hosted production backup evidence.
+Status: Risk accepted for current phase — managed backups unavailable on current
+  plan; hosted backup/offsite Storage evidence deferred
 ```
 
 ### OPEN-032 - Phase 3 attendance frontend wiring
