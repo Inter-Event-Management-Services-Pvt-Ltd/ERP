@@ -2,6 +2,9 @@
 
 ## Unreleased
 
+- Recorded Pratham's 2026-06-26 production Compose review, release-candidate
+  approval and manual production-promotion confirmation, closing the Phase 5
+  release gate for the accepted scope.
 - Hardened production Docker Compose after security review: Redis now requires
   auth, backend containers no longer receive host-gateway mappings in
   production, Caddy admin is disabled, no-new-privileges/resource limits/tmpfs

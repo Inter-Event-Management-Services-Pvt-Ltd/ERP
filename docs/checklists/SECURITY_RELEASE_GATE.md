@@ -29,4 +29,7 @@ Complete before production deployment.
   primary incident contact, backup incident contact and rollback owner in
   `docs/deployment/monitoring-alerting-runbook.md`; email is the current alert
   delivery channel.
-- [ ] Human approval recorded.
+- [x] Human approval recorded. On 2026-06-26, Pratham confirmed:
+  "I, Pratham, reviewed the production Compose file and approve it. I approve
+  this release candidate for production. Manual production promotion is
+  complete."

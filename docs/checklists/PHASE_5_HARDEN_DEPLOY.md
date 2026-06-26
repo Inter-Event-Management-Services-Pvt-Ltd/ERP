@@ -26,7 +26,9 @@
   `https://api.prathlabs.com/health` returned 200 on 2026-06-26. API docs are
   not exposed on the hosted API domain.
 - [x] Health checks.
-- [ ] Manual production promotion.
+- [x] Manual production promotion. Pratham confirmed on 2026-06-26 that manual
+  production promotion is complete after the backend hardening deploy was
+  pulled, rebuilt and verified working on the server.
 
 ## Operations
 
@@ -60,9 +62,9 @@
 ## Security Gate
 
 - [x] Complete `SECURITY_GLOBAL.md`.
-- [ ] Complete `SECURITY_RELEASE_GATE.md`. Threat review, auth allowlist test
-  evidence, native rate limiting, incident ownership, monitoring and accepted
-  backup risk are documented; human approval remains open.
+- [x] Complete `SECURITY_RELEASE_GATE.md`. Threat review, auth allowlist test
+  evidence, native rate limiting, incident ownership, monitoring, accepted
+  backup risk and human release approval are documented.
 - [x] Dependency scan passes. `uv run --group dev pip-audit` returned no known vulnerabilities on 2026-06-18.
 - [x] Secret scan passes.
 - [x] Service-role key server-only check passes. Secret scan checks tracked files, backend Docker validation confirms secrets are not baked into images, and frontend bundle secret-scan evidence remains recorded in Dockerization docs.
@@ -78,11 +80,12 @@
 ## Exit Criteria
 
 - [x] Staging is production-like.
-- [ ] Release candidate is approved.
+- [x] Release candidate is approved. Pratham approved the release candidate for
+  production on 2026-06-26.
 
 ## Docker Production Gate
 
-- [ ] Complete `docs/checklists/DOCKERIZATION.md`.
+- [x] Complete `docs/checklists/DOCKERIZATION.md`.
 - [x] Production Compose config validated.
 - [x] Containers run as non-root. API, worker, scheduler, and web all run as
   UID 10001 in Docker validation on 2026-06-18.

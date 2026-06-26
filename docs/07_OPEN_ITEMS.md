@@ -46,8 +46,9 @@ Recommended next action:
   Next.js script nonce plumbing.
 Owner: Codex for host egress documentation/configuration; Claude for CSP nonce
   frontend integration
-Status: Open — accepted for current Phase 5 close unless the release owner
-  requires host firewall enforcement before production promotion.
+Status: Accepted follow-up — release owner approved Phase 5 close on
+  2026-06-26 with this item tracked for future host/firewall and frontend CSP
+  hardening.
 ```
 
 ### OPEN-046 - Phase 6 department administration workflow
@@ -77,17 +78,17 @@ Date: 2026-06-18
 Category: Release / Operations
 Severity: High
 Question or issue:
-  Backend-owned local Phase 5 validation now passes for Ruff, MyPy, pytest,
+  Backend-owned local Phase 5 validation passes for Ruff, MyPy, pytest,
   dependency audit, secret scan, clean Supabase reset, Phase 2/3/5 SQL probes,
   backend injection/abuse pattern scan, backend Docker build, backend non-root
-  runtime, backend restart/log checks, and local backup/restore proof. The full
-  production release gate is still not complete because several items require
-  external environment setup or human approval.
+  runtime, backend restart/log checks, local backup/restore proof, production
+  Compose hardening, monitoring, alerting and deployed endpoint smoke checks.
+  The release owner approved production promotion on 2026-06-26.
 Why it matters:
   The ERP should not be promoted to production based only on local backend
-  validation. Production readiness depends on frontend container sign-off,
-  managed Supabase backup configuration, staging validation, image scanning,
-  monitoring/alerting, and an explicit release owner approval.
+  validation. Production readiness required frontend validation, backend
+  validation, backup/restore evidence or accepted risk, monitoring/alerting,
+  Docker hardening and explicit release owner approval.
 Frontend validation completed 2026-06-18:
   - Type-check: PASS (tsc --noEmit, no errors)
   - Lint: PASS (eslint src/, no errors)
@@ -165,18 +166,19 @@ Container validation completed 2026-06-18 (after Alpine rebase):
   - Bundle secret scan (inside container): anon key present as expected
     (NEXT_PUBLIC_SUPABASE_ANON_KEY is intentionally public; role=anon, subject to
     RLS). SUPABASE_SERVICE_ROLE_KEY and JWT_SECRET absent from all 78 chunks.
-  - Production Compose file human review remains required.
-  - Incident contact and rollback owner remain required.
-  - Human release approval remains required.
+  - Production Compose file human review completed on 2026-06-26.
+  - Incident contact and rollback owner recorded in monitoring runbook.
+  - Human release approval recorded on 2026-06-26.
 Recommended next action:
-  Frontend static validation is complete, Docker image scans are clean, browser
-  Docker auth has been manually confirmed, and OPEN-045 is fully resolved.
-  Human release owner must provision staging, configure backups and monitoring,
-  complete the staging validation runbook, and record final approval.
+  Phase 5 release evidence is complete for the current accepted scope. Keep
+  deferred backup-plan upgrade and host egress/CSP hardening tracked as
+  follow-up items.
 Owner: Human release owner, Claude for remaining frontend items, Codex for
   backend follow-up if new backend issues are found.
-Status: Open — local validation complete; staging, backups, monitoring and
-  release approval remain
+Status: Resolved for Phase 5 — Pratham approved the production Compose file,
+  approved the release candidate and confirmed manual production promotion on
+  2026-06-26. Remaining non-blocking follow-ups are tracked separately in
+  OPEN-002 and OPEN-047.
 ```
 
 ### OPEN-042 - No frontend unit or integration tests

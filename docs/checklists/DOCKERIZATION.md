@@ -80,7 +80,10 @@
   beat state now lives under a dedicated `/var/run/celery` tmpfs instead of
   world-writable `/tmp`.
 - [x] Redis not exposed publicly.
-- [ ] Production Compose file reviewed by human.
+- [x] Production Compose file reviewed by human. Pratham approved the
+  production Compose file on 2026-06-26 after the Redis auth, Caddy admin,
+  host-gateway removal, resource limit and tmpfs hardening deploy was confirmed
+  working.
 
 ## Validation
 
