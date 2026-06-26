@@ -8,6 +8,7 @@ import { AppShell } from '@/components/layout/app-shell'
 import { PageHeader } from '@/components/layout/page-header'
 import { ContentArea } from '@/components/layout/content-area'
 import { SkeletonScreen } from '@/components/states/skeleton-screen'
+import { ModuleGuard } from '@/components/states/module-guard'
 import { EmptyState } from '@/components/states/empty-state'
 import { ErrorState } from '@/components/states/error-state'
 import { Badge } from '@/components/status/badge'
@@ -66,6 +67,7 @@ export default function TasksPage() {
       />
 
       <ContentArea>
+        <ModuleGuard code="tasks">
         <div className="flex flex-wrap gap-3 mb-5">
           <label className="flex items-center gap-2 px-3 py-2 text-sm font-sans text-text-primary/60 cursor-pointer select-none">
             <input
@@ -182,6 +184,7 @@ export default function TasksPage() {
             </table>
           </div>
         )}
+        </ModuleGuard>
       </ContentArea>
 
       <CreateTaskDialog open={showCreate} onClose={() => setShowCreate(false)} />

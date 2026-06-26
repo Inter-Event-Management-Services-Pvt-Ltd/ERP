@@ -19,6 +19,7 @@ import { ContentArea } from '@/components/layout/content-area'
 import { SkeletonScreen } from '@/components/states/skeleton-screen'
 import { ErrorState } from '@/components/states/error-state'
 import { useDirectorOverview } from '@/hooks/use-director'
+import { useModuleEnabled } from '@/hooks/use-modules'
 import type { DirectorAuditEvent } from '@/types'
 
 function StatRow({ label, value }: { label: string; value: number | string }) {
@@ -124,6 +125,10 @@ function formatMinutes(mins: number): string {
 
 export default function DirectorDashboardPage() {
   const { data: overview, isLoading, error, refetch } = useDirectorOverview()
+  const attendanceEnabled = useModuleEnabled('attendance')
+  const projectsEnabled = useModuleEnabled('projects')
+  const archiveEnabled = useModuleEnabled('physical_archive')
+  const documentsEnabled = useModuleEnabled('documents')
 
   return (
     <AppShell>
@@ -150,21 +155,45 @@ export default function DirectorDashboardPage() {
           <div className="space-y-4">
             {/* Row 1 — Attendance + Projects */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <SectionCard icon={Users} title="Attendance Today" href="/director/attendance">
-                <StatRow
-                  label="Checked in"
-                  value={`${overview.attendance.checked_in_count} / ${overview.attendance.active_employee_count}`}
-                />
-                <StatRow label="Checked out" value={overview.attendance.checked_out_count} />
-                <StatRow label="Absent / not checked in" value={overview.attendance.absent_or_not_checked_in_count} />
-                <StatRow label="Total work time today" value={formatMinutes(overview.attendance.total_minutes_today)} />
+              <SectionCard
+                icon={Users}
+                title="Attendance Today"
+                href={attendanceEnabled ? '/director/attendance' : undefined}
+              >
+                {attendanceEnabled ? (
+                  <div className="py-2">
+                    <StatRow label="Checked in" value={overview.attendance.checked_in_count} />
+                    <StatRow label="Checked out" value={overview.attendance.checked_out_count} />
+                    <StatRow label="Absent / not checked in" value={overview.attendance.absent_or_not_checked_in_count} />
+                  </div>
+                ) : (
+                  <div className="flex items-center gap-2 py-3">
+                    <span className="text-xs font-mono uppercase tracking-wider text-text-primary/30 border border-surface-border rounded px-2 py-0.5">
+                      Coming Soon
+                    </span>
+                    <span className="text-xs font-sans text-text-primary/35">
+                      Attendance rollout not yet active
+                    </span>
+                  </div>
+                )}
               </SectionCard>
 
-              <SectionCard icon={FolderOpen} title="Projects" href="/director/projects">
-                <StatRow label="Active" value={overview.projects.active_count} />
-                <StatRow label="Planning" value={overview.projects.planning_count} />
-                <StatRow label="Completed" value={overview.projects.completed_count} />
-                <StatRow label="Archived" value={overview.projects.archived_count} />
+              <SectionCard icon={FolderOpen} title="Projects" href={projectsEnabled ? '/director/projects' : undefined}>
+                {projectsEnabled ? (
+                  <>
+                    <StatRow label="Active" value={overview.projects.active_count} />
+                    <StatRow label="Planning" value={overview.projects.planning_count} />
+                    <StatRow label="Completed" value={overview.projects.completed_count} />
+                    <StatRow label="Archived" value={overview.projects.archived_count} />
+                  </>
+                ) : (
+                  <div className="flex items-center gap-2 py-3">
+                    <span className="text-xs font-mono uppercase tracking-wider text-text-primary/30 border border-surface-border rounded px-2 py-0.5">
+                      Coming Soon
+                    </span>
+                    <span className="text-xs font-sans text-text-primary/35">Not active for this rollout</span>
+                  </div>
+                )}
               </SectionCard>
             </div>
 
@@ -185,11 +214,22 @@ export default function DirectorDashboardPage() {
                 variant={overview.overdue_task_count > 0 ? 'critical' : 'normal'}
               />
 
-              <SectionCard icon={Archive} title="Physical Archive" href="/director/archive">
-                <StatRow label="Checked out" value={overview.physical_archive.checked_out_count} />
-                <StatRow label="Overdue returns" value={overview.physical_archive.overdue_return_count} />
-                <StatRow label="Verification due" value={overview.physical_archive.verification_due_count} />
-                <StatRow label="Missing" value={overview.physical_archive.missing_count} />
+              <SectionCard icon={Archive} title="Physical Archive" href={archiveEnabled ? '/director/archive' : undefined}>
+                {archiveEnabled ? (
+                  <>
+                    <StatRow label="Checked out" value={overview.physical_archive.checked_out_count} />
+                    <StatRow label="Overdue returns" value={overview.physical_archive.overdue_return_count} />
+                    <StatRow label="Verification due" value={overview.physical_archive.verification_due_count} />
+                    <StatRow label="Missing" value={overview.physical_archive.missing_count} />
+                  </>
+                ) : (
+                  <div className="flex items-center gap-2 py-3">
+                    <span className="text-xs font-mono uppercase tracking-wider text-text-primary/30 border border-surface-border rounded px-2 py-0.5">
+                      Coming Soon
+                    </span>
+                    <span className="text-xs font-sans text-text-primary/35">Not active for this rollout</span>
+                  </div>
+                )}
               </SectionCard>
             </div>
 
@@ -227,7 +267,7 @@ export default function DirectorDashboardPage() {
               </SectionCard>
             )}
 
-            {/* Row 4 — Quick links to extended metrics */}
+            {/* Row 4 — Quick links to extended metrics (hidden when module is disabled) */}
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
               <Link
                 href="/director/upcoming-events"
@@ -239,26 +279,30 @@ export default function DirectorDashboardPage() {
                   <p className="text-xs text-text-primary/40 mt-0.5">Calendar feed</p>
                 </div>
               </Link>
-              <Link
-                href="/director/missing-docs"
-                className="rounded-lg border border-surface-border bg-surface-raised p-4 flex items-center gap-3 hover:border-accent-critical/40 transition-colors"
-              >
-                <FileX size={14} className="text-accent-critical flex-none" aria-hidden="true" />
-                <div>
-                  <p className="text-xs font-mono uppercase tracking-widest text-text-primary/55">Missing Documents</p>
-                  <p className="text-xs text-text-primary/40 mt-0.5">Required docs not uploaded</p>
-                </div>
-              </Link>
-              <Link
-                href="/director/verification-reminders"
-                className="rounded-lg border border-surface-border bg-surface-raised p-4 flex items-center gap-3 hover:border-accent-warning/40 transition-colors"
-              >
-                <ShieldAlert size={14} className="text-accent-warning flex-none" aria-hidden="true" />
-                <div>
-                  <p className="text-xs font-mono uppercase tracking-widest text-text-primary/55">Verification Reminders</p>
-                  <p className="text-xs text-text-primary/40 mt-0.5">Physical files due for check</p>
-                </div>
-              </Link>
+              {documentsEnabled && (
+                <Link
+                  href="/director/missing-docs"
+                  className="rounded-lg border border-surface-border bg-surface-raised p-4 flex items-center gap-3 hover:border-accent-critical/40 transition-colors"
+                >
+                  <FileX size={14} className="text-accent-critical flex-none" aria-hidden="true" />
+                  <div>
+                    <p className="text-xs font-mono uppercase tracking-widest text-text-primary/55">Missing Documents</p>
+                    <p className="text-xs text-text-primary/40 mt-0.5">Required docs not uploaded</p>
+                  </div>
+                </Link>
+              )}
+              {archiveEnabled && (
+                <Link
+                  href="/director/verification-reminders"
+                  className="rounded-lg border border-surface-border bg-surface-raised p-4 flex items-center gap-3 hover:border-accent-warning/40 transition-colors"
+                >
+                  <ShieldAlert size={14} className="text-accent-warning flex-none" aria-hidden="true" />
+                  <div>
+                    <p className="text-xs font-mono uppercase tracking-widest text-text-primary/55">Verification Reminders</p>
+                    <p className="text-xs text-text-primary/40 mt-0.5">Physical files due for check</p>
+                  </div>
+                </Link>
+              )}
             </div>
           </div>
         )}

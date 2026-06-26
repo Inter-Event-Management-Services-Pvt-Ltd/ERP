@@ -21,6 +21,8 @@ export function apiErrorMessage(err: unknown): string {
       return 'You cannot assign this role to yourself.'
     case 'SUPER_USER_OVERRIDE_REASON_REQUIRED':
       return 'A Super User override reason is required. Enter your reason and resubmit.'
+    case 'MODULE_DISABLED':
+      return 'This module is not enabled for the current rollout.'
     case 'PERMISSION_DENIED':
     case 'ABAC_DENIED':
       return 'You do not have permission to perform this action.'

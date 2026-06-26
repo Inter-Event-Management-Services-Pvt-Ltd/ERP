@@ -7,6 +7,7 @@ import { Plus, CheckCircle2 } from 'lucide-react'
 import { AppShell } from '@/components/layout/app-shell'
 import { PageHeader } from '@/components/layout/page-header'
 import { ContentArea } from '@/components/layout/content-area'
+import { ModuleGuard } from '@/components/states/module-guard'
 import { SkeletonScreen } from '@/components/states/skeleton-screen'
 import { EmptyState } from '@/components/states/empty-state'
 import { ErrorState } from '@/components/states/error-state'
@@ -79,6 +80,7 @@ export default function ApprovalsPage() {
       />
 
       <ContentArea>
+        <ModuleGuard code="approvals">
         {/* Status filter tabs */}
         <div className="flex gap-1 mb-5 flex-wrap" role="group" aria-label="Filter by status">
           {STATUS_TABS.map((tab) => (
@@ -180,6 +182,7 @@ export default function ApprovalsPage() {
             </table>
           </div>
         )}
+        </ModuleGuard>
       </ContentArea>
 
       {showCreate && <CreateApprovalDialog onClose={() => setShowCreate(false)} />}

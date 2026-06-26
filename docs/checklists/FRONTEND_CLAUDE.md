@@ -1,5 +1,42 @@
 # Claude Frontend Checklist
 
+## Phase 5/6 — Module Rollout Flags (OPEN-048)
+
+### Ownership
+
+- [x] Only frontend-owned files modified: `apps/web/src/types/index.ts`, `apps/web/src/lib/api.ts`, `apps/web/src/lib/errors.ts`, `apps/web/src/hooks/use-modules.ts` (new), `apps/web/src/components/states/module-disabled-state.tsx` (new), `apps/web/src/components/layout/sidebar.tsx`, `apps/web/src/app/attendance/page.tsx`, `apps/web/src/app/director/page.tsx`, `apps/web/src/app/director/attendance/page.tsx`.
+- [x] No backend files modified.
+- [x] API contract followed exactly: `GET /v1/modules` returns `[{ code, enabled }]`; `MODULE_DISABLED` 403 handled in `apiErrorMessage`.
+
+### Design Workflow
+
+- [x] Screen purpose documented: module flags control nav visibility and route content; disabled routes show calm `ModuleDisabledState` instead of crashing.
+- [x] Sidebar filters nav items by both role and module flag; items hidden while loading remain hidden only after modules confirm disabled.
+- [x] Director Attendance card conditionally links to `/director/attendance` and shows live stats when `attendance: true`.
+- [x] Attendance pages restored to full UI (check-in/out + history) when `attendance: true`; `ModuleDisabledState` shown when `false`.
+- [x] `useModuleEnabled` fails open: returns `true` while loading and for unknown module codes.
+
+### Security
+
+- [x] `fetchModules` uses plain `fetch` (no auth token) — endpoint is intentionally unauthenticated.
+- [x] Backend `MODULE_DISABLED` 403 remains authoritative; frontend hides UI only for UX.
+- [x] Route guards are presentation-only; no frontend-only authorization logic added.
+- [x] No secrets or tokens exposed.
+
+### Accessibility
+
+- [x] `ModuleDisabledState` uses semantic `h2` heading and descriptive paragraph.
+- [x] `PackageX` icon has `aria-hidden="true"`.
+
+### Validation
+
+- [x] Tests pass (50 tests, 11 files — `fetchModules` fail-open cases + `MODULE_DISABLED` error message + module enabled resolution logic).
+- [x] Lint passes (`npm run lint`).
+- [x] Type check passes (`npm run type-check`).
+- [ ] Production build passes (`npm run build`).
+
+---
+
 ## Phase 4 — Admin, Policy, Audit and Director Extended Metrics (Slice 3)
 
 ### Ownership

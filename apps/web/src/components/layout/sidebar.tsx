@@ -18,15 +18,17 @@ import {
 import { cn } from '@/lib/utils'
 import { useMe } from '@/hooks/use-me'
 import { canAccess } from '@/hooks/use-role'
+import { useModules } from '@/hooks/use-modules'
 import { createClient } from '@/lib/supabase/client'
 import { ConfirmDialog } from '@/components/status/confirm-dialog'
-import type { UserRole } from '@/types'
+import type { UserRole, ModuleCode } from '@/types'
 
 interface NavItem {
   label: string
   href: string
   icon: React.ElementType
   allowedRoles?: UserRole[]
+  moduleCode?: ModuleCode
 }
 
 const NAV_GROUPS: { label: string; items: NavItem[] }[] = [
@@ -34,21 +36,27 @@ const NAV_GROUPS: { label: string; items: NavItem[] }[] = [
     label: 'Workspace',
     items: [
       { label: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
-      { label: 'Projects', href: '/projects', icon: FolderOpen },
-      { label: 'Archive', href: '/archive', icon: Archive },
+      { label: 'Projects', href: '/projects', icon: FolderOpen, moduleCode: 'projects' },
+      { label: 'Archive', href: '/archive', icon: Archive, moduleCode: 'physical_archive' },
     ],
   },
   {
     label: 'People',
     items: [
-      { label: 'Attendance', href: '/attendance', icon: Clock },
-      { label: 'Tasks', href: '/tasks', icon: CheckSquare },
-      { label: 'Calendar', href: '/calendar', icon: CalendarDays },
+      {
+        label: 'Attendance',
+        href: '/attendance',
+        icon: Clock,
+        allowedRoles: ['ADMIN', 'SUPER_ADMIN', 'SUPER_USER'],
+        moduleCode: 'attendance',
+      },
+      { label: 'Tasks', href: '/tasks', icon: CheckSquare, moduleCode: 'tasks' },
+      { label: 'Calendar', href: '/calendar', icon: CalendarDays, moduleCode: 'calendar' },
     ],
   },
   {
     label: 'Approvals',
-    items: [{ label: 'Approvals', href: '/approvals', icon: Bell }],
+    items: [{ label: 'Approvals', href: '/approvals', icon: Bell, moduleCode: 'approvals' }],
   },
   {
     label: 'Admin',
@@ -58,6 +66,7 @@ const NAV_GROUPS: { label: string; items: NavItem[] }[] = [
         href: '/admin',
         icon: ShieldCheck,
         allowedRoles: ['ADMIN', 'SUPER_ADMIN', 'SUPER_USER'],
+        moduleCode: 'admin',
       },
     ],
   },
@@ -69,6 +78,7 @@ const NAV_GROUPS: { label: string; items: NavItem[] }[] = [
         href: '/director',
         icon: BarChart3,
         allowedRoles: ['DIRECTOR'],
+        moduleCode: 'director_dashboard',
       },
     ],
   },
@@ -77,10 +87,17 @@ const NAV_GROUPS: { label: string; items: NavItem[] }[] = [
 export function Sidebar() {
   const pathname = usePathname()
   const { data: user } = useMe()
+  const { data: modules } = useModules()
   const roles = user?.roles ?? []
   const [confirmSignOut, setConfirmSignOut] = useState(false)
 
   const isSuperUser = user?.isSuperUser ?? false
+
+  function isModuleVisible(code?: ModuleCode): boolean {
+    if (!code || !modules) return true // loading — show all; no code = always visible
+    const flag = modules.find(f => f.code === code)
+    return flag?.enabled ?? true
+  }
 
   const isActive = (href: string) =>
     href === '/dashboard' ? pathname === href : pathname.startsWith(href)
@@ -112,7 +129,8 @@ export function Sidebar() {
         {NAV_GROUPS.map((group) => {
           const visible = group.items.filter(
             (item) =>
-              !item.allowedRoles || isSuperUser || canAccess(roles, item.allowedRoles)
+              isModuleVisible(item.moduleCode) &&
+              (!item.allowedRoles || isSuperUser || canAccess(roles, item.allowedRoles))
           )
           if (visible.length === 0) return null
 

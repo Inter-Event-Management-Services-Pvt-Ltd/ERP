@@ -51,6 +51,27 @@ export interface AuthUser {
   isSuperUser: boolean
 }
 
+// ─── Module flags ─────────────────────────────────────────────────────────────
+
+export type ModuleCode =
+  | 'projects'
+  | 'documents'
+  | 'archive_exports'
+  | 'physical_archive'
+  | 'attendance'
+  | 'leave'
+  | 'tasks'
+  | 'calendar'
+  | 'approvals'
+  | 'director_dashboard'
+  | 'admin'
+
+/** Shape of GET /v1/modules (unauthenticated) */
+export interface ModuleFlag {
+  code: ModuleCode
+  enabled: boolean
+}
+
 export type BadgeVariant =
   | 'active'
   | 'pending'

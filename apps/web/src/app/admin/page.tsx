@@ -13,6 +13,7 @@ import {
 import { AppShell } from '@/components/layout/app-shell'
 import { PageHeader } from '@/components/layout/page-header'
 import { ContentArea } from '@/components/layout/content-area'
+import { ModuleGuard } from '@/components/states/module-guard'
 import { useMe } from '@/hooks/use-me'
 
 interface AdminSection {
@@ -82,6 +83,7 @@ export default function AdminPage() {
         subtitle="System administration and configuration"
       />
       <ContentArea>
+        <ModuleGuard code="admin">
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
           {ADMIN_SECTIONS.map((section) => {
             const canManage =
@@ -118,6 +120,7 @@ export default function AdminPage() {
             )
           })}
         </div>
+        </ModuleGuard>
       </ContentArea>
     </AppShell>
   )

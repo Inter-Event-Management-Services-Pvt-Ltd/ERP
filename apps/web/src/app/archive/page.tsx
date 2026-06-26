@@ -11,6 +11,7 @@ import { SkeletonScreen } from '@/components/states/skeleton-screen'
 import { ErrorState } from '@/components/states/error-state'
 import { EmptyState } from '@/components/states/empty-state'
 import { useRooms } from '@/hooks/use-physical-archive'
+import { ModuleGuard } from '@/components/states/module-guard'
 
 export default function ArchivePage() {
   const router = useRouter()
@@ -39,6 +40,7 @@ export default function ArchivePage() {
       />
 
       <ContentArea>
+        <ModuleGuard code="physical_archive">
         <form
           onSubmit={handleScanLookup}
           className="rounded-lg border border-surface-border bg-surface-raised px-4 py-3 mb-5 flex flex-col sm:flex-row sm:items-end gap-3"
@@ -106,6 +108,7 @@ export default function ArchivePage() {
             ))}
           </ul>
         )}
+        </ModuleGuard>
       </ContentArea>
     </AppShell>
   )

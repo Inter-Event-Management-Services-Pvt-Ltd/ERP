@@ -7,6 +7,7 @@ import { AppShell } from '@/components/layout/app-shell'
 import { PageHeader } from '@/components/layout/page-header'
 import { ContentArea } from '@/components/layout/content-area'
 import { SkeletonScreen } from '@/components/states/skeleton-screen'
+import { ModuleGuard } from '@/components/states/module-guard'
 import { EmptyState } from '@/components/states/empty-state'
 import { ErrorState } from '@/components/states/error-state'
 import { Badge } from '@/components/status/badge'
@@ -89,6 +90,7 @@ export default function CalendarPage() {
       />
 
       <ContentArea>
+        <ModuleGuard code="calendar">
         <div className="flex items-center justify-between mb-5">
           <button
             type="button"
@@ -174,6 +176,7 @@ export default function CalendarPage() {
             ))}
           </div>
         )}
+        </ModuleGuard>
       </ContentArea>
 
       <CalendarEventDialog

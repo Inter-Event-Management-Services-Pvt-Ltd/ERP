@@ -9,6 +9,7 @@ import { ContentArea } from '@/components/layout/content-area'
 import { SkeletonScreen } from '@/components/states/skeleton-screen'
 import { EmptyState } from '@/components/states/empty-state'
 import { ErrorState } from '@/components/states/error-state'
+import { ModuleGuard } from '@/components/states/module-guard'
 import { Badge } from '@/components/status/badge'
 import { ConfirmDialog } from '@/components/status/confirm-dialog'
 import { CreateLeaveDialog } from '@/components/leave/create-leave-dialog'
@@ -160,6 +161,7 @@ export default function LeavePage() {
       />
 
       <ContentArea>
+        <ModuleGuard code="leave">
         {canReview && (
           <>
             <h2 className="font-serif italic text-lg text-text-primary mb-3">Pending Review</h2>
@@ -268,6 +270,7 @@ export default function LeavePage() {
             </table>
           </div>
         )}
+        </ModuleGuard>
       </ContentArea>
 
       <CreateLeaveDialog open={showCreate} onClose={() => setShowCreate(false)} />

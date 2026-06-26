@@ -17,6 +17,7 @@ import { SearchInput } from '@/components/ui/search-input'
 import { useProjects } from '@/hooks/use-projects'
 import { useProjectTypes, useProjectStatuses, usePriorityLevels } from '@/hooks/use-lookups'
 import { useMe } from '@/hooks/use-me'
+import { ModuleGuard } from '@/components/states/module-guard'
 import { format } from 'date-fns'
 
 export default function ProjectsPage() {
@@ -94,6 +95,7 @@ export default function ProjectsPage() {
       />
 
       <ContentArea>
+        <ModuleGuard code="projects">
         {/* Filters */}
         <div className="flex flex-wrap gap-3 mb-5">
           <SearchInput
@@ -227,6 +229,7 @@ export default function ProjectsPage() {
             </table>
           </div>
         )}
+        </ModuleGuard>
       </ContentArea>
 
       <CreateProjectDialog

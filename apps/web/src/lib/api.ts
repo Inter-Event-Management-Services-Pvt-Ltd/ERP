@@ -2,6 +2,7 @@ import { createClient as createSupabaseClient } from '@/lib/supabase/client'
 import type {
   MeResponse,
   PermissionsResponse,
+  ModuleFlag,
   Client,
   CreateClientPayload,
   Project,
@@ -139,6 +140,19 @@ async function apiUpload<T>(path: string, formData: FormData): Promise<T> {
     throw Object.assign(new Error(message), { code, status: res.status })
   }
   return res.json() as Promise<T>
+}
+
+// ─── Module flags (unauthenticated) ──────────────────────────────────────────
+
+/** No auth required — safe to call before session is established. Fails open on error. */
+export async function fetchModules(): Promise<ModuleFlag[]> {
+  try {
+    const res = await fetch(`${API_URL}/v1/modules`)
+    if (!res.ok) return []
+    return res.json() as Promise<ModuleFlag[]>
+  } catch {
+    return []
+  }
 }
 
 export async function fetchMe(): Promise<MeResponse> {

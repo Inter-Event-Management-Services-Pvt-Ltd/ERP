@@ -36,7 +36,10 @@ Required from Claude:
   - Remove or mark disabled module cards/metrics on dashboards.
   - Keep onboarding copy aligned with enabled modules.
 Owner: Claude
-Status: Open — backend contract available
+Status: Resolved 2026-06-26 — ModuleFlag types, fetchModules (unauthenticated, fail-open),
+  useModules/useModuleEnabled hooks, ModuleDisabledState component, sidebar module filtering,
+  dynamic attendance pages (employee + director), director dashboard attendance card conditional,
+  MODULE_DISABLED error message, and tests all implemented.
 ```
 
 ### OPEN-047 - Production host egress filtering and nonce-based CSP follow-up

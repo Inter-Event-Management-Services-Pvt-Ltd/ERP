@@ -6,7 +6,7 @@ vi.mock('@/lib/supabase/client', () => ({
   createClient: () => ({ auth: { getSession: mockGetSession } }),
 }))
 
-import { fetchMe } from '@/lib/api'
+import { fetchMe, fetchModules } from '@/lib/api'
 
 describe('apiFetch', () => {
   const realFetch = globalThis.fetch
@@ -80,5 +80,44 @@ describe('apiFetch', () => {
       code: 'NOT_FOUND',
       requestId: 'req-abc',
     })
+  })
+})
+
+describe('fetchModules', () => {
+  const realFetch = globalThis.fetch
+
+  afterEach(() => {
+    globalThis.fetch = realFetch
+  })
+
+  it('returns the parsed module array on a 200 response', async () => {
+    globalThis.fetch = vi.fn().mockResolvedValue({
+      ok: true,
+      status: 200,
+      json: async () => [
+        { code: 'attendance', enabled: false },
+        { code: 'projects', enabled: true },
+      ],
+    })
+    const result = await fetchModules()
+    expect(result).toEqual([
+      { code: 'attendance', enabled: false },
+      { code: 'projects', enabled: true },
+    ])
+  })
+
+  it('returns an empty array when the response is not ok (fail open)', async () => {
+    globalThis.fetch = vi.fn().mockResolvedValue({
+      ok: false,
+      status: 503,
+    })
+    const result = await fetchModules()
+    expect(result).toEqual([])
+  })
+
+  it('returns an empty array when the network throws (fail open)', async () => {
+    globalThis.fetch = vi.fn().mockRejectedValue(new Error('Network error'))
+    const result = await fetchModules()
+    expect(result).toEqual([])
   })
 })
