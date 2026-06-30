@@ -51,9 +51,11 @@ Required from Codex:
 Owner: Codex
 Status: Resolved 2026-06-30 - `EMPLOYEE_ADMIN_SELECT` now embeds
   `employee_department_assignments` through the explicit
-  `employee_department_assignments_employee_id_fkey` relationship, removing the
-  PostgREST ambiguity on `GET /v1/employees/{employee_id}` admin detail loads.
-  Added a backend regression test that asserts the FK hint is present in the
+  `employee_department_assignments_employee_id_fkey` relationship and nested
+  `user_role_assignments` through the explicit
+  `user_role_assignments_user_account_id_fkey` relationship, removing the
+  PostgREST ambiguities on `GET /v1/employees/{employee_id}` admin detail loads.
+  Added a backend regression test that asserts both FK hints are present in the
   Supabase REST select string.
 ```
 

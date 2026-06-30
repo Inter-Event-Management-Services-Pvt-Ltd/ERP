@@ -257,7 +257,7 @@ def test_service_requires_override_reason_when_super_user_bypasses_admin_permiss
     assert exc_info.value.code == "SUPER_USER_OVERRIDE_REASON_REQUIRED"
 
 
-def test_service_get_employee_uses_department_assignment_fk_hint() -> None:
+def test_service_get_employee_uses_fk_hints_for_ambiguous_embeds() -> None:
     seen_requests: list[httpx.Request] = []
 
     def handler(request: httpx.Request) -> Response:
@@ -288,6 +288,10 @@ def test_service_get_employee_uses_department_assignment_fk_hint() -> None:
     assert (
         "department_assignments:employee_department_assignments!"
         "employee_department_assignments_employee_id_fkey("
+    ) in select
+    assert (
+        "role_assignments:user_role_assignments!"
+        "user_role_assignments_user_account_id_fkey("
     ) in select
 
 

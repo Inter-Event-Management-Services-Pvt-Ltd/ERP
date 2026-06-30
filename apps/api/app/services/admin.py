@@ -40,7 +40,7 @@ EMPLOYEE_ADMIN_SELECT = (
     "id,employee_id,valid_from,valid_to,assigned_by,department:departments(id,code,name)"
     "),"
     "account:user_accounts(id,is_active,is_super_user,"
-    "role_assignments:user_role_assignments("
+    "role_assignments:user_role_assignments!user_role_assignments_user_account_id_fkey("
     "assigned_at,expires_at,role:roles(id,code,name,description)"
     "))"
 )
