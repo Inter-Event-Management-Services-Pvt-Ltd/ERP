@@ -385,8 +385,8 @@ class AdminService:
         elif created_to is not None:
             params["created_at"] = f"lte.{created_to.isoformat()}"
 
-        rows = await self._get_rows("/rest/v1/audit_events", params=params)
         await self._write_audit_explorer_access(current_user=current_user, context=context)
+        rows = await self._get_rows("/rest/v1/audit_events", params=params)
         return [_audit_event_from_row(row) for row in rows]
 
     async def list_folder_templates(

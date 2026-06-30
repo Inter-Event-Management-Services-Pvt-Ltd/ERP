@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+- Fixed audit explorer freshness by recording the sensitive
+  `audit.explorer_viewed` event before fetching audit rows, so the newest audit
+  event can appear in the current `/v1/audit-events` response instead of only
+  after a later refresh.
 - Fixed the admin employee detail Supabase embeds by adding explicit
   `employee_department_assignments_employee_id_fkey` and
   `user_role_assignments_user_account_id_fkey` PostgREST relationship hints,

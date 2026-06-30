@@ -161,6 +161,22 @@ def _template_row() -> dict[str, object]:
     }
 
 
+def _audit_event_row(action_code: str = "audit.explorer_viewed") -> dict[str, object]:
+    return {
+        "id": str(UUID("cccccccc-cccc-4ccc-8ccc-cccccccccccc")),
+        "action_code": action_code,
+        "resource_type": "audit_events",
+        "resource_id": None,
+        "actor_employee_id": str(EMPLOYEE_ID),
+        "actor": None,
+        "request_id": str(REQUEST_ID),
+        "old_values": None,
+        "new_values": None,
+        "metadata": None,
+        "created_at": CREATED_AT,
+    }
+
+
 def test_service_creates_employee_through_audited_rpc() -> None:
     seen_requests: list[httpx.Request] = []
 
@@ -201,6 +217,44 @@ def test_service_creates_employee_through_audited_rpc() -> None:
     assert payload["p_official_email"] == "new.employee@iemsnewdelhi.com"
     assert payload["p_actor_employee_id"] == str(EMPLOYEE_ID)
     assert payload["p_request_id"] == str(REQUEST_ID)
+
+
+def test_service_lists_audit_events_after_recording_sensitive_read() -> None:
+    seen_requests: list[httpx.Request] = []
+
+    def handler(request: httpx.Request) -> Response:
+        seen_requests.append(request)
+        if request.url.path == "/rest/v1/audit_events" and request.method == "POST":
+            return Response(201, json=[_audit_event_row()])
+        if request.url.path == "/rest/v1/audit_events" and request.method == "GET":
+            return Response(200, json=[_audit_event_row()])
+        return Response(500, json={"message": "unexpected request"})
+
+    service = AdminService(
+        supabase_url="http://localhost:54321",
+        service_role_key="legacy-service-role-key",
+        transport=httpx.MockTransport(handler),
+    )
+
+    result = asyncio.run(
+        service.list_audit_events(
+            current_user=_current_user(permissions=["audit.view"]),
+            limit=50,
+            offset=0,
+            action_code=None,
+            resource_type=None,
+            resource_id=None,
+            actor_employee_id=None,
+            created_from=None,
+            created_to=None,
+            context=AuditContext(request_id=REQUEST_ID),
+        )
+    )
+
+    assert result[0].action_code == "audit.explorer_viewed"
+    assert [request.method for request in seen_requests] == ["POST", "GET"]
+    assert seen_requests[0].url.path == "/rest/v1/audit_events"
+    assert seen_requests[1].url.params["order"] == "created_at.desc"
 
 
 def test_service_requires_employee_manage_for_employee_create() -> None:
