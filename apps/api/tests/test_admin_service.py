@@ -106,6 +106,26 @@ def _department_assignment_row() -> dict[str, object]:
     }
 
 
+def _embedded_employee_row(employee_id: UUID = OTHER_EMPLOYEE_ID) -> dict[str, object]:
+    row = _employee_row(employee_id)
+    row.pop("current_department", None)
+    row.pop("roles", None)
+    row["department_assignments"] = [_department_assignment_row()]
+    row["account"] = {
+        "id": str(UUID("aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa")),
+        "is_active": True,
+        "is_super_user": False,
+        "role_assignments": [
+            {
+                "assigned_at": CREATED_AT,
+                "expires_at": None,
+                "role": _role_row("MANAGER"),
+            }
+        ],
+    }
+    return row
+
+
 def _policy_row() -> dict[str, object]:
     return {
         "id": str(POLICY_ID),
@@ -235,6 +255,40 @@ def test_service_requires_override_reason_when_super_user_bypasses_admin_permiss
 
     assert exc_info.value.status_code == 403
     assert exc_info.value.code == "SUPER_USER_OVERRIDE_REASON_REQUIRED"
+
+
+def test_service_get_employee_uses_department_assignment_fk_hint() -> None:
+    seen_requests: list[httpx.Request] = []
+
+    def handler(request: httpx.Request) -> Response:
+        seen_requests.append(request)
+        if request.url.path == "/rest/v1/employees":
+            return Response(200, json=[_embedded_employee_row()])
+        return Response(500)
+
+    service = AdminService(
+        supabase_url="http://localhost:54321",
+        service_role_key="legacy-service-role-key",
+        transport=httpx.MockTransport(handler),
+    )
+
+    result = asyncio.run(
+        service.get_employee(
+            employee_id=OTHER_EMPLOYEE_ID,
+            current_user=_current_user(permissions=["employee.view"]),
+        )
+    )
+
+    assert result.current_department is not None
+    assert result.current_department.code == "OPS"
+    assert result.roles[0].role.code == "MANAGER"
+    request = seen_requests[0]
+    assert request.url.path == "/rest/v1/employees"
+    select = request.url.params["select"]
+    assert (
+        "department_assignments:employee_department_assignments!"
+        "employee_department_assignments_employee_id_fkey("
+    ) in select
 
 
 def test_service_blocks_self_super_user_role_assignment() -> None:

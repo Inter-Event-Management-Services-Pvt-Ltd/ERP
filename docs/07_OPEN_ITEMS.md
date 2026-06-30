@@ -49,7 +49,12 @@ Required from Codex:
   Alternatively, if the embedding is not required, remove it and fetch
   department history in a separate query.
 Owner: Codex
-Status: Open
+Status: Resolved 2026-06-30 - `EMPLOYEE_ADMIN_SELECT` now embeds
+  `employee_department_assignments` through the explicit
+  `employee_department_assignments_employee_id_fkey` relationship, removing the
+  PostgREST ambiguity on `GET /v1/employees/{employee_id}` admin detail loads.
+  Added a backend regression test that asserts the FK hint is present in the
+  Supabase REST select string.
 ```
 
 ### OPEN-048 - Phase 6 frontend module rollout flags

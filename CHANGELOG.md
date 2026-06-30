@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+- Fixed the admin employee detail Supabase embed by adding the explicit
+  `employee_department_assignments_employee_id_fkey` PostgREST relationship
+  hint, resolving OPEN-049 and preventing ambiguous employee department
+  assignment loads.
 - Added Phase 6 backend module rollout controls: `GET /v1/modules` exposes
   current module flags, disabled module paths return stable `MODULE_DISABLED`
   errors before business logic runs, and production Compose passes explicit
