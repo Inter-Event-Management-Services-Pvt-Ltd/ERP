@@ -19,6 +19,39 @@ Status:
 
 ## Initial Open Items
 
+### OPEN-049 - PostgREST ambiguous relationship: employees ↔ employee_department_assignments
+
+```text
+Date: 2026-06-30
+Category: Backend / API
+Severity: High
+Question or issue:
+  The Employee admin page renders "Could not embed because more than one
+  relationship was found for 'employees' and 'employee_department_assignments'".
+  This is a PostgREST error that occurs when the Supabase query tries to embed
+  employee_department_assignments into employees without specifying which FK to
+  use. The table likely has two FK columns that both reference employees (e.g.
+  employee_id and assigned_by_employee_id or similar), making the relationship
+  ambiguous.
+Why it matters:
+  The Employee detail page (/admin/employees/[id]) fails to load. Any backend
+  query that embeds employee_department_assignments without an explicit FK hint
+  will produce this error for all users.
+Required from Codex:
+  In whichever apps/api service/query selects employee_department_assignments
+  alongside employees (likely the GET /v1/employees/{employee_id} handler or
+  a Supabase PostgREST select call), add an explicit FK disambiguation hint.
+  PostgREST syntax: table!fk_column_name(columns) or table!fk_name(columns).
+  Example:
+    .select("*, employee_department_assignments!employee_department_assignments_employee_id_fkey(*)")
+  If using the Python postgrest-py client, the same syntax applies in the
+  .select() string.
+  Alternatively, if the embedding is not required, remove it and fetch
+  department history in a separate query.
+Owner: Codex
+Status: Open
+```
+
 ### OPEN-048 - Phase 6 frontend module rollout flags
 
 ```text
