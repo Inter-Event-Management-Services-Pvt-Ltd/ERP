@@ -1,0 +1,772 @@
+<html xmlns:o='urn:schemas-microsoft-com:office:office'
+      xmlns:w='urn:schemas-microsoft-com:office:word'
+      xmlns='http://www.w3.org/TR/REC-html40'>
+<head>
+<meta charset="UTF-8">
+<style>
+  body {
+    font-family: Calibri, Arial, sans-serif;
+    font-size: 11pt;
+    color: #1a1a1a;
+    margin: 2.5cm;
+    line-height: 1.6;
+  }
+  h1 { font-size: 20pt; color: #1B3A5C; page-break-before: always; margin-top: 30px; }
+  h1.first { page-break-before: avoid; }
+  h2 { font-size: 15pt; color: #2E6DA4; margin-top: 24px; margin-bottom: 6px; }
+  h3 { font-size: 12pt; color: #444; margin-top: 16px; margin-bottom: 4px; }
+  p { margin: 6px 0 10px 0; }
+  pre {
+    background: #F4F4F4;
+    border-left: 4px solid #2E6DA4;
+    padding: 12px 16px;
+    font-family: Consolas, "Courier New", monospace;
+    font-size: 9pt;
+    white-space: pre-wrap;
+    word-break: break-all;
+    margin: 10px 0 18px 0;
+    border-radius: 3px;
+  }
+  ul { margin: 6px 0 12px 20px; }
+  li { margin-bottom: 4px; }
+  .evidence {
+    background: #EAF3FF;
+    border: 1px solid #BDD7F0;
+    padding: 8px 14px;
+    font-size: 9pt;
+    margin: 10px 0 16px 0;
+    border-radius: 3px;
+  }
+  .evidence strong { color: #1B3A5C; }
+  .cover { text-align: center; padding: 80px 0 60px 0; }
+  .cover h1 { page-break-before: avoid; font-size: 26pt; color: #1B3A5C; border-bottom: 2px solid #2E6DA4; padding-bottom: 12px; display: inline-block; }
+  .cover p { font-size: 12pt; color: #555; }
+  .toc-entry { margin: 4px 0; font-size: 11pt; }
+  hr { border: none; border-top: 1px solid #ccc; margin: 20px 0; }
+  table { border-collapse: collapse; width: 100%; margin: 12px 0; }
+  td, th { border: 1px solid #ccc; padding: 6px 10px; font-size: 10pt; }
+  th { background: #2E6DA4; color: white; }
+  tr:nth-child(even) { background: #F0F6FF; }
+</style>
+</head>
+<body>
+
+<!-- COVER PAGE -->
+<div class="cover">
+  <h1 class="first">IEMS Internal ERP<br/>System Architecture &amp; Design Diagrams</h1>
+  <p><br/><strong>Project:</strong> IEMS Internal ERP — Full-Stack Enterprise Resource Planning</p>
+  <p><strong>Organization:</strong> Inter Event Management Services Pvt. Ltd., New Delhi</p>
+  <p><strong>Student:</strong> Pratham Nagpal</p>
+  <p><strong>Date:</strong> 28 June 2026</p>
+  <p><strong>Repository:</strong> Inter-Event-Management-Services-Pvt-Ltd/ERP &nbsp;|&nbsp; Tag: v1.0.0-Beta</p>
+  <p><strong>Production URLs:</strong><br/>
+    Frontend: https://erp-dusky-six.vercel.app<br/>
+    API: https://api.prathlabs.com (Cloudflare Tunnel)
+  </p>
+  <br/><hr/>
+  <p style="font-size:9pt;color:#888;">
+    Note: This document contains Mermaid diagram source code. To render diagrams visually,<br/>
+    paste the code blocks at https://mermaid.live or use a Mermaid-enabled viewer.
+  </p>
+</div>
+
+<!-- TABLE OF CONTENTS -->
+<h1 class="first">Table of Contents</h1>
+<div class="toc-entry">1. System Architecture Diagram</div>
+<div class="toc-entry">2. Deployment Diagram</div>
+<div class="toc-entry">3. Authentication Flow</div>
+<div class="toc-entry">4. Authorization Flow</div>
+<div class="toc-entry">5. Document Upload &amp; Download Flow</div>
+<div class="toc-entry">6. Archive Export Flow</div>
+<div class="toc-entry">7. Physical Archive Flow</div>
+<div class="toc-entry">8. Phase Timeline / Roadmap</div>
+<div class="toc-entry">9. Security Controls Diagram</div>
+<div class="toc-entry">10. Module Rollout Flow</div>
+
+<!-- ============================================================ -->
+<h1>Diagram 1 — System Architecture</h1>
+
+<h2>Purpose</h2>
+<p>
+  Shows the logical application architecture: how the employee browser interacts with the
+  Vercel-hosted frontend, the FastAPI backend, Supabase (Auth, PostgreSQL, Storage), and
+  the Redis/Celery background job layer. Highlights the security boundary that prevents
+  the browser from ever receiving the Supabase service-role key.
+</p>
+
+<h2>Mermaid Source</h2>
+<pre>
+flowchart LR
+    U[("👤 Employee Browser")] --> W["Vercel\nNext.js Frontend\nerp-dusky-six.vercel.app"]
+    W --> A["FastAPI Backend API\napi.prathlabs.com"]
+
+    A --> AUTH["Supabase Auth\n(JWT validation, PKCE OAuth)"]
+    A --> DB[("Supabase PostgreSQL\n(source of truth, RLS enabled)")]
+    A --> ST[("Supabase Storage\n(private buckets, signed URLs)")]
+    A --> R[("Redis\n(job broker, rate-limit state)")]
+    R --> C["Celery Worker\n+ Scheduler"]
+    C --> DB
+    C --> ST
+
+    W -. "public anon config only\n(no service-role key)" .-> AUTH
+    A -. "service-role\nserver-side only" .-> DB
+    A -. "signed URLs\n(short-lived)" .-> ST
+
+    style U fill:#E8F4FD,stroke:#2E6DA4
+    style W fill:#D6EAF8,stroke:#2E6DA4
+    style A fill:#D5E8D4,stroke:#27AE60
+    style DB fill:#FFF3CD,stroke:#F39C12
+    style ST fill:#FFF3CD,stroke:#F39C12
+    style AUTH fill:#FFF3CD,stroke:#F39C12
+    style R fill:#FADBD8,stroke:#E74C3C
+    style C fill:#FADBD8,stroke:#E74C3C
+</pre>
+
+<h2>Key Points</h2>
+<ul>
+  <li>The browser communicates only with the Vercel frontend and the FastAPI API — never directly with the database or private Storage buckets.</li>
+  <li>The Supabase service-role key exists only on the FastAPI server and is never exposed to any client bundle.</li>
+  <li>All sensitive writes (document upload, checkout, approval, attendance correction) go through FastAPI, which enforces RBAC/ABAC and writes immutable audit events.</li>
+  <li>Supabase Storage buckets are private; all file access goes through short-lived signed URLs generated by FastAPI after authorization.</li>
+  <li>Redis acts as the Celery job broker for asynchronous archive ZIP generation and scheduled jobs (e.g., export expiration); it is not directly reachable from the browser or frontend.</li>
+</ul>
+
+<div class="evidence">
+  <strong>Evidence files:</strong>
+  docs/02_ARCHITECTURE.md &nbsp;|&nbsp; docs/04_SECURITY_MODEL.md &nbsp;|&nbsp;
+  docs/api-contract.md &nbsp;|&nbsp; apps/api/app/main.py &nbsp;|&nbsp;
+  apps/api/app/core/config.py &nbsp;|&nbsp; compose.yaml &nbsp;|&nbsp;
+  compose.backend.yaml &nbsp;|&nbsp; apps/api/app/services/documents_archive.py
+</div>
+
+<!-- ============================================================ -->
+<h1>Diagram 2 — Deployment Diagram</h1>
+
+<h2>Purpose</h2>
+<p>
+  Shows the physical deployment topology: where each service runs, how traffic reaches
+  the API from outside (Cloudflare Tunnel), and the monitoring stack that watches the
+  system.
+</p>
+
+<h2>Mermaid Source</h2>
+<pre>
+flowchart TB
+    Users["Users / Employees\n(any location)"]
+
+    Users --> V["Vercel Edge\nNext.js Frontend\nerp-dusky-six.vercel.app"]
+    Users --> CF["Cloudflare DNS\n+ Tunnel"]
+
+    CF --> Caddy["Caddy Reverse Proxy\n(custom Alpine image, TLS,\nsecurity headers, UID 10001)"]
+
+    subgraph DockerServer ["Local Docker Server (Pratham's machine)"]
+        Caddy --> API["FastAPI api\n(UID 10001, Alpine)"]
+        API --> REDIS["Redis\n(auth enabled,\ninternal network only)"]
+        REDIS --> WORKER["Celery worker\n(UID 10001, Alpine)"]
+        REDIS --> SCHED["Celery scheduler\n(UID 10001, Alpine)"]
+    end
+
+    API --> SUPA["Supabase Cloud\nAuth + PostgreSQL\n+ Storage"]
+    WORKER --> SUPA
+    SCHED --> SUPA
+
+    subgraph Monitoring ["Monitoring Stack"]
+        UK["Uptime Kuma\n(Raspberry Pi)"] -. monitors .-> V
+        UR["UptimeRobot"] -. monitors .-> V
+        CFA["Cloudflare Tunnel\nAlerts"] -. alerts .-> CF
+        DZ["Dozzle"] -. log viewer .-> DockerServer
+    end
+
+    style DockerServer fill:#EAF5EA,stroke:#27AE60
+    style Monitoring fill:#FFF8E1,stroke:#F39C12
+    style REDIS fill:#FADBD8,stroke:#E74C3C
+</pre>
+
+<h2>Key Points</h2>
+<ul>
+  <li>The Next.js frontend is hosted on Vercel's global edge network; no backend containers are needed for frontend serving.</li>
+  <li>The FastAPI backend runs locally in Docker on Pratham's machine and is exposed to the internet only through a Cloudflare Tunnel — no ports are forwarded on the router.</li>
+  <li>Redis is on an internal Docker network and is not reachable from outside the Docker host; Redis authentication is enforced in production.</li>
+  <li>All containers run as non-root (UID 10001); the custom Caddy image is source-compiled from alpine:3.24 and passes Docker Scout at 0 critical/0 high CVEs.</li>
+  <li>Uptime Kuma (self-hosted on Raspberry Pi) and UptimeRobot provide redundant public monitoring with email alerts to Pratham as the incident contact and rollback owner.</li>
+</ul>
+
+<div class="evidence">
+  <strong>Evidence files:</strong>
+  compose.yaml &nbsp;|&nbsp; compose.backend.yaml &nbsp;|&nbsp;
+  infrastructure/caddy/Caddyfile &nbsp;|&nbsp;
+  docs/checklists/DOCKERIZATION.md &nbsp;|&nbsp;
+  docs/checklists/PHASE_5_HARDEN_DEPLOY.md &nbsp;|&nbsp;
+  docs/deployment/monitoring-alerting-runbook.md &nbsp;|&nbsp; CHANGELOG.md
+</div>
+
+<!-- ============================================================ -->
+<h1>Diagram 3 — Authentication Flow</h1>
+
+<h2>Purpose</h2>
+<p>
+  Shows the complete Google OAuth login sequence using PKCE, how the Supabase JWT
+  reaches FastAPI, and how FastAPI resolves and validates the employee identity before
+  granting access.
+</p>
+
+<h2>Mermaid Source</h2>
+<pre>
+sequenceDiagram
+    participant User as 👤 User
+    participant Web as Next.js Frontend
+    participant Supa as Supabase Auth
+    participant Google as Google OAuth
+    participant API as FastAPI Backend
+    participant DB as Supabase PostgreSQL
+
+    User->>Web: Click "Sign in with Google"
+    Web->>Web: Server-side: generate PKCE code_verifier
+    Web->>Web: Store code_verifier in HTTP-only cookie
+    Web->>Supa: Redirect to OAuth authorize endpoint
+    Supa->>Google: Forward to Google OAuth consent
+    Google-->>Supa: Authorization code (verified identity)
+    Supa->>Supa: Exchange code for session using code_verifier
+    Supa-->>Web: Supabase session + signed JWT
+    Web->>Web: Store session (not in localStorage)
+
+    Note over Web,API: Every subsequent API request
+
+    Web->>API: Request with Authorization: Bearer JWT
+    API->>Supa: Fetch JWKS (public keys, cached)
+    API->>API: Validate: signature, issuer, audience, expiry
+    API->>API: Check email domain (@iemsnewdelhi.com)
+    API->>DB: Resolve user_account + employee record
+    API->>API: Check employee status = ACTIVE
+    API-->>Web: 200 OK (or 401/403 if denied)
+</pre>
+
+<h2>Key Points</h2>
+<ul>
+  <li>PKCE (Proof Key for Code Exchange) is implemented server-side in Next.js: the code verifier is stored in a server-set cookie before the OAuth redirect, preventing token interception via browser state.</li>
+  <li>Only email addresses from the @iemsnewdelhi.com domain are accepted; any other domain receives 403 EMAIL_DOMAIN_NOT_ALLOWED even with a valid Google account.</li>
+  <li>FastAPI validates the JWT using Supabase's JWKS endpoint (asymmetric key validation); it checks signature, issuer, audience, and expiry on every request — no session state is maintained on the server.</li>
+  <li>If an employee account is deactivated in the system, they receive 403 on all requests even with a valid Supabase session.</li>
+  <li>The Director account (director@iemsnewdelhi.com) is resolved as a Super User, granting elevated access to the Director Dashboard and all admin functions.</li>
+</ul>
+
+<div class="evidence">
+  <strong>Evidence files:</strong>
+  docs/04_SECURITY_MODEL.md &nbsp;|&nbsp; apps/api/app/core/auth.py &nbsp;|&nbsp;
+  apps/api/app/api/v1/me.py &nbsp;|&nbsp; apps/web/src/lib/api.ts &nbsp;|&nbsp;
+  apps/web/src/app/auth/signin/route.ts &nbsp;|&nbsp;
+  apps/web/src/app/auth/callback/route.ts &nbsp;|&nbsp; CHANGELOG.md
+</div>
+
+<!-- ============================================================ -->
+<h1>Diagram 4 — Authorization Flow</h1>
+
+<h2>Purpose</h2>
+<p>
+  Shows the complete backend authorization pipeline for every protected API request,
+  from JWT validation through RBAC and ABAC checks to the immutable audit event write.
+</p>
+
+<h2>Mermaid Source</h2>
+<pre>
+flowchart TD
+    Req["Incoming API Request\nAuthorization: Bearer JWT"] --> JWT["Validate JWT\n(signature, issuer, audience, expiry)"]
+    JWT --> Emp["Resolve user_account + employee\nfrom Supabase PostgreSQL"]
+    Emp --> Active{"Employee\nstatus = ACTIVE?"}
+    Active -- No --> Deny["401 / 403 Denied\n(EMPLOYEE_NOT_FOUND or\nEMAIL_DOMAIN_NOT_ALLOWED)"]
+    Active -- Yes --> RBAC["RBAC permission check\ne.g. project.view, document.upload,\nattendance.correct, approval.approve"]
+    RBAC --> HasPerm{"Permission\ngranted?"}
+    HasPerm -- No --> SU{"Is Super User?"}
+    SU -- No --> Deny
+    SU -- Yes --> Reason{"Override reason\nprovided?"}
+    Reason -- No --> Deny
+    Reason -- Yes --> ABAC
+    HasPerm -- Yes --> ABAC["ABAC context check\ne.g. project membership,\ndepartment, confidentiality,\nresource state"]
+    ABAC --> ABACPass{"ABAC\npasses?"}
+    ABACPass -- No --> Deny
+    ABACPass -- Yes --> DB["Execute DB operation\n(service-role RPC / transaction)"]
+    DB --> Audit["Write immutable audit event\n(actor, action, resource, timestamp)"]
+    Audit --> Resp["Return API response\n200 / 201 / 204"]
+
+    style Deny fill:#FADBD8,stroke:#E74C3C
+    style Resp fill:#D5E8D4,stroke:#27AE60
+    style Audit fill:#FFF3CD,stroke:#F39C12
+</pre>
+
+<h2>RBAC Permission Examples</h2>
+<table>
+  <tr><th>Permission</th><th>Who holds it</th><th>What it controls</th></tr>
+  <tr><td>project.view</td><td>Employee, Manager, Admin, Director</td><td>View project list and details</td></tr>
+  <tr><td>document.upload</td><td>Manager, Admin</td><td>Upload documents to folders</td></tr>
+  <tr><td>attendance.correct</td><td>Admin, Super Admin</td><td>Correct employee attendance sessions</td></tr>
+  <tr><td>approval.approve</td><td>Manager, Admin, Director</td><td>Approve or reject approval requests</td></tr>
+  <tr><td>audit.view</td><td>Admin, Super Admin, Director</td><td>Access full audit event log</td></tr>
+</table>
+
+<h2>Key Points</h2>
+<ul>
+  <li>Authorization is enforced independently by FastAPI on every request; frontend route guards are UX-only and provide no security guarantee.</li>
+  <li>The ABAC layer checks contextual attributes such as project membership, document confidentiality level, resource state, and department — providing finer-grained control than role alone.</li>
+  <li>Super User overrides bypass RBAC/ABAC restrictions but require a meaningful reason string sent via the X-IEMS-Override-Reason header, which is stored in the immutable audit log.</li>
+  <li>All database writes for sensitive operations use service-role-only Supabase RPCs executed inside transactions, ensuring atomicity between the business operation and the audit event write.</li>
+  <li>Supabase RLS acts as a defense-in-depth layer at the database level, independent of application-layer authorization.</li>
+</ul>
+
+<div class="evidence">
+  <strong>Evidence files:</strong>
+  docs/04_SECURITY_MODEL.md &nbsp;|&nbsp; apps/api/app/core/auth.py &nbsp;|&nbsp;
+  apps/api/app/core/permissions.py &nbsp;|&nbsp;
+  apps/api/app/api/dependencies.py &nbsp;|&nbsp;
+  apps/api/app/services/*.py &nbsp;|&nbsp;
+  supabase/migrations/*rls*.sql &nbsp;|&nbsp; supabase/migrations/*audit*.sql
+</div>
+
+<!-- ============================================================ -->
+<h1>Diagram 5 — Document Upload &amp; Download Flow</h1>
+
+<h2>Purpose</h2>
+<p>
+  Shows how documents are securely uploaded to private Supabase Storage through
+  FastAPI validation, and how downloads use short-lived signed URLs to avoid
+  exposing raw Storage paths.
+</p>
+
+<h2>Mermaid Source</h2>
+<pre>
+sequenceDiagram
+    participant User as 👤 User
+    participant Web as Next.js Frontend
+    participant API as FastAPI Backend
+    participant Storage as Supabase Storage (private)
+    participant DB as Supabase PostgreSQL
+
+    Note over User,DB: UPLOAD FLOW
+
+    User->>Web: Select file in upload dialog
+    Web->>API: POST multipart/form-data\n(file + metadata)
+    API->>API: Validate JWT + RBAC + ABAC
+    API->>API: Validate filename, MIME type, size
+    API->>Storage: Upload to private bucket\n(immutable key, never overwritten)
+    API->>DB: INSERT document record\n+ document_version record
+    API->>DB: Store SHA-256 checksum\n+ immutable storage key
+    API->>DB: Write audit event\n(actor, action, resource, timestamp)
+    API-->>Web: DocumentResponse (metadata only)
+
+    Note over User,DB: DOWNLOAD FLOW
+
+    User->>Web: Click download
+    Web->>API: GET /v1/document-versions/{id}/download-url
+    API->>API: Validate JWT + authorization
+    API->>Storage: Generate short-lived signed URL\n(expires in minutes)
+    API-->>Web: Signed URL
+    Web->>Storage: Browser downloads directly from signed URL
+</pre>
+
+<h2>Key Points</h2>
+<ul>
+  <li>Files are never stored on the FastAPI server; they are streamed directly to Supabase Storage using the service-role key, which exists only on the backend.</li>
+  <li>Storage keys are immutable — a new document version always creates a new storage object; existing objects are never overwritten, preserving full version history.</li>
+  <li>Download URLs are short-lived signed URLs generated by FastAPI after checking authorization; the browser downloads directly from Supabase Storage CDN without any round-trip through FastAPI.</li>
+  <li>Server-side validation checks filename (no path traversal), MIME type (against allowed list), and file size before any Storage write occurs.</li>
+  <li>SHA-256 checksums are stored in the database for every document version, enabling integrity verification.</li>
+</ul>
+
+<div class="evidence">
+  <strong>Evidence files:</strong>
+  docs/api-contract.md &nbsp;|&nbsp; docs/04_SECURITY_MODEL.md &nbsp;|&nbsp;
+  apps/api/app/api/v1/documents_archive.py &nbsp;|&nbsp;
+  apps/api/app/services/documents_archive.py &nbsp;|&nbsp;
+  apps/web/src/lib/api.ts &nbsp;|&nbsp;
+  supabase/migrations/202606040005_folders_documents.sql &nbsp;|&nbsp;
+  supabase/migrations/202606040015_storage.sql
+</div>
+
+<!-- ============================================================ -->
+<h1>Diagram 6 — Archive Export Flow</h1>
+
+<h2>Purpose</h2>
+<p>
+  Shows how project archive exports (ZIP files with folder hierarchy, manifest, and
+  index PDF) are generated asynchronously by a Celery worker and made available via
+  a signed download URL.
+</p>
+
+<h2>Export Status State Machine (Mermaid)</h2>
+<pre>
+stateDiagram-v2
+    [*] --> QUEUED : User requests export
+    QUEUED --> GENERATING : Celery worker picks up job
+    QUEUED --> CANCELLED : User cancels before generation starts
+    GENERATING --> READY : ZIP uploaded to Storage successfully
+    GENERATING --> FAILED : Worker encounters unrecoverable error
+    READY --> EXPIRED : TTL cleanup job runs
+    READY --> [*] : User downloads archive
+</pre>
+
+<h2>Archive Generation Flow (Mermaid)</h2>
+<pre>
+flowchart TD
+    User["User requests archive export"] --> API["FastAPI creates\narchive_export row\nstatus = QUEUED"]
+    API --> Redis["Dispatch Celery job\nvia Redis broker"]
+    Redis --> Worker["Celery worker picks up job\nstatus -> GENERATING"]
+    Worker --> Meta["Read folder + document\nmetadata from PostgreSQL"]
+    Worker --> Files["Download private documents\nfrom Supabase Storage"]
+    Worker --> ZIP["Build ZIP file\n(preserving folder hierarchy)"]
+    ZIP --> PDF["Generate manifest\n+ index PDF"]
+    PDF --> Upload["Upload ZIP to\ngenerated-archives bucket"]
+    Upload --> Ready["Mark export READY\nin PostgreSQL"]
+    Ready --> Notify["Create employee notification"]
+
+    User2["User polls for export status"] --> Status["GET /v1/exports/{id}\nstatus: QUEUED / GENERATING / READY"]
+    Status --> DL["GET /v1/exports/{id}/download-url\n(only when READY)"]
+    DL --> SignedURL["FastAPI generates\nshort-lived signed URL"]
+    SignedURL --> Download["Browser downloads from\nSupabase Storage"]
+
+    style Ready fill:#D5E8D4,stroke:#27AE60
+    style Upload fill:#D5E8D4,stroke:#27AE60
+</pre>
+
+<h2>Key Points</h2>
+<ul>
+  <li>Export generation is fully asynchronous — the API returns immediately with status QUEUED and the frontend polls until the status changes to READY.</li>
+  <li>The Celery worker reconstructs the folder hierarchy inside the ZIP, preserving the IEMS folder naming convention (e.g., 01 Client Brief/, 04 Venue Documents/) in the archive.</li>
+  <li>A manifest file and index PDF are generated automatically and included in every archive export.</li>
+  <li>Exports can be cancelled while QUEUED; attempting to cancel a GENERATING or READY export returns 422 INVALID_STATE.</li>
+  <li>READY exports expire after a configured TTL; expired exports return a signed-URL-not-available error and must be re-requested.</li>
+</ul>
+
+<div class="evidence">
+  <strong>Evidence files:</strong>
+  docs/api-contract.md &nbsp;|&nbsp;
+  apps/api/app/api/v1/documents_archive.py &nbsp;|&nbsp;
+  apps/api/app/services/documents_archive.py &nbsp;|&nbsp;
+  compose.yaml &nbsp;|&nbsp;
+  supabase/migrations/202606040006_archive_exports.sql &nbsp;|&nbsp;
+  supabase/migrations/20260606155127_cancel_archive_export.sql
+</div>
+
+<!-- ============================================================ -->
+<h1>Diagram 7 — Physical Archive Flow</h1>
+
+<h2>Purpose</h2>
+<p>
+  Shows how the physical records-room hierarchy is set up, how physical files are
+  registered and QR-labelled, and how checkout/return/verify operations maintain the
+  audit trail.
+</p>
+
+<h2>Mermaid Source</h2>
+<pre>
+flowchart TD
+    subgraph Setup ["Archive Room Setup (Admin)"]
+        Room["Archive Room\n(e.g. Records Room A)"]
+        Room --> Rack["Rack\n(e.g. R02)"]
+        Rack --> Shelf["Shelf\n(e.g. S03)"]
+        Shelf --> Cabinet["Cabinet\n(optional)"]
+        Cabinet --> Box["Box\n(e.g. B05)"]
+        Box --> Slot["File Slot\n(e.g. F014)"]
+    end
+
+    subgraph Registration ["Physical File Registration"]
+        Project["Project\n(e.g. IEMS-2026-0042)"] --> Register["Register physical file\nPOST /v1/projects/{id}/physical-files"]
+        Register --> QR["QR token generated\nGET /v1/physical-files/{id}/label"]
+        QR --> Label["Printable label\n(Project ID + location + QR code)"]
+        Register --> Slot
+    end
+
+    subgraph Lifecycle ["File Lifecycle Operations"]
+        Available["Status: AVAILABLE"] --> Checkout["Checkout request\n(employee, purpose,\nexpected return date)"]
+        Checkout --> CheckedOut["Status: CHECKED_OUT\n+ checkout row created\n+ audit event"]
+        CheckedOut --> Return["Return request\n(returned_at set)"]
+        Return --> Available
+
+        Available --> Move["Move to new location"]
+        Move --> Available
+
+        Available --> Verify["Verification scan\n(confirm exists,\nlabel readable, location correct)"]
+        Verify --> Available
+        Verify --> Audit2["last_verified_at updated\n+ audit event"]
+
+        CheckedOut --> Overdue["OVERDUE flag\nif past expected return\n(visible on Director Dashboard)"]
+    end
+
+    subgraph QRScan ["QR Scan Resolution"]
+        Scan["Employee scans QR code"] --> Resolve["GET /v1/physical-files/by-qr/{qr_token}"]
+        Resolve --> FileDetail["Redirect to /archive/files/{id}"]
+    end
+
+    style Available fill:#D5E8D4,stroke:#27AE60
+    style CheckedOut fill:#FFF3CD,stroke:#F39C12
+    style Overdue fill:#FADBD8,stroke:#E74C3C
+</pre>
+
+<h2>Key Points</h2>
+<ul>
+  <li>The physical archive hierarchy mirrors the digital folder system: every physical file is linked to a project ID, creating a single source of truth across both digital and physical records.</li>
+  <li>QR codes are generated per physical file and encode an opaque token (not a Storage URL or auth secret). Scanning redirects to the file detail page after API resolution.</li>
+  <li>The checkout register tracks the employee, purpose, expected return date, and actual return date; overdue files are surfaced on the Director Dashboard.</li>
+  <li>All physical file operations (checkout, return, move, verify) write immutable audit events with the actor, action, and timestamp.</li>
+  <li>The QR scan route (/archive/scan/[qr_token]) is accessible from any device with a browser, allowing physical scanning without a dedicated app.</li>
+</ul>
+
+<div class="evidence">
+  <strong>Evidence files:</strong>
+  docs/api-contract.md &nbsp;|&nbsp; docs/03_DATABASE_DESIGN.md &nbsp;|&nbsp;
+  apps/api/app/api/v1/physical_archive.py &nbsp;|&nbsp;
+  apps/api/app/services/physical_archive.py &nbsp;|&nbsp;
+  apps/web/src/app/archive/** &nbsp;|&nbsp;
+  supabase/migrations/202606040007_physical_archive.sql
+</div>
+
+<!-- ============================================================ -->
+<h1>Diagram 8 — Phase Timeline / Roadmap</h1>
+
+<h2>Purpose</h2>
+<p>
+  Shows the seven implementation phases of the IEMS ERP project, what was delivered
+  in each phase, and the current status as of the mid-semester report date.
+</p>
+
+<h2>Mermaid Source</h2>
+<pre>
+timeline
+    title IEMS ERP Implementation Timeline (2026)
+    Phase 0 - Foundation
+        : Supabase schema validation
+        : Extensions, RLS, Storage buckets
+        : SQL probes and constraint checks
+        : Director bootstrap seed
+    Phase 1 - App / Auth
+        : FastAPI shell (health, errors, request IDs)
+        : Supabase Auth + Google OAuth PKCE
+        : RBAC + ABAC service layer
+        : Next.js frontend shell + design system
+    Phase 2 - Projects / Documents / Archive
+        : Client and project CRUD
+        : Folder tree + templates
+        : Document upload + versioning (private Storage)
+        : ZIP archive export via Celery
+        : Physical archive (rooms, QR labels, checkout)
+    Phase 3 - Employee Operations
+        : Attendance check-in / check-out
+        : Leave requests and review
+        : Task management (list, detail, assignees)
+        : Shared calendar with synthetic feeds
+        : Notifications
+    Phase 4 - Management + Director
+        : Approval workflows (create, approve, reject)
+        : Director Dashboard (9 sub-pages, live data)
+        : Admin Panel (employees, policies, templates)
+        : Full audit explorer
+    Phase 5 - Hardening / Deployment
+        : 52-test frontend suite (Vitest 4)
+        : Docker hardening (all images 0C/0H CVEs)
+        : Rate limiting, security headers
+        : Cloudflare Tunnel live deployment
+        : Monitoring (Uptime Kuma + UptimeRobot)
+        : Release approved 2026-06-26
+    Phase 6 - Pilot Rollout (IN PROGRESS)
+        : Module rollout flags (backend + frontend)
+        : Pilot employee onboarding
+        : Training materials
+        : Historical data import
+        : Department-by-department rollout
+</pre>
+
+<h2>Phase Summary Table</h2>
+<table>
+  <tr><th>Phase</th><th>Name</th><th>Status</th><th>Key Deliverables</th></tr>
+  <tr><td>0</td><td>Foundation</td><td>Complete</td><td>DB schema, RLS, Storage, SQL probes</td></tr>
+  <tr><td>1</td><td>App / Auth</td><td>Complete</td><td>FastAPI shell, Google OAuth, RBAC/ABAC, frontend shell</td></tr>
+  <tr><td>2</td><td>Projects / Docs / Archive</td><td>Complete</td><td>Documents, ZIP exports, physical archive, QR labels</td></tr>
+  <tr><td>3</td><td>Employee Operations</td><td>Complete</td><td>Attendance, leave, tasks, calendar, notifications</td></tr>
+  <tr><td>4</td><td>Management / Director</td><td>Complete</td><td>Approvals, Director Dashboard, Admin Panel, audit explorer</td></tr>
+  <tr><td>5</td><td>Hardening / Deployment</td><td>Complete (approved 2026-06-26)</td><td>Docker, security, tests, monitoring, release</td></tr>
+  <tr><td>6</td><td>Pilot Rollout</td><td>In Progress</td><td>Module flags live; onboarding, training, rollout pending</td></tr>
+</table>
+
+<div class="evidence">
+  <strong>Evidence files:</strong>
+  docs/00_START_HERE.md &nbsp;|&nbsp; docs/checklists/PHASE_0_FOUNDATION_VALIDATION.md &nbsp;|&nbsp;
+  docs/checklists/PHASE_5_HARDEN_DEPLOY.md &nbsp;|&nbsp;
+  docs/checklists/PHASE_6_PILOT_ROLLOUT.md &nbsp;|&nbsp; CHANGELOG.md &nbsp;|&nbsp; git log
+</div>
+
+<!-- ============================================================ -->
+<h1>Diagram 9 — Security Controls Diagram</h1>
+
+<h2>Purpose</h2>
+<p>
+  Shows all security controls layered across the system: browser, API, database,
+  Storage, Docker infrastructure, and operations.
+</p>
+
+<h2>Mermaid Source</h2>
+<pre>
+flowchart TB
+    subgraph Browser ["Browser Layer"]
+        B1["No service-role secrets\nin client bundle"]
+        B2["Protected routes\n(UX only — not authorization)"]
+        B3["Module hiding UX\n(disabled modules hidden from nav)"]
+        B4["Auth tokens not in localStorage"]
+    end
+
+    subgraph API ["API Layer (FastAPI)"]
+        A1["JWT validation\n(signature, issuer, audience, expiry)"]
+        A2["RBAC permission checks"]
+        A3["ABAC context checks\n(project, department, resource state)"]
+        A4["Redis-backed rate limiting\n(429 RATE_LIMIT_EXCEEDED)"]
+        A5["Security headers\n(nosniff, DENY framing, no-referrer,\npermissions policy, COOP, CSP)"]
+        A6["Stable error envelope\n+ X-Request-ID on every response"]
+        A7["Immutable audit logging\n(every sensitive operation)"]
+        A8["API docs disabled\nin production"]
+    end
+
+    subgraph Database ["Database Layer (Supabase PostgreSQL)"]
+        D1["RLS on all tables\n(default deny)"]
+        D2["Constraints\n(check, unique, FK)"]
+        D3["Private schemas\n(app_private, not exposed via PostgREST)"]
+        D4["Immutable audit table\n(no UPDATE/DELETE triggers)"]
+        D5["Indexes for\nperformance + correctness"]
+    end
+
+    subgraph Storage ["Storage Layer (Supabase Storage)"]
+        S1["Private buckets\n(no public access)"]
+        S2["Signed URLs\n(short-lived, generated by API)"]
+        S3["Server-side MIME/size checks\nbefore upload"]
+        S4["Immutable storage keys\n(no overwrite)"]
+    end
+
+    subgraph Infra ["Docker / Infrastructure Layer"]
+        I1["Non-root containers\n(UID 10001)"]
+        I2["Redis password\nenforced"]
+        I3["Redis on internal\nDocker network only"]
+        I4["Caddy admin API\ndisabled in production"]
+        I5["no-new-privileges\nconfigured"]
+        I6["Resource limits\non all containers"]
+        I7["Image scans\n(Docker Scout: 0C/0H on all images)"]
+        I8["_FILE secret mounts\nfor service-role key + JWT secret"]
+    end
+
+    subgraph Ops ["Operations Layer"]
+        O1["Uptime Kuma\n(self-hosted, Raspberry Pi)"]
+        O2["UptimeRobot\n(redundant public monitor)"]
+        O3["Cloudflare Tunnel\nalerts"]
+        O4["Dozzle\n(live container logs)"]
+        O5["Rollback runbook\n+ incident response docs"]
+        O6["pip-audit\nin backend CI"]
+    end
+
+    Browser --> API
+    API --> Database
+    API --> Storage
+    API --> Infra
+    Infra --> Ops
+</pre>
+
+<h2>Key Points</h2>
+<ul>
+  <li>Security is layered: a bypass at the browser layer (e.g., direct URL navigation) is blocked by the API layer; a bypass at the API layer is blocked by the database RLS layer.</li>
+  <li>The Supabase service-role key is handled exclusively by FastAPI and is never included in any build argument, client bundle, or environment variable accessible to the frontend.</li>
+  <li>All Docker images pass Docker Scout vulnerability scanning at 0 critical and 0 high findings; the Caddy image is source-compiled to eliminate CVEs present in the official caddy:2-alpine image.</li>
+  <li>Rate limiting uses Redis-backed shared state across all API workers, ensuring limits are enforced consistently even under concurrent requests.</li>
+  <li>An immutable audit table (protected by database triggers that block UPDATE and DELETE) provides a tamper-evident record of all sensitive operations.</li>
+</ul>
+
+<div class="evidence">
+  <strong>Evidence files:</strong>
+  docs/04_SECURITY_MODEL.md &nbsp;|&nbsp; docs/checklists/SECURITY_GLOBAL.md &nbsp;|&nbsp;
+  docs/checklists/SECURITY_RELEASE_GATE.md &nbsp;|&nbsp;
+  apps/api/app/core/rate_limit.py &nbsp;|&nbsp;
+  apps/api/app/core/security_headers.py &nbsp;|&nbsp;
+  apps/api/app/core/auth.py &nbsp;|&nbsp;
+  compose.yaml &nbsp;|&nbsp; infrastructure/caddy/Caddyfile
+</div>
+
+<!-- ============================================================ -->
+<h1>Diagram 10 — Module Rollout Flow</h1>
+
+<h2>Purpose</h2>
+<p>
+  Shows how phased module enable/disable works across the backend environment flags,
+  the /v1/modules API endpoint, and the frontend gating layer — with the backend
+  middleware as the authoritative enforcement point.
+</p>
+
+<h2>Mermaid Source</h2>
+<pre>
+sequenceDiagram
+    participant Env as Backend .env\nMODULE_*_ENABLED flags
+    participant API as FastAPI Settings\n+ Middleware
+    participant Modules as GET /v1/modules\n(unauthenticated)
+    participant Web as Next.js Frontend
+    participant Sidebar as Sidebar Component
+    participant Guard as ModuleGuard Component
+    participant Route as Protected API Route
+
+    Note over Env,API: At process startup
+    Env->>API: Load all MODULE_*_ENABLED flags
+    API->>API: FastAPI Settings validates and stores flags
+
+    Note over Web,Guard: On page load
+    Web->>Modules: Fetch module list (no auth required)
+    Modules-->>Web: [{code: "projects", enabled: true}, ...]
+    Web->>Sidebar: Filter nav items by enabled flags
+    Sidebar-->>Web: Hide disabled module links
+    Web->>Guard: Render page content
+    Guard-->>Web: Show ModuleDisabledState if module disabled
+
+    Note over Web,Route: When user accesses a page or calls API
+    Web->>Route: API call to disabled module route
+    Route-->>Web: 403 MODULE_DISABLED\n"This module is not enabled for this rollout."
+
+    Note over Env: To enable/disable a module
+    Env->>API: Update .env flag
+    API->>API: Restart uvicorn process\n(docker compose up --force-recreate)
+    API->>Modules: New flag state served immediately
+</pre>
+
+<h2>Module Flag Configuration</h2>
+<table>
+  <tr><th>Flag</th><th>Current .env</th><th>Recommended Onboarding</th></tr>
+  <tr><td>MODULE_PROJECTS_ENABLED</td><td>true</td><td>true</td></tr>
+  <tr><td>MODULE_DOCUMENTS_ENABLED</td><td>true</td><td>true</td></tr>
+  <tr><td>MODULE_ARCHIVE_EXPORTS_ENABLED</td><td>true</td><td>false (enable after training)</td></tr>
+  <tr><td>MODULE_PHYSICAL_ARCHIVE_ENABLED</td><td>true</td><td>false (enable after physical setup)</td></tr>
+  <tr><td>MODULE_ATTENDANCE_ENABLED</td><td>false</td><td>false (enable when HR ready)</td></tr>
+  <tr><td>MODULE_LEAVE_ENABLED</td><td>false</td><td>true</td></tr>
+  <tr><td>MODULE_TASKS_ENABLED</td><td>true</td><td>true</td></tr>
+  <tr><td>MODULE_CALENDAR_ENABLED</td><td>true</td><td>true</td></tr>
+  <tr><td>MODULE_APPROVALS_ENABLED</td><td>true</td><td>true</td></tr>
+  <tr><td>MODULE_DIRECTOR_DASHBOARD_ENABLED</td><td>true</td><td>true</td></tr>
+  <tr><td>MODULE_ADMIN_ENABLED</td><td>true</td><td>true</td></tr>
+</table>
+
+<h2>Key Points</h2>
+<ul>
+  <li>The backend is the sole source of truth for module state. The Vercel frontend does not need any module-specific environment variables — it reads /v1/modules at runtime.</li>
+  <li>The frontend module gating (sidebar hiding, ModuleGuard) is UX-only and provides no security guarantee; the FastAPI middleware blocks disabled API routes with 403 MODULE_DISABLED before any business logic runs.</li>
+  <li>The /v1/modules endpoint is intentionally unauthenticated so the frontend can fetch module state before the user logs in, enabling correct login-page rendering.</li>
+  <li>The frontend fails open: if /v1/modules is unreachable (network error or non-200 response), all modules are treated as enabled to prevent user lockout during a backend outage.</li>
+  <li>To change module flags in production, update the .env file and run: docker compose up -d --force-recreate api worker scheduler</li>
+</ul>
+
+<div class="evidence">
+  <strong>Evidence files:</strong>
+  apps/api/app/core/config.py &nbsp;|&nbsp; apps/api/app/core/module_flags.py &nbsp;|&nbsp;
+  apps/api/app/api/v1/modules.py &nbsp;|&nbsp; compose.yaml &nbsp;|&nbsp;
+  apps/web/src/hooks/use-modules.ts &nbsp;|&nbsp;
+  apps/web/src/components/layout/sidebar.tsx &nbsp;|&nbsp;
+  apps/web/src/components/states/module-guard.tsx &nbsp;|&nbsp;
+  apps/web/src/lib/errors.ts &nbsp;|&nbsp; docs/07_OPEN_ITEMS.md
+</div>
+
+<hr/>
+<p style="text-align:center; font-size:9pt; color:#888; margin-top:30px;">
+  IEMS Internal ERP — Architecture Diagrams &nbsp;|&nbsp;
+  Pratham Nagpal &nbsp;|&nbsp; 28 June 2026 &nbsp;|&nbsp;
+  Paste Mermaid code blocks at https://mermaid.live to render visually
+</p>
+
+</body>
+</html>
