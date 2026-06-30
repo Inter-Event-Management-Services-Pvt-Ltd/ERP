@@ -135,8 +135,14 @@ export default function DirectorAuditPage() {
                       {format(new Date(ev.created_at), 'dd MMM yyyy HH:mm:ss')}
                     </td>
                     <td className="px-4 py-3 whitespace-nowrap">
-                      <span className="font-mono text-xs text-text-primary/40 mr-1.5">{ev.actor.employee_code}</span>
-                      <span className="text-text-primary/80">{ev.actor.full_name}</span>
+                      {ev.actor ? (
+                        <>
+                          <span className="font-mono text-xs text-text-primary/40 mr-1.5">{ev.actor.employee_code}</span>
+                          <span className="text-text-primary/80">{ev.actor.full_name}</span>
+                        </>
+                      ) : (
+                        <span className="font-mono text-xs text-text-primary/40">System</span>
+                      )}
                     </td>
                     <td className="px-4 py-3 whitespace-nowrap">
                       <span className="font-mono text-xs text-accent-saffron/80">{ev.action_code}</span>
