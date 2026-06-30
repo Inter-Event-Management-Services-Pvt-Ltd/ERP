@@ -1,0 +1,24 @@
+flowchart LR
+    U["👤 Employee Browser"] --> W["Vercel Next.js Frontend\nerp-dusky-six.vercel.app"]
+    W --> A["FastAPI Backend API\napi.prathlabs.com"]
+
+    A --> AUTH["Supabase Auth\nJWT validation / Google OAuth"]
+    A --> DB[("Supabase PostgreSQL\nSource of truth — RLS enabled")]
+    A --> ST[("Supabase Storage\nPrivate buckets — signed URLs")]
+    A --> R[("Redis\nJob broker / rate-limit state")]
+    R --> C["Celery Worker + Scheduler\nAsync ZIP generation / jobs"]
+    C --> DB
+    C --> ST
+
+    W -. "public anon key only\nno service-role key" .-> AUTH
+    A -. "service-role\nserver-side only" .-> DB
+    A -. "short-lived\nsigned URLs" .-> ST
+
+    style U fill:#E8F4FD,stroke:#2E6DA4,color:#000
+    style W fill:#D6EAF8,stroke:#2E6DA4,color:#000
+    style A fill:#D5E8D4,stroke:#27AE60,color:#000
+    style DB fill:#FFF3CD,stroke:#F39C12,color:#000
+    style ST fill:#FFF3CD,stroke:#F39C12,color:#000
+    style AUTH fill:#FFF3CD,stroke:#F39C12,color:#000
+    style R fill:#FADBD8,stroke:#E74C3C,color:#000
+    style C fill:#FADBD8,stroke:#E74C3C,color:#000

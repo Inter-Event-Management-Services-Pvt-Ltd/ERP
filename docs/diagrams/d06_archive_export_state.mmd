@@ -1,0 +1,8 @@
+stateDiagram-v2
+    [*] --> QUEUED : User requests export
+    QUEUED --> GENERATING : Celery worker picks up job
+    QUEUED --> CANCELLED : User cancels before generation
+    GENERATING --> READY : ZIP uploaded to Storage
+    GENERATING --> FAILED : Worker error
+    READY --> EXPIRED : TTL cleanup runs
+    READY --> [*] : User downloads archive

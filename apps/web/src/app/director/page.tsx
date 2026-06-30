@@ -101,8 +101,14 @@ function AuditEventRow({ event }: { event: DirectorAuditEvent }) {
   return (
     <tr className="border-b border-surface-border last:border-0">
       <td className="px-4 py-3 text-text-primary/70 whitespace-nowrap">
-        <span className="text-xs text-text-primary/40 font-mono mr-2">{event.actor.employee_code}</span>
-        <span className="text-xs text-text-primary">{event.actor.full_name}</span>
+        {event.actor ? (
+          <>
+            <span className="text-xs text-text-primary/40 font-mono mr-2">{event.actor.employee_code}</span>
+            <span className="text-xs text-text-primary">{event.actor.full_name}</span>
+          </>
+        ) : (
+          <span className="text-xs text-text-primary/40 font-mono">System</span>
+        )}
       </td>
       <td className="px-4 py-3">
         <span className="font-mono text-xs text-accent-saffron/80">{event.action_code}</span>

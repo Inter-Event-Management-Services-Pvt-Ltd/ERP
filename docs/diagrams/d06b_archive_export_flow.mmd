@@ -1,0 +1,16 @@
+flowchart TD
+    User["User requests archive export"] --> API["FastAPI creates archive_export\nstatus = QUEUED"]
+    API --> Redis["Dispatch Celery job via Redis"]
+    Redis --> Worker["Celery worker starts\nstatus = GENERATING"]
+    Worker --> Meta["Read folder + document\nmetadata from PostgreSQL"]
+    Worker --> Files["Download private files\nfrom Supabase Storage"]
+    Worker --> ZIP["Build ZIP\npreserving folder hierarchy"]
+    ZIP --> PDF["Generate manifest\n+ index PDF"]
+    PDF --> Upload["Upload ZIP to\ngenerated-archives bucket"]
+    Upload --> Ready["Mark export READY"]
+    Ready --> Notify["Create employee notification"]
+    User2["User polls export status"] --> DL["GET signed download URL\nwhen READY"]
+    DL --> Download["Browser downloads\nfrom Supabase Storage"]
+
+    style Ready fill:#D5E8D4,stroke:#27AE60,color:#000
+    style Upload fill:#D5E8D4,stroke:#27AE60,color:#000

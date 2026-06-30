@@ -1,0 +1,25 @@
+sequenceDiagram
+    participant User as 👤 User
+    participant Web as Next.js Frontend
+    participant API as FastAPI Backend
+    participant Storage as Supabase Storage (private)
+    participant DB as Supabase PostgreSQL
+
+    Note over User,DB: UPLOAD FLOW
+    User->>Web: Select file in upload dialog
+    Web->>API: POST multipart/form-data
+    API->>API: Validate JWT + RBAC + ABAC
+    API->>API: Validate filename / MIME type / size
+    API->>Storage: Upload private immutable object
+    API->>DB: INSERT document + document_version
+    API->>DB: Store SHA-256 checksum + storage key
+    API->>DB: Write audit event
+    API-->>Web: DocumentResponse
+
+    Note over User,DB: DOWNLOAD FLOW
+    User->>Web: Click download
+    Web->>API: GET /v1/document-versions/{id}/download-url
+    API->>API: Authorization check
+    API->>Storage: Generate short-lived signed URL
+    API-->>Web: Signed URL
+    Web->>Storage: Browser downloads directly

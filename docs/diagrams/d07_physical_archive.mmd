@@ -1,0 +1,35 @@
+flowchart TD
+    subgraph Setup ["Archive Room Hierarchy"]
+        Room["Archive Room"] --> Rack["Rack"]
+        Rack --> Shelf["Shelf"]
+        Shelf --> Box["Box"]
+        Box --> Slot["File Slot"]
+    end
+
+    subgraph Registration ["Physical File Registration"]
+        Project["Project\ne.g. IEMS-2026-0042"] --> Register["Register physical file\nPOST /v1/projects/id/physical-files"]
+        Register --> QR["QR token generated"]
+        QR --> Label["Printable label\nProject + location + QR code"]
+        Register --> Slot
+    end
+
+    subgraph Lifecycle ["File Operations"]
+        Available["AVAILABLE"] --> Checkout["Checkout request\nemployee · purpose · expected return"]
+        Checkout --> CheckedOut["CHECKED_OUT\n+ checkout row + audit event"]
+        CheckedOut --> Return["Return request"]
+        Return --> Available
+        Available --> Move["Move to new location\n+ audit event"]
+        Move --> Available
+        Available --> Verify["Verification scan\nlast_verified_at updated + audit event"]
+        Verify --> Available
+        CheckedOut --> Overdue["OVERDUE if past\nexpected return date"]
+    end
+
+    subgraph QRScan ["QR Scan Resolution"]
+        Scan["Employee scans QR code"] --> Resolve["GET /v1/physical-files/by-qr/token"]
+        Resolve --> FileDetail["Redirect to /archive/files/id"]
+    end
+
+    style Available fill:#D5E8D4,stroke:#27AE60,color:#000
+    style CheckedOut fill:#FFF3CD,stroke:#F39C12,color:#000
+    style Overdue fill:#FADBD8,stroke:#E74C3C,color:#000

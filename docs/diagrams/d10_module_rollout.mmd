@@ -1,0 +1,28 @@
+sequenceDiagram
+    participant Env as Backend .env flags
+    participant API as FastAPI Settings + Middleware
+    participant Modules as GET /v1/modules (unauthenticated)
+    participant Web as Next.js Frontend
+    participant Sidebar as Sidebar Component
+    participant Guard as ModuleGuard Component
+    participant Route as Protected API Route
+
+    Note over Env,API: At process startup
+    Env->>API: Load MODULE_*_ENABLED flags
+    API->>API: Validate and store in FastAPI Settings
+
+    Note over Web,Guard: On page load
+    Web->>Modules: Fetch module list (no auth required)
+    Modules-->>Web: [{code, enabled}, ...]
+    Web->>Sidebar: Filter nav by enabled flags
+    Sidebar-->>Web: Disabled module links hidden
+    Web->>Guard: Render page content
+    Guard-->>Web: ModuleDisabledState if disabled
+
+    Note over Web,Route: API call to disabled module
+    Web->>Route: Request to disabled module endpoint
+    Route-->>Web: 403 MODULE_DISABLED
+
+    Note over Env,API: To change flags
+    Env->>API: Update .env + restart process
+    API->>Modules: New flag state served immediately

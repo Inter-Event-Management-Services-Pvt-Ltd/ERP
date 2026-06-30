@@ -585,12 +585,12 @@ export interface DirectorAuditEvent {
   action_code: string
   resource_type: string
   resource_id: string
-  actor_employee_id: string
+  actor_employee_id: string | null
   actor: {
     id: string
     employee_code: string
     full_name: string
-  }
+  } | null
   request_id: string
   created_at: string
 }

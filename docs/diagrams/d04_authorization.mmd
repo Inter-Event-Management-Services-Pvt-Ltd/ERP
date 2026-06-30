@@ -1,0 +1,22 @@
+flowchart TD
+    Req["Incoming API Request\nAuthorization: Bearer JWT"] --> JWT["Validate JWT\nsignature · issuer · audience · expiry"]
+    JWT --> Emp["Resolve user_account + employee\nfrom PostgreSQL"]
+    Emp --> Active{"Employee\nstatus = ACTIVE?"}
+    Active -- No --> Deny["401 / 403 Denied"]
+    Active -- Yes --> RBAC["RBAC permission check\ne.g. project.view · document.upload\nattendance.correct · approval.approve"]
+    RBAC --> HasPerm{"Permission\ngranted?"}
+    HasPerm -- No --> SU{"Is Super\nUser?"}
+    SU -- No --> Deny
+    SU -- Yes --> Reason{"Override reason\nprovided?"}
+    Reason -- No --> Deny
+    Reason -- Yes --> ABAC
+    HasPerm -- Yes --> ABAC["ABAC context check\nproject membership · department\nconfidentiality · resource state"]
+    ABAC --> ABACPass{"ABAC\npasses?"}
+    ABACPass -- No --> Deny
+    ABACPass -- Yes --> DB["Execute DB operation\nservice-role RPC / transaction"]
+    DB --> Audit["Write immutable audit event\nactor · action · resource · timestamp"]
+    Audit --> Resp["Return API response\n200 / 201 / 204"]
+
+    style Deny fill:#FADBD8,stroke:#E74C3C,color:#000
+    style Resp fill:#D5E8D4,stroke:#27AE60,color:#000
+    style Audit fill:#FFF3CD,stroke:#F39C12,color:#000

@@ -1,0 +1,26 @@
+flowchart TB
+    Users["Users / Employees"] --> V["Vercel Frontend\nerp-dusky-six.vercel.app"]
+    Users --> CF["Cloudflare DNS + Tunnel\napi.prathlabs.com"]
+    CF --> Caddy["Caddy Reverse Proxy\nTLS · Security Headers · UID 10001"]
+
+    subgraph DockerServer ["Local Docker Server"]
+        Caddy --> API["FastAPI api\nUID 10001 · Alpine"]
+        API --> REDIS["Redis\nAuth enabled · internal network"]
+        REDIS --> WORKER["Celery worker\nUID 10001 · Alpine"]
+        REDIS --> SCHED["Celery scheduler\nUID 10001 · Alpine"]
+    end
+
+    API --> SUPA["Supabase Cloud\nAuth · PostgreSQL · Storage"]
+    WORKER --> SUPA
+    SCHED --> SUPA
+
+    subgraph Monitoring ["Monitoring"]
+        UK["Uptime Kuma\nRaspberry Pi"] -. monitors .-> V
+        UR["UptimeRobot"] -. monitors .-> V
+        CFA["Cloudflare Alerts"] -. tunnel health .-> CF
+        DZ["Dozzle"] -. container logs .-> DockerServer
+    end
+
+    style DockerServer fill:#EAF5EA,stroke:#27AE60,color:#000
+    style Monitoring fill:#FFF8E1,stroke:#F39C12,color:#000
+    style REDIS fill:#FADBD8,stroke:#E74C3C,color:#000

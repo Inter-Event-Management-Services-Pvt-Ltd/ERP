@@ -1,0 +1,23 @@
+sequenceDiagram
+    participant User as 👤 User
+    participant Web as Next.js Frontend
+    participant Supa as Supabase Auth
+    participant Google as Google OAuth
+    participant API as FastAPI Backend
+    participant DB as Supabase PostgreSQL
+
+    User->>Web: Click Sign in with Google
+    Web->>Web: Generate PKCE code_verifier
+    Web->>Web: Store verifier in HTTP-only cookie
+    Web->>Supa: Redirect to OAuth authorize
+    Supa->>Google: Google OAuth consent
+    Google-->>Supa: Authorization code
+    Supa->>Supa: Exchange code using verifier
+    Supa-->>Web: Session + signed JWT
+    Web->>API: API request — Authorization: Bearer JWT
+    API->>Supa: Fetch JWKS public keys
+    API->>API: Validate signature / issuer / audience / expiry
+    API->>API: Check email domain @iemsnewdelhi.com
+    API->>DB: Resolve user_account + employee record
+    API->>API: Check employee status = ACTIVE
+    API-->>Web: 200 OK or 401/403 denied

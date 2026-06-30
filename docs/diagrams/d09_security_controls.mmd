@@ -1,0 +1,54 @@
+flowchart TB
+    subgraph Browser ["Browser Layer"]
+        B1["No service-role secrets in bundle"]
+        B2["Protected routes (UX only)"]
+        B3["Module hiding UX"]
+        B4["Auth tokens not in localStorage"]
+    end
+
+    subgraph API ["API Layer — FastAPI"]
+        A1["JWT validation\nsignature · issuer · audience · expiry"]
+        A2["RBAC permission checks"]
+        A3["ABAC context checks"]
+        A4["Redis rate limiting\n429 RATE_LIMIT_EXCEEDED"]
+        A5["Security headers\nnosniff · DENY framing · CSP · HSTS"]
+        A6["Stable error envelope + X-Request-ID"]
+        A7["Immutable audit logging"]
+        A8["API docs disabled in production"]
+    end
+
+    subgraph Database ["Database Layer — Supabase PostgreSQL"]
+        D1["RLS on all tables — default deny"]
+        D2["Check + unique + FK constraints"]
+        D3["app_private schema — not exposed"]
+        D4["Immutable audit table\nno UPDATE/DELETE allowed"]
+    end
+
+    subgraph Storage ["Storage Layer — Supabase Storage"]
+        S1["Private buckets — no public access"]
+        S2["Short-lived signed URLs"]
+        S3["Server-side MIME + size validation"]
+        S4["Immutable storage keys"]
+    end
+
+    subgraph Infra ["Docker / Infrastructure"]
+        I1["Non-root containers UID 10001"]
+        I2["Redis password enforced"]
+        I3["Redis on internal network only"]
+        I4["Caddy admin API disabled"]
+        I5["no-new-privileges + resource limits"]
+        I6["Docker Scout 0C/0H all images"]
+        I7["_FILE secret mounts"]
+    end
+
+    subgraph Ops ["Operations"]
+        O1["Uptime Kuma + UptimeRobot"]
+        O2["Cloudflare Tunnel alerts"]
+        O3["Dozzle live container logs"]
+        O4["Rollback runbook"]
+        O5["pip-audit in backend CI"]
+    end
+
+    Browser --> API --> Database
+    API --> Storage
+    API --> Infra --> Ops
